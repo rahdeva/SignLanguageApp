@@ -8,6 +8,7 @@
 import AVFoundation
 import SwiftUI
 
+/// SwiftUI bridge for `AVCaptureVideoPreviewLayer` using the Apple AVCam pattern.
 struct CameraPreviewView: UIViewRepresentable {
     let source: any PreviewSource
 

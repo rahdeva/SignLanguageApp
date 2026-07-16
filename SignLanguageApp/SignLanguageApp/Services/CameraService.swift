@@ -9,6 +9,7 @@
 import CoreImage
 import OSLog
 
+/// Errors that can occur during camera setup and operation.
 enum CameraError: LocalizedError {
     case addInputFailed, addOutputFailed, noCameraAvailable, noMicAvailable,
         notAuthorized, flipFailed
@@ -25,6 +26,8 @@ enum CameraError: LocalizedError {
     }
 }
 
+/// Manages `AVCaptureSession` and streams video frames as `CVPixelBuffer`.
+/// Conforms to `PreviewSource` to connect a SwiftUI preview without exposing the session.
 actor CameraService: PreviewSource {
     let captureSession = AVCaptureSession()
     private let videoOutput = AVCaptureVideoDataOutput()
@@ -52,6 +55,7 @@ actor CameraService: PreviewSource {
         Task { await target.setSession(captureSession) }
     }
 
+    /// Starts the capture session. Requests camera permission if needed.
     func start() async throws {
         guard await PermissionService.requestCamera() else {
             throw CameraError.notAuthorized
@@ -66,6 +70,7 @@ actor CameraService: PreviewSource {
         }
     }
 
+    /// Stops the capture session. Does NOT finish the pixel buffer stream.
     func stop() {
         guard captureSession.isRunning else { return }
         DispatchQueue.global(qos: .background).async { [self] in
@@ -73,6 +78,7 @@ actor CameraService: PreviewSource {
         }
     }
 
+    /// Toggle between front and back camera. Uses `beginConfiguration` / `commitConfiguration` for atomicity.
     func flipCamera() async throws {
         guard let currentInput = activeVideoInput else { return }
         let newPosition: AVCaptureDevice.Position =
@@ -123,6 +129,7 @@ actor CameraService: PreviewSource {
         return camera
     }()
 
+    /// One-time session configuration: preset, inputs, video output, mic.
     private func configureSession() throws {
         captureSession.beginConfiguration()
         defer {

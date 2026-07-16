@@ -8,6 +8,7 @@
 import AVFoundation
 import SwiftUI
 
+/// Sign→Speech: camera preview, prediction display, flip camera, speak output.
 struct SignToSpeechView: View {
     @Environment(AppStore.self) private var appStore
     @State private var store: SignToSpeechStore?
@@ -15,6 +16,7 @@ struct SignToSpeechView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
+                // Camera preview with flip button overlay
                 ZStack(alignment: .bottomTrailing) {
                     if store?.isCapturing == true {
                         CameraPreviewView(source: appStore.cameraService)
@@ -46,11 +48,11 @@ struct SignToSpeechView: View {
                     }
 
                     if store?.isCapturing == true {
-                        flipButton
-                            .padding(12)
+                        flipButton.padding(12)
                     }
                 }
 
+                // Prediction output
                 Text(store?.predictedText ?? "No sign detected")
                     .font(.title2.weight(.medium))
                     .multilineTextAlignment(.center)
@@ -63,6 +65,7 @@ struct SignToSpeechView: View {
 
                 Spacer()
 
+                // Action buttons
                 HStack(spacing: 16) {
                     if let store {
                         let isBusy = store.isCameraBusy

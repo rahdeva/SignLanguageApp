@@ -8,6 +8,7 @@
 import AVFoundation
 import Speech
 
+/// Errors thrown by `SpeechRecognizerService`.
 enum SpeechError: LocalizedError {
     case unavailable
     case notAuthorized
@@ -25,13 +26,15 @@ enum SpeechError: LocalizedError {
     }
 }
 
+/// Real-time speech-to-text via `AVAudioEngine` + `SFSpeechRecognizer`.
+/// Returns an async throwing stream of partial transcription strings.
 actor SpeechRecognizerService {
     private let audioEngine = AVAudioEngine()
     private var recognitionTask: SFSpeechRecognitionTask?
     private var recognizer: SFSpeechRecognizer?
 
-    func start(locale: Locale = .current) -> AsyncThrowingStream<String, Error>
-    {
+    /// Start recognition for the given locale. Outputs partial results as they arrive.
+    func start(locale: Locale = .current) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             Task {
                 do {
@@ -103,6 +106,7 @@ actor SpeechRecognizerService {
         }
     }
 
+    /// Cancel current recognition and release audio resources.
     func stop() {
         cleanup()
     }

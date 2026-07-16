@@ -7,6 +7,7 @@
 
 import AVFAudio
 
+/// Speaks text aloud using `AVSpeechSynthesizer`. Async wrapper with queue management.
 actor SpeechSynthesizerService {
     private let synthesizer = AVSpeechSynthesizer()
     private let delegate = SpeechSynthesizerDelegate()
@@ -16,6 +17,7 @@ actor SpeechSynthesizerService {
         synthesizer.delegate = delegate
     }
 
+    /// Speak the given text. Defaults to Indonesian voice, falls back to English.
     func speak(_ text: String, voice: AVSpeechSynthesisVoice? = nil) async {
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice =
@@ -34,6 +36,7 @@ actor SpeechSynthesizerService {
         }
     }
 
+    /// Stop speaking immediately.
     func stop() {
         synthesizer.stopSpeaking(at: .immediate)
         continuation?.resume()

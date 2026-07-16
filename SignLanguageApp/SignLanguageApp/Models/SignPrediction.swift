@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// Output from the Core ML sign-language model: label, confidence, raw scores.
 struct SignPrediction: Identifiable, Sendable {
     let id: UUID
     let gestureLabel: String

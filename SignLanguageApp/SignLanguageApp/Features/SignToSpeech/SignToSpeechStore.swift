@@ -9,6 +9,7 @@ import AVFoundation
 import CoreImage
 import Observation
 
+/// State and actions for the Sign→Speech pipeline (camera + ML + TTS).
 @MainActor
 @Observable
 final class SignToSpeechStore {
@@ -26,6 +27,7 @@ final class SignToSpeechStore {
         self.appStore = appStore
     }
 
+    /// Start camera + begin listening for pixel buffers. Guards against double-start and cooldown.
     func startCapture() {
         guard !isCapturing, !isCameraBusy else { return }
         isCameraBusy = true
@@ -46,6 +48,7 @@ final class SignToSpeechStore {
                     await appStore.cameraService.currentPosition == .front
                 isCameraBusy = false
 
+                // Stub loop — replace `appStore.inferencer.predict()` with real model call.
                 predictionTask = Task { [appStore, weak self] in
                     for await _ in stream {
                         try? await Task.sleep(for: .milliseconds(500))
@@ -63,11 +66,13 @@ final class SignToSpeechStore {
         }
     }
 
+    /// Flip between front and back camera.
     func flipCamera() async {
         try? await appStore.cameraService.flipCamera()
         isFrontCamera = await appStore.cameraService.currentPosition == .front
     }
 
+    /// Speak the latest prediction aloud.
     func speakPrediction() {
         let text = predictedText
         guard !text.isEmpty else { return }
@@ -77,6 +82,7 @@ final class SignToSpeechStore {
         }
     }
 
+    /// Stop camera and reset. Enforces a short cooldown to prevent rapid toggles.
     func stopCapture() {
         isCapturing = false
         appStore.isPredicting = false

@@ -8,6 +8,7 @@
 import Foundation
 import Observation
 
+/// State and actions for the Speech→Text pipeline.
 @MainActor
 @Observable
 final class SpeechToTextStore {
@@ -21,6 +22,7 @@ final class SpeechToTextStore {
         self.appStore = appStore
     }
 
+    /// Request mic permission and start streaming transcription.
     func startRecording() {
         guard !isRecording else { return }
         Task { [appStore] in
@@ -48,6 +50,7 @@ final class SpeechToTextStore {
         }
     }
 
+    /// Stop recording and save the final text to conversation history.
     func stopRecording() {
         isRecording = false
         appStore.isTranscribing = false

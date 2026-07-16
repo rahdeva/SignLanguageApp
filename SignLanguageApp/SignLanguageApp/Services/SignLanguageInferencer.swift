@@ -8,6 +8,7 @@
 import CoreImage
 import CoreML
 
+/// Errors thrown during model loading or inference.
 enum InferenceError: LocalizedError {
     case modelNotFound
     case modelLoadFailed(Error)
@@ -26,15 +27,18 @@ enum InferenceError: LocalizedError {
     }
 }
 
+/// Interface for sign-language inference. Team can provide different implementations.
 protocol SignLanguageInferencing: Actor, Sendable {
     func predict(_ pixelBuffer: CVPixelBuffer) async throws -> SignPrediction
 }
 
+/// Loads a Core ML model and runs inference on camera frames.
 actor SignLanguageInferencer: SignLanguageInferencing {
     private var model: MLModel?
 
     init() {}
 
+    /// Load `.mlmodelc` (or `.mlmodel`) from the app bundle.
     func loadModel(named name: String = "SignLanguageModel") async throws {
         guard
             let url = Bundle.main.url(
@@ -56,14 +60,14 @@ actor SignLanguageInferencer: SignLanguageInferencing {
         }
     }
 
+    /// Run prediction on a single pixel buffer. Returns label + confidence + raw scores.
     func predict(_ pixelBuffer: CVPixelBuffer) async throws -> SignPrediction {
         guard let model else { throw InferenceError.modelNotFound }
 
         let input: MLFeatureProvider
         do {
             let value = MLFeatureValue(pixelBuffer: pixelBuffer)
-            input = try MLDictionaryFeatureProvider(dictionary: ["image": value]
-            )
+            input = try MLDictionaryFeatureProvider(dictionary: ["image": value])
         } catch {
             throw InferenceError.invalidInput
         }
@@ -97,6 +101,7 @@ actor SignLanguageInferencer: SignLanguageInferencing {
 
 // MARK: - Mock for testing
 
+/// Returns a canned response after 300 ms — used for SwiftUI previews and unit tests.
 actor MockSignLanguageInferencer: SignLanguageInferencing {
     private let stubLabel: String
     private let stubConfidence: Float

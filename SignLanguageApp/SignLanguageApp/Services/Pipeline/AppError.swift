@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// Unified error type used across the app for user-facing error messages.
 enum AppError: LocalizedError, Equatable {
     case cameraUnavailable
     case micUnavailable

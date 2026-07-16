@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// App entry point. Root scene connects `AppStore` to the view hierarchy.
 @main
 struct SignLanguageApp: App {
     var body: some Scene {

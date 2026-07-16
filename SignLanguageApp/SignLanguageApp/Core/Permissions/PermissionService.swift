@@ -11,7 +11,9 @@ import OSLog
 import Speech
 import UIKit
 
+/// Requests camera, microphone, and speech recognition permissions at runtime.
 enum PermissionService {
+    /// Checks and requests camera access. Returns `true` when granted.
     static func requestCamera() async -> Bool {
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         guard status != .denied, status != .restricted else {
@@ -22,10 +24,12 @@ enum PermissionService {
         return await AVCaptureDevice.requestAccess(for: .video)
     }
 
+    /// Checks and requests microphone access. Returns `true` when granted.
     static func requestMicrophone() async -> Bool {
         return await AVAudioApplication.requestRecordPermission()
     }
 
+    /// Checks and requests speech recognition access. Returns `true` when granted.
     static func requestSpeech() async -> Bool {
         let status = SFSpeechRecognizer.authorizationStatus()
         guard status != .denied, status != .restricted else {
@@ -42,6 +46,7 @@ enum PermissionService {
         }
     }
 
+    /// Opens system Settings so the user can toggle permissions.
     static func openSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else {
             return

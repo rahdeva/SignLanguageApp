@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// A single speech-to-text result fragment (final or intermediate).
 struct Transcription: Identifiable, Sendable {
     let id: UUID
     let text: String

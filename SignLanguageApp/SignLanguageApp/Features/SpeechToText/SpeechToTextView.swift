@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// Speech→Text: records microphone audio and displays live transcription.
 struct SpeechToTextView: View {
     @Environment(AppStore.self) private var appStore
     @State private var store: SpeechToTextStore?
@@ -16,6 +17,7 @@ struct SpeechToTextView: View {
             VStack(spacing: 24) {
                 Spacer()
 
+                // Status icon — animated waveform while recording, muted icon otherwise.
                 if appStore.isTranscribing {
                     VStack(spacing: 16) {
                         Image(systemName: "waveform")
@@ -32,6 +34,7 @@ struct SpeechToTextView: View {
                         .foregroundStyle(.tertiary)
                 }
 
+                // Transcribed text display
                 Text(
                     (store?.transcribedText ?? appStore.speechToTextOutput)
                         .isEmpty
@@ -69,6 +72,7 @@ struct SpeechToTextView: View {
         }
     }
 
+    /// Toggle record/stop button with Liquid Glass style.
     @ViewBuilder
     private var recordButton: some View {
         let isRecording = store?.isRecording ?? false

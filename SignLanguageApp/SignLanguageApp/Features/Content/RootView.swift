@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// Navigation tabs for the two main pipelines plus history log.
 enum AppTab: String, CaseIterable {
     case speechToText = "Speech"
     case signToSpeech = "Sign"
@@ -29,6 +30,7 @@ enum AppTab: String, CaseIterable {
     }
 }
 
+/// Root view — hosts `AppStore` in the environment and presents a three-tab layout.
 struct RootView: View {
     @State private var appStore = AppStore()
     @State private var selectedTab: AppTab = .speechToText

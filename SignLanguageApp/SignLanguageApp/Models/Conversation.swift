@@ -7,10 +7,12 @@
 
 import Foundation
 
+/// Who said what — used to build the conversation history log.
 enum ConversationRole: String, Sendable, Codable {
     case userSigned, userSpoke, assistantSpoke
 }
 
+/// A single entry in the bidirectional conversation timeline.
 struct Conversation: Identifiable, Sendable {
     let id: UUID
     let message: String
