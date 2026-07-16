@@ -34,7 +34,8 @@ actor SpeechRecognizerService {
     private var recognizer: SFSpeechRecognizer?
 
     /// Start recognition for the given locale. Outputs partial results as they arrive.
-    func start(locale: Locale = .current) -> AsyncThrowingStream<String, Error> {
+    func start(locale: Locale = .current) -> AsyncThrowingStream<String, Error>
+    {
         AsyncThrowingStream { continuation in
             Task {
                 do {

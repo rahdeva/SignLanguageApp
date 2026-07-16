@@ -32,7 +32,10 @@ struct OnboardingView: View {
                 // Main action: Next → Get Started
                 Button {
                     if isLastPage {
-                        UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
+                        UserDefaults.standard.set(
+                            true,
+                            forKey: "hasSeenOnboarding"
+                        )
                         isPresented = false
                     } else {
                         withAnimation { currentPage += 1 }
@@ -93,17 +96,20 @@ private struct OnboardingPage {
         OnboardingPage(
             icon: "waveform",
             title: "Speech to Text",
-            subtitle: "Tap the microphone and start speaking. Your words appear on screen in real time."
+            subtitle:
+                "Tap the microphone and start speaking. Your words appear on screen in real time."
         ),
         OnboardingPage(
             icon: "camera.fill",
             title: "Sign to Speech",
-            subtitle: "Point your camera at sign language gestures. The app translates them into spoken words."
+            subtitle:
+                "Point your camera at sign language gestures. The app translates them into spoken words."
         ),
         OnboardingPage(
             icon: "clock.arrow.circlepath",
             title: "Conversation History",
-            subtitle: "Every translation is saved so you can review, replay, or share past conversations."
+            subtitle:
+                "Every translation is saved so you can review, replay, or share past conversations."
         ),
     ]
 }

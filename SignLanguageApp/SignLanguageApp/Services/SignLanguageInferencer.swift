@@ -67,7 +67,8 @@ actor SignLanguageInferencer: SignLanguageInferencing {
         let input: MLFeatureProvider
         do {
             let value = MLFeatureValue(pixelBuffer: pixelBuffer)
-            input = try MLDictionaryFeatureProvider(dictionary: ["image": value])
+            input = try MLDictionaryFeatureProvider(dictionary: ["image": value]
+            )
         } catch {
             throw InferenceError.invalidInput
         }
