@@ -7,21 +7,25 @@ struct SignToSpeechView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
+                // Camera preview with glass container
                 if store?.isCapturing == true {
-                    CameraPreviewView(source: appStore.cameraService)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 360)
-                        .clipShape(.rect(cornerRadius: 16))
-                        .overlay(alignment: .topTrailing) {
-                            if appStore.isPredicting {
-                                Image(systemName: "viewfinder")
-                                    .font(.title3)
-                                    .symbolEffect(.pulse)
-                                    .padding(8)
-                                    .background(.ultraThinMaterial, in: .circle)
-                                    .padding(8)
+                    GlassEffectContainer(spacing: 8) {
+                        CameraPreviewView(source: appStore.cameraService)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 360)
+                            .clipShape(.rect(cornerRadius: 16))
+                            .overlay(alignment: .topTrailing) {
+                                if appStore.isPredicting {
+                                    Image(systemName: "viewfinder")
+                                        .font(.title3)
+                                        .symbolEffect(.pulse)
+                                        .padding(8)
+                                        .background(.ultraThinMaterial, in: .circle)
+                                        .glassEffect(in: .circle)
+                                        .padding(8)
+                                }
                             }
-                        }
+                    }
                 } else {
                     ContentUnavailableView(
                         "Camera Off",
@@ -29,17 +33,20 @@ struct SignToSpeechView: View {
                         description: Text("Start the camera to begin sign language detection.")
                     )
                     .frame(maxHeight: 360)
+                    .glassEffect(in: .rect(cornerRadius: 16))
                 }
 
+                // Prediction output with Liquid Glass background
                 Text(store?.predictedText ?? "No sign detected")
                     .font(.title2.weight(.medium))
                     .multilineTextAlignment(.center)
                     .padding()
                     .frame(maxWidth: .infinity, minHeight: 80)
-                    .background(.quaternary.opacity(0.3), in: .rect(cornerRadius: 12))
+                    .glassEffect(in: .rect(cornerRadius: 12))
 
                 Spacer()
 
+                // Action buttons with Liquid Glass styles per Apple docs
                 HStack(spacing: 16) {
                     if let store {
                         Button {
@@ -55,8 +62,9 @@ struct SignToSpeechView: View {
                             )
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(store.isCapturing ? Color.red : Color.accentColor, in: .capsule)
                         }
+                        .buttonStyle(.glass)
+                        .tint(store.isCapturing ? .red : nil)
 
                         if store.isCapturing {
                             Button {
@@ -65,9 +73,8 @@ struct SignToSpeechView: View {
                                 Image(systemName: "speaker.wave.2.fill")
                                     .font(.title2)
                                     .frame(width: 52, height: 52)
-                                    .background(.tint, in: .circle)
-                                    .foregroundStyle(.white)
                             }
+                            .buttonStyle(.glassProminent)
                             .disabled(store.predictedText.isEmpty)
                         }
                     }

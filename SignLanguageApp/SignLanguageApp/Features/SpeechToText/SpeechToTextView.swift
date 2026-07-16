@@ -9,12 +9,15 @@ struct SpeechToTextView: View {
             VStack(spacing: 24) {
                 Spacer()
 
+                // Status icon with Liquid Glass
                 if appStore.isTranscribing {
                     VStack(spacing: 16) {
                         Image(systemName: "waveform")
                             .font(.system(size: 60))
                             .symbolEffect(.bounce, options: .repeating)
                             .foregroundStyle(.tint)
+                            .padding()
+                            .glassEffect(.regular.tint(.accentColor).interactive())
                         Text("Listening...")
                             .font(.headline)
                             .foregroundStyle(.secondary)
@@ -23,8 +26,11 @@ struct SpeechToTextView: View {
                     Image(systemName: "mic.slash")
                         .font(.system(size: 40))
                         .foregroundStyle(.tertiary)
+                        .padding()
+                        .glassEffect()
                 }
 
+                // Transcribed text display with glass background
                 Text((store?.transcribedText ?? appStore.speechToTextOutput).isEmpty
                     ? "Tap the microphone to start"
                     : appStore.speechToTextOutput
@@ -33,30 +39,12 @@ struct SpeechToTextView: View {
                 .multilineTextAlignment(.center)
                 .padding()
                 .frame(maxWidth: .infinity, minHeight: 100)
-                .background(.quaternary.opacity(0.3), in: .rect(cornerRadius: 16))
+                .glassEffect(in: .rect(cornerRadius: 16))
 
                 Spacer()
 
-                Button {
-                    guard let store else { return }
-                    if store.isRecording {
-                        store.stopRecording()
-                    } else {
-                        store.startRecording()
-                    }
-                } label: {
-                    Label(
-                        store?.isRecording == true ? "Stop Recording" : "Start Recording",
-                        systemImage: store?.isRecording == true ? "stop.circle.fill" : "mic.circle.fill"
-                    )
-                    .font(.title2.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(store?.isRecording == true ? Color.red : Color.accentColor, in: .capsule)
-                    .foregroundStyle(.white)
-                }
-                .padding(.horizontal)
-                .disabled(appStore.error != nil)
+                // Main action button — Liquid Glass button style per Apple docs
+                recordButton
             }
             .padding()
             .navigationTitle("Speech to Text")
@@ -68,6 +56,31 @@ struct SpeechToTextView: View {
                 Text(appStore.error?.localizedDescription ?? "")
             }
         }
+    }
+
+    @ViewBuilder
+    private var recordButton: some View {
+        let isRecording = store?.isRecording ?? false
+        Button {
+            guard let store else { return }
+            if store.isRecording {
+                store.stopRecording()
+            } else {
+                store.startRecording()
+            }
+        } label: {
+            Label(
+                isRecording ? "Stop Recording" : "Start Recording",
+                systemImage: isRecording ? "stop.circle.fill" : "mic.circle.fill"
+            )
+            .font(.title2.weight(.semibold))
+            .frame(maxWidth: .infinity)
+            .padding()
+        }
+        .buttonStyle(.glass)
+        .tint(isRecording ? .red : nil)
+        .padding(.horizontal)
+        .disabled(appStore.error != nil)
     }
 }
 
