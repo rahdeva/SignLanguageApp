@@ -9,15 +9,12 @@ struct SpeechToTextView: View {
             VStack(spacing: 24) {
                 Spacer()
 
-                // Status icon with Liquid Glass
                 if appStore.isTranscribing {
                     VStack(spacing: 16) {
                         Image(systemName: "waveform")
                             .font(.system(size: 60))
                             .symbolEffect(.bounce, options: .repeating)
                             .foregroundStyle(.tint)
-                            .padding()
-                            .glassEffect(.regular.tint(.accentColor).interactive())
                         Text("Listening...")
                             .font(.headline)
                             .foregroundStyle(.secondary)
@@ -26,11 +23,8 @@ struct SpeechToTextView: View {
                     Image(systemName: "mic.slash")
                         .font(.system(size: 40))
                         .foregroundStyle(.tertiary)
-                        .padding()
-                        .glassEffect()
                 }
 
-                // Transcribed text display with glass background
                 Text((store?.transcribedText ?? appStore.speechToTextOutput).isEmpty
                     ? "Tap the microphone to start"
                     : appStore.speechToTextOutput
@@ -39,11 +33,10 @@ struct SpeechToTextView: View {
                 .multilineTextAlignment(.center)
                 .padding()
                 .frame(maxWidth: .infinity, minHeight: 100)
-                .glassEffect(in: .rect(cornerRadius: 16))
+                .background(.quaternary.opacity(0.3), in: .rect(cornerRadius: 16))
 
                 Spacer()
 
-                // Main action button — Liquid Glass button style per Apple docs
                 recordButton
             }
             .padding()

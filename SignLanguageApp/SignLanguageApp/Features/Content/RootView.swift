@@ -60,28 +60,23 @@ private struct HistoryView: View {
                         description: Text("Start transcribing or signing to build your conversation history.")
                     )
                 } else {
-                    GlassEffectContainer(spacing: 12) {
-                        List(appStore.conversationHistory.reversed()) { entry in
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text(entry.role.label)
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.tint)
-                                    Spacer()
-                                    Text(entry.timestamp, style: .time)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Text(entry.message)
-                                    .font(.body)
+                    List(appStore.conversationHistory.reversed()) { entry in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(entry.role.label)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.tint)
+                                Spacer()
+                                Text(entry.timestamp, style: .time)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
                             }
-                            .padding(.vertical, 4)
-                            .padding(.horizontal, 8)
-                            .glassEffect(in: .rect(cornerRadius: 12))
+                            Text(entry.message)
+                                .font(.body)
                         }
-                        .listStyle(.insetGrouped)
-                        .scrollContentBackground(.hidden)
+                        .padding(.vertical, 4)
                     }
+                    .listStyle(.insetGrouped)
                 }
             }
             .navigationTitle("History")
