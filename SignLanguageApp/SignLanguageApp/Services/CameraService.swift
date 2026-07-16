@@ -8,6 +8,7 @@ enum CameraError: LocalizedError {
     case noCameraAvailable
     case noMicAvailable
     case notAuthorized
+    case flipFailed
 
     var errorDescription: String? {
         switch self {
@@ -16,6 +17,7 @@ enum CameraError: LocalizedError {
         case .noCameraAvailable: "No camera available on this device"
         case .noMicAvailable: "No microphone available on this device"
         case .notAuthorized: "Camera access not authorized"
+        case .flipFailed: "Could not switch camera"
         }
     }
 }
@@ -29,12 +31,15 @@ actor CameraService: PreviewSource {
 
     nonisolated(unsafe) let pixelBufferStream: AsyncStream<CVPixelBuffer>
 
+    private(set) var currentPosition: AVCaptureDevice.Position = .front
+
     init() {
         var cont: AsyncStream<CVPixelBuffer>.Continuation?
         pixelBufferStream = AsyncStream { continuation in
             cont = continuation
         }
         streamContinuation = cont
+        currentPosition = .front
     }
 
     nonisolated func connect(to target: any PreviewTarget) {
@@ -62,15 +67,19 @@ actor CameraService: PreviewSource {
         streamContinuation?.finish()
     }
 
-    func switchCamera() async throws {
+    func flipCamera() async throws {
         guard let currentInput = activeVideoInput else { return }
         let newPosition: AVCaptureDevice.Position = currentInput.device.position == .front ? .back : .front
-        guard let newDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: newPosition) else { return }
+        guard let newDevice = AVCaptureDevice.default(.builtInDualCamera, for: .video, position: newPosition)
+            ?? .default(.builtInWideAngleCamera, for: .video, position: newPosition)
+        else { throw CameraError.flipFailed }
+
         captureSession.beginConfiguration()
         defer { captureSession.commitConfiguration() }
         captureSession.removeInput(currentInput)
         do {
             activeVideoInput = try addInput(for: newDevice)
+            currentPosition = newPosition
         } catch {
             captureSession.addInput(currentInput)
             throw error
@@ -87,8 +96,10 @@ actor CameraService: PreviewSource {
         }
         captureSession.sessionPreset = .high
 
-        let camera = CameraService.defaultVideoDevice
-        activeVideoInput = try addInput(for: camera)
+        let frontDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
+            ?? CameraService.fallbackVideoDevice
+        activeVideoInput = try addInput(for: frontDevice)
+        currentPosition = .front
 
         if let mic = AVCaptureDevice.default(for: .audio) {
             _ = try? addInput(for: mic)
@@ -105,7 +116,7 @@ actor CameraService: PreviewSource {
         captureSession.addOutput(videoOutput)
     }
 
-    private static let defaultVideoDevice: AVCaptureDevice = {
+    private static let fallbackVideoDevice: AVCaptureDevice = {
         let device: AVCaptureDevice? = .default(.external, for: .video, position: .unspecified)
             ?? .default(.builtInWideAngleCamera, for: .video, position: .front)
         guard let camera = device else {
