@@ -54,7 +54,9 @@ actor CameraService: PreviewSource {
     }
 
     func start() async throws {
-        guard await PermissionService.requestCamera() else { throw CameraError.notAuthorized }
+        guard await PermissionService.requestCamera() else {
+            throw CameraError.notAuthorized
+        }
         if !isConfigured { try configureSession() }
         if !captureSession.isRunning {
             await withCheckedContinuation { continuation in
@@ -76,9 +78,19 @@ actor CameraService: PreviewSource {
 
     func flipCamera() async throws {
         guard let currentInput = activeVideoInput else { return }
-        let newPosition: AVCaptureDevice.Position = currentInput.device.position == .front ? .back : .front
-        guard let newDevice = AVCaptureDevice.default(.builtInDualCamera, for: .video, position: newPosition)
-            ?? .default(.builtInWideAngleCamera, for: .video, position: newPosition)
+        let newPosition: AVCaptureDevice.Position =
+            currentInput.device.position == .front ? .back : .front
+        guard
+            let newDevice = AVCaptureDevice.default(
+                .builtInDualCamera,
+                for: .video,
+                position: newPosition
+            )
+                ?? .default(
+                    .builtInWideAngleCamera,
+                    for: .video,
+                    position: newPosition
+                )
         else { throw CameraError.flipFailed }
 
         captureSession.beginConfiguration()
@@ -103,7 +115,12 @@ actor CameraService: PreviewSource {
         }
         captureSession.sessionPreset = .high
 
-        let frontDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
+        let frontDevice =
+            AVCaptureDevice.default(
+                .builtInWideAngleCamera,
+                for: .video,
+                position: .front
+            )
             ?? CameraService.fallbackVideoDevice
         activeVideoInput = try addInput(for: frontDevice)
         currentPosition = .front
@@ -119,24 +136,35 @@ actor CameraService: PreviewSource {
         videoOutput.alwaysDiscardsLateVideoFrames = true
         videoOutput.automaticallyConfiguresOutputBufferDimensions = true
 
-        guard captureSession.canAddOutput(videoOutput) else { throw CameraError.addOutputFailed }
+        guard captureSession.canAddOutput(videoOutput) else {
+            throw CameraError.addOutputFailed
+        }
         captureSession.addOutput(videoOutput)
     }
 
     private static let fallbackVideoDevice: AVCaptureDevice = {
-        let device: AVCaptureDevice? = .default(.external, for: .video, position: .unspecified)
+        let device: AVCaptureDevice? =
+            .default(.external, for: .video, position: .unspecified)
             ?? .default(.builtInWideAngleCamera, for: .video, position: .front)
         guard let camera = device else {
             AppLogger.default.error("No camera device found")
-            return .default(.builtInWideAngleCamera, for: .video, position: .front)!
+            return .default(
+                .builtInWideAngleCamera,
+                for: .video,
+                position: .front
+            )!
         }
         return camera
     }()
 
     @discardableResult
-    private func addInput(for device: AVCaptureDevice) throws -> AVCaptureDeviceInput {
+    private func addInput(for device: AVCaptureDevice) throws
+        -> AVCaptureDeviceInput
+    {
         let input = try AVCaptureDeviceInput(device: device)
-        guard captureSession.canAddInput(input) else { throw CameraError.addInputFailed }
+        guard captureSession.canAddInput(input) else {
+            throw CameraError.addInputFailed
+        }
         captureSession.addInput(input)
         return input
     }
@@ -144,14 +172,20 @@ actor CameraService: PreviewSource {
 
 // MARK: - Sample Buffer Delegate
 
-private final class CameraOutputDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+private final class CameraOutputDelegate: NSObject,
+    AVCaptureVideoDataOutputSampleBufferDelegate
+{
     let continuation: AsyncStream<CVPixelBuffer>.Continuation?
 
     init(continuation: AsyncStream<CVPixelBuffer>.Continuation?) {
         self.continuation = continuation
     }
 
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+    func captureOutput(
+        _ output: AVCaptureOutput,
+        didOutput sampleBuffer: CMSampleBuffer,
+        from connection: AVCaptureConnection
+    ) {
         guard let pixelBuffer = sampleBuffer.imageBuffer else { return }
         continuation?.yield(pixelBuffer)
     }

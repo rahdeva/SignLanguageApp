@@ -17,7 +17,12 @@ struct Conversation: Identifiable, Sendable {
     let role: ConversationRole
     let timestamp: Date
 
-    init(id: UUID = UUID(), message: String, role: ConversationRole, timestamp: Date = .now) {
+    init(
+        id: UUID = UUID(),
+        message: String,
+        role: ConversationRole,
+        timestamp: Date = .now
+    ) {
         self.id = id
         self.message = message
         self.role = role

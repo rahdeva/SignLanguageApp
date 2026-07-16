@@ -36,15 +36,30 @@ struct RootView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             SpeechToTextView()
-                .tabItem { Label(AppTab.speechToText.title, systemImage: AppTab.speechToText.icon) }
+                .tabItem {
+                    Label(
+                        AppTab.speechToText.title,
+                        systemImage: AppTab.speechToText.icon
+                    )
+                }
                 .tag(AppTab.speechToText)
 
             SignToSpeechView()
-                .tabItem { Label(AppTab.signToSpeech.title, systemImage: AppTab.signToSpeech.icon) }
+                .tabItem {
+                    Label(
+                        AppTab.signToSpeech.title,
+                        systemImage: AppTab.signToSpeech.icon
+                    )
+                }
                 .tag(AppTab.signToSpeech)
 
             HistoryView()
-                .tabItem { Label(AppTab.history.title, systemImage: AppTab.history.icon) }
+                .tabItem {
+                    Label(
+                        AppTab.history.title,
+                        systemImage: AppTab.history.icon
+                    )
+                }
                 .tag(AppTab.history)
         }
         .environment(appStore)
@@ -64,7 +79,9 @@ private struct HistoryView: View {
                     ContentUnavailableView(
                         "No History",
                         systemImage: "clock.arrow.circlepath",
-                        description: Text("Start transcribing or signing to build your conversation history.")
+                        description: Text(
+                            "Start transcribing or signing to build your conversation history."
+                        )
                     )
                 } else {
                     List(appStore.conversationHistory.reversed()) { entry in
@@ -91,8 +108,8 @@ private struct HistoryView: View {
     }
 }
 
-private extension ConversationRole {
-    var label: String {
+extension ConversationRole {
+    fileprivate var label: String {
         switch self {
         case .userSigned: "You (Sign)"
         case .userSpoke: "You (Speech)"

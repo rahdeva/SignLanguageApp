@@ -32,15 +32,20 @@ struct SpeechToTextView: View {
                         .foregroundStyle(.tertiary)
                 }
 
-                Text((store?.transcribedText ?? appStore.speechToTextOutput).isEmpty
-                    ? "Tap the microphone to start"
-                    : appStore.speechToTextOutput
+                Text(
+                    (store?.transcribedText ?? appStore.speechToTextOutput)
+                        .isEmpty
+                        ? "Tap the microphone to start"
+                        : appStore.speechToTextOutput
                 )
                 .font(.title2)
                 .multilineTextAlignment(.center)
                 .padding()
                 .frame(maxWidth: .infinity, minHeight: 100)
-                .background(.quaternary.opacity(0.3), in: .rect(cornerRadius: 16))
+                .background(
+                    .quaternary.opacity(0.3),
+                    in: .rect(cornerRadius: 16)
+                )
 
                 Spacer()
 
@@ -49,7 +54,13 @@ struct SpeechToTextView: View {
             .padding()
             .navigationTitle("Speech to Text")
             .onAppear { store = SpeechToTextStore(appStore: appStore) }
-            .alert("Error", isPresented: Binding(get: { appStore.showingError }, set: { appStore.showingError = $0 })) {
+            .alert(
+                "Error",
+                isPresented: Binding(
+                    get: { appStore.showingError },
+                    set: { appStore.showingError = $0 }
+                )
+            ) {
                 Button("OK") { appStore.dismissError() }
                 Button("Settings") { PermissionService.openSettings() }
             } message: {
@@ -71,7 +82,8 @@ struct SpeechToTextView: View {
         } label: {
             Label(
                 isRecording ? "Stop Recording" : "Start Recording",
-                systemImage: isRecording ? "stop.circle.fill" : "mic.circle.fill"
+                systemImage: isRecording
+                    ? "stop.circle.fill" : "mic.circle.fill"
             )
             .font(.title2.weight(.semibold))
             .frame(maxWidth: .infinity)

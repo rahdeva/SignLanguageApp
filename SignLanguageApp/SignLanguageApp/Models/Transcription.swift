@@ -13,7 +13,12 @@ struct Transcription: Identifiable, Sendable {
     let timestamp: Date
     let isFinal: Bool
 
-    init(id: UUID = UUID(), text: String, timestamp: Date = .now, isFinal: Bool = false) {
+    init(
+        id: UUID = UUID(),
+        text: String,
+        timestamp: Date = .now,
+        isFinal: Bool = false
+    ) {
         self.id = id
         self.text = text
         self.timestamp = timestamp

@@ -27,7 +27,10 @@ struct SignToSpeechView: View {
                                         .font(.title3)
                                         .symbolEffect(.pulse)
                                         .padding(8)
-                                        .background(.ultraThinMaterial, in: .circle)
+                                        .background(
+                                            .ultraThinMaterial,
+                                            in: .circle
+                                        )
                                         .padding(8)
                                 }
                             }
@@ -35,7 +38,9 @@ struct SignToSpeechView: View {
                         ContentUnavailableView(
                             "Camera Off",
                             systemImage: "camera.fill",
-                            description: Text("Start the camera to begin sign language detection.")
+                            description: Text(
+                                "Start the camera to begin sign language detection."
+                            )
                         )
                         .frame(maxHeight: 360)
                     }
@@ -51,7 +56,10 @@ struct SignToSpeechView: View {
                     .multilineTextAlignment(.center)
                     .padding()
                     .frame(maxWidth: .infinity, minHeight: 80)
-                    .background(.quaternary.opacity(0.3), in: .rect(cornerRadius: 12))
+                    .background(
+                        .quaternary.opacity(0.3),
+                        in: .rect(cornerRadius: 12)
+                    )
 
                 Spacer()
 
@@ -65,8 +73,10 @@ struct SignToSpeechView: View {
                             }
                         } label: {
                             Label(
-                                store.isCapturing ? "Stop Camera" : "Start Camera",
-                                systemImage: store.isCapturing ? "stop.circle.fill" : "camera.fill"
+                                store.isCapturing
+                                    ? "Stop Camera" : "Start Camera",
+                                systemImage: store.isCapturing
+                                    ? "stop.circle.fill" : "camera.fill"
                             )
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -92,7 +102,13 @@ struct SignToSpeechView: View {
             .padding()
             .navigationTitle("Sign to Speech")
             .onAppear { store = SignToSpeechStore(appStore: appStore) }
-            .alert("Error", isPresented: Binding(get: { appStore.showingError }, set: { appStore.showingError = $0 })) {
+            .alert(
+                "Error",
+                isPresented: Binding(
+                    get: { appStore.showingError },
+                    set: { appStore.showingError = $0 }
+                )
+            ) {
                 Button("OK") { appStore.dismissError() }
                 Button("Settings") { PermissionService.openSettings() }
             } message: {

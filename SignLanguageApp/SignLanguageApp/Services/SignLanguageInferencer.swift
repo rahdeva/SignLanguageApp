@@ -17,8 +17,10 @@ enum InferenceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .modelNotFound: "Core ML model not found in bundle"
-        case .modelLoadFailed(let error): "Model load failed: \(error.localizedDescription)"
-        case .predictionFailed(let error): "Prediction failed: \(error.localizedDescription)"
+        case .modelLoadFailed(let error):
+            "Model load failed: \(error.localizedDescription)"
+        case .predictionFailed(let error):
+            "Prediction failed: \(error.localizedDescription)"
         case .invalidInput: "Invalid input buffer"
         }
     }
@@ -34,14 +36,21 @@ actor SignLanguageInferencer: SignLanguageInferencing {
     init() {}
 
     func loadModel(named name: String = "SignLanguageModel") async throws {
-        guard let url = Bundle.main.url(forResource: name, withExtension: "mlmodelc")
-            ?? Bundle.main.url(forResource: name, withExtension: "mlmodel")
+        guard
+            let url = Bundle.main.url(
+                forResource: name,
+                withExtension: "mlmodelc"
+            )
+                ?? Bundle.main.url(forResource: name, withExtension: "mlmodel")
         else { throw InferenceError.modelNotFound }
 
         let config = MLModelConfiguration()
         config.computeUnits = .all
         do {
-            model = try await MLModel.load(contentsOf: url, configuration: config)
+            model = try await MLModel.load(
+                contentsOf: url,
+                configuration: config
+            )
         } catch {
             throw InferenceError.modelLoadFailed(error)
         }
@@ -53,7 +62,8 @@ actor SignLanguageInferencer: SignLanguageInferencing {
         let input: MLFeatureProvider
         do {
             let value = MLFeatureValue(pixelBuffer: pixelBuffer)
-            input = try MLDictionaryFeatureProvider(dictionary: ["image": value])
+            input = try MLDictionaryFeatureProvider(dictionary: ["image": value]
+            )
         } catch {
             throw InferenceError.invalidInput
         }
@@ -66,14 +76,22 @@ actor SignLanguageInferencer: SignLanguageInferencing {
         }
 
         let label = output.featureValue(for: "label")?.stringValue ?? "unknown"
-        let confidence = output.featureValue(for: "confidence")?.multiArrayValue?[0].floatValue ?? 0
+        let confidence =
+            output.featureValue(for: "confidence")?.multiArrayValue?[0]
+            .floatValue ?? 0
 
         var rawOutput: [String: Float] = [:]
-        if let labelProbabilities = output.featureValue(for: "labelProbability")?.dictionaryValue as? [String: Float] {
+        if let labelProbabilities = output.featureValue(
+            for: "labelProbability"
+        )?.dictionaryValue as? [String: Float] {
             rawOutput = labelProbabilities
         }
 
-        return SignPrediction(gestureLabel: label, confidence: confidence, rawOutput: rawOutput)
+        return SignPrediction(
+            gestureLabel: label,
+            confidence: confidence,
+            rawOutput: rawOutput
+        )
     }
 }
 
@@ -93,7 +111,9 @@ actor MockSignLanguageInferencer: SignLanguageInferencing {
         return SignPrediction(
             gestureLabel: stubLabel,
             confidence: stubConfidence,
-            rawOutput: [stubLabel: stubConfidence, "thanks": 0.03, "please": 0.02]
+            rawOutput: [
+                stubLabel: stubConfidence, "thanks": 0.03, "please": 0.02,
+            ]
         )
     }
 }

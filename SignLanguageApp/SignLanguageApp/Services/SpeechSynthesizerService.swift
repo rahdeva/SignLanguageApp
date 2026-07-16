@@ -18,10 +18,14 @@ actor SpeechSynthesizerService {
 
     func speak(_ text: String, voice: AVSpeechSynthesisVoice? = nil) async {
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = voice ?? .init(language: "id-ID") ?? .init(language: "en-US")
+        utterance.voice =
+            voice ?? .init(language: "id-ID") ?? .init(language: "en-US")
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
 
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        try? AVAudioSession.sharedInstance().setCategory(
+            .playback,
+            mode: .default
+        )
         try? AVAudioSession.sharedInstance().setActive(true)
 
         await withCheckedContinuation { [delegate] continuation in
@@ -41,15 +45,23 @@ actor SpeechSynthesizerService {
 
 // MARK: - Delegate (NSObject required for AVSpeechSynthesizerDelegate)
 
-private final class SpeechSynthesizerDelegate: NSObject, AVSpeechSynthesizerDelegate {
+private final class SpeechSynthesizerDelegate: NSObject,
+    AVSpeechSynthesizerDelegate
+{
     var continuation: CheckedContinuation<Void, Never>?
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+    func speechSynthesizer(
+        _ synthesizer: AVSpeechSynthesizer,
+        didFinish utterance: AVSpeechUtterance
+    ) {
         continuation?.resume()
         continuation = nil
     }
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+    func speechSynthesizer(
+        _ synthesizer: AVSpeechSynthesizer,
+        didCancel utterance: AVSpeechUtterance
+    ) {
         continuation?.resume()
         continuation = nil
     }

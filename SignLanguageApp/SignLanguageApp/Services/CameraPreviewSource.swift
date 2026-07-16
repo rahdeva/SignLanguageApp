@@ -23,7 +23,9 @@ protocol PreviewTarget: AnyObject {
 final class CameraPreviewUIView: UIView {
     override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
 
-    var previewLayer: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
+    var previewLayer: AVCaptureVideoPreviewLayer {
+        layer as! AVCaptureVideoPreviewLayer
+    }
 }
 
 extension CameraPreviewUIView: PreviewTarget {

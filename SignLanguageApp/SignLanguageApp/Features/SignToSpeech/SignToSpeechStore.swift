@@ -37,7 +37,9 @@ final class SignToSpeechStore {
                 try await appStore.cameraService.start()
 
                 predictionTask = Task { [weak self] in
-                    for await pixelBuffer in appStore.cameraService.pixelBufferStream {
+                    for await pixelBuffer in appStore.cameraService
+                        .pixelBufferStream
+                    {
                         try? await Task.sleep(for: .milliseconds(500))
                         self?.predictedText = "Sign detected..."
                         appStore.signPredictionOutput = "Sign detected..."

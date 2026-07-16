@@ -29,7 +29,9 @@ enum PermissionService {
     static func requestSpeech() async -> Bool {
         let status = SFSpeechRecognizer.authorizationStatus()
         guard status != .denied, status != .restricted else {
-            AppLogger.default.warning("Speech recognition permission denied or restricted")
+            AppLogger.default.warning(
+                "Speech recognition permission denied or restricted"
+            )
             return false
         }
         guard status == .notDetermined else { return true }
@@ -41,7 +43,9 @@ enum PermissionService {
     }
 
     static func openSettings() {
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        guard let url = URL(string: UIApplication.openSettingsURLString) else {
+            return
+        }
         Task { @MainActor in
             await UIApplication.shared.open(url)
         }
