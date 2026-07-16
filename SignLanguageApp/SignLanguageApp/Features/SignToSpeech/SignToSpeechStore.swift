@@ -19,13 +19,16 @@ final class SignToSpeechStore {
     var isCapturing = false
     var isAuthorized = false
     private(set) var isFrontCamera = true
+    private(set) var isCameraBusy = false
+    private static let cooldown: Duration = .milliseconds(150)
 
     init(appStore: AppStore) {
         self.appStore = appStore
     }
 
     func startCapture() {
-        guard !isCapturing else { return }
+        guard !isCapturing, !isCameraBusy else { return }
+        isCameraBusy = true
         let stream = appStore.cameraService.pixelBufferStream
         Task { [self] in
             do {
@@ -33,12 +36,15 @@ final class SignToSpeechStore {
                 guard isAuthorized else {
                     appStore.error = .permissionDenied("camera")
                     appStore.showingError = true
+                    isCameraBusy = false
                     return
                 }
                 isCapturing = true
                 appStore.isPredicting = true
                 try await appStore.cameraService.start()
-                isFrontCamera = await appStore.cameraService.currentPosition == .front
+                isFrontCamera =
+                    await appStore.cameraService.currentPosition == .front
+                isCameraBusy = false
 
                 predictionTask = Task { [appStore, weak self] in
                     for await _ in stream {
@@ -52,6 +58,7 @@ final class SignToSpeechStore {
                 appStore.showingError = true
                 isCapturing = false
                 appStore.isPredicting = false
+                isCameraBusy = false
             }
         }
     }
@@ -75,6 +82,11 @@ final class SignToSpeechStore {
         appStore.isPredicting = false
         predictionTask?.cancel()
         predictionTask = nil
-        Task { await appStore.cameraService.stop() }
+        isCameraBusy = true
+        Task {
+            await appStore.cameraService.stop()
+            try? await Task.sleep(for: Self.cooldown)
+            isCameraBusy = false
+        }
     }
 }

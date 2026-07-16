@@ -65,16 +65,19 @@ struct SignToSpeechView: View {
 
                 HStack(spacing: 16) {
                     if let store {
+                        let isBusy = store.isCameraBusy
                         Button {
                             if store.isCapturing {
                                 store.stopCapture()
-                            } else {
+                            } else if !isBusy {
                                 store.startCapture()
                             }
                         } label: {
                             Label(
-                                store.isCapturing
-                                    ? "Stop Camera" : "Start Camera",
+                                isBusy
+                                    ? "Please wait..."
+                                    : store.isCapturing
+                                        ? "Stop Camera" : "Start Camera",
                                 systemImage: store.isCapturing
                                     ? "stop.circle.fill" : "camera.fill"
                             )
@@ -83,6 +86,8 @@ struct SignToSpeechView: View {
                         }
                         .buttonStyle(.glass)
                         .tint(store.isCapturing ? .red : nil)
+                        .disabled(isBusy)
+                        .opacity(isBusy ? 0.6 : 1)
 
                         if store.isCapturing {
                             Button {
