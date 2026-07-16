@@ -1,5 +1,9 @@
-import CoreImage
-import Observation
+//
+//  SignToSpeechStore.swift
+//  SignLanguageApp
+//
+//  Created by Muhammad Hisyam Kamil on 17/07/26.
+//
 
 import CoreImage
 import Observation

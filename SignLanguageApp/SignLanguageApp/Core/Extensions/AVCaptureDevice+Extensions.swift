@@ -1,3 +1,10 @@
+//
+//  AVCaptureDevice+Extensions.swift
+//  SignLanguageApp
+//
+//  Created by Muhammad Hisyam Kamil on 17/07/26.
+//
+
 import AVFoundation
 import OSLog
 

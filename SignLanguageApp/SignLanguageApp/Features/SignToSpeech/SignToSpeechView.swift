@@ -1,3 +1,10 @@
+//
+//  SignToSpeechView.swift
+//  SignLanguageApp
+//
+//  Created by Muhammad Hisyam Kamil on 17/07/26.
+//
+
 import AVFoundation
 import SwiftUI
 
@@ -8,7 +15,6 @@ struct SignToSpeechView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                // Camera preview area
                 ZStack(alignment: .bottomTrailing) {
                     if store?.isCapturing == true {
                         CameraPreviewView(source: appStore.cameraService)
@@ -34,14 +40,12 @@ struct SignToSpeechView: View {
                         .frame(maxHeight: 360)
                     }
 
-                    // Flip camera button — positioned over bottom-right of preview
                     if store?.isCapturing == true {
                         flipButton
                             .padding(12)
                     }
                 }
 
-                // Prediction output
                 Text(store?.predictedText ?? "No sign detected")
                     .font(.title2.weight(.medium))
                     .multilineTextAlignment(.center)
@@ -51,7 +55,6 @@ struct SignToSpeechView: View {
 
                 Spacer()
 
-                // Action buttons
                 HStack(spacing: 16) {
                     if let store {
                         Button {

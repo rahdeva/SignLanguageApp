@@ -1,3 +1,10 @@
+//
+//  Transcription.swift
+//  SignLanguageApp
+//
+//  Created by Muhammad Hisyam Kamil on 17/07/26.
+//
+
 import Foundation
 
 struct Transcription: Identifiable, Sendable {

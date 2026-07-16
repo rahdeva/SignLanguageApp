@@ -1,3 +1,10 @@
+//
+//  Conversation.swift
+//  SignLanguageApp
+//
+//  Created by Muhammad Hisyam Kamil on 17/07/26.
+//
+
 import Foundation
 
 enum ConversationRole: String, Sendable, Codable {
