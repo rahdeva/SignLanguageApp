@@ -4,7 +4,7 @@ import SwiftUI
 struct SignLanguageApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
     }
 }
