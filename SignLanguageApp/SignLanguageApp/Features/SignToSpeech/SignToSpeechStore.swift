@@ -1,6 +1,9 @@
 import CoreImage
 import Observation
 
+import CoreImage
+import Observation
+
 @MainActor
 @Observable
 final class SignToSpeechStore {
@@ -17,7 +20,7 @@ final class SignToSpeechStore {
 
     func startCapture() {
         guard !isCapturing else { return }
-        Task {
+        Task { [self] in
             do {
                 isAuthorized = await PermissionService.requestCamera()
                 guard isAuthorized else {
@@ -30,12 +33,10 @@ final class SignToSpeechStore {
                 try await appStore.cameraService.start()
 
                 predictionTask = Task { [weak self] in
-                    for await _ in appStore.cameraService.pixelBufferStream {
+                    for await pixelBuffer in appStore.cameraService.pixelBufferStream {
                         try? await Task.sleep(for: .milliseconds(500))
-                        await MainActor.run {
-                            self?.predictedText = "Sign detected..."
-                            appStore.signPredictionOutput = "Sign detected..."
-                        }
+                        self?.predictedText = "Sign detected..."
+                        appStore.signPredictionOutput = "Sign detected..."
                     }
                 }
             } catch {

@@ -1,3 +1,4 @@
+import AVFAudio
 import AVFoundation
 import OSLog
 import Speech
@@ -15,18 +16,7 @@ enum PermissionService {
     }
 
     static func requestMicrophone() async -> Bool {
-        let session = AVAudioSession.sharedInstance()
-        let status = session.recordPermission
-        guard status != .denied else {
-            AppLogger.default.warning("Microphone permission denied")
-            return false
-        }
-        guard status == .undetermined else { return true }
-        return await withCheckedContinuation { continuation in
-            session.requestRecordPermission { granted in
-                continuation.resume(returning: granted)
-            }
-        }
+        return await AVAudioApplication.requestRecordPermission()
     }
 
     static func requestSpeech() async -> Bool {

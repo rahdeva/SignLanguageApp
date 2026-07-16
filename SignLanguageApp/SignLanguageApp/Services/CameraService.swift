@@ -1,5 +1,6 @@
 import AVFoundation
 import CoreImage
+import OSLog
 
 enum CameraError: LocalizedError {
     case addInputFailed
@@ -24,26 +25,20 @@ actor CameraService: PreviewSource {
     private let videoOutput = AVCaptureVideoDataOutput()
     private var activeVideoInput: AVCaptureDeviceInput?
     private var isConfigured = false
-    private var continuation: AsyncStream<CVPixelBuffer>.Continuation?
-    private weak var previewTarget: (any PreviewTarget)?
+    private var streamContinuation: AsyncStream<CVPixelBuffer>.Continuation?
 
-    nonisolated let pixelBufferStream: AsyncStream<CVPixelBuffer>
+    nonisolated(unsafe) let pixelBufferStream: AsyncStream<CVPixelBuffer>
 
     init() {
         var cont: AsyncStream<CVPixelBuffer>.Continuation?
         pixelBufferStream = AsyncStream { continuation in
             cont = continuation
         }
-        self.continuation = cont
+        streamContinuation = cont
     }
 
     nonisolated func connect(to target: any PreviewTarget) {
-        Task { await connectOnActor(target) }
-    }
-
-    private func connectOnActor(_ target: any PreviewTarget) {
-        previewTarget = target
-        target.setSession(captureSession)
+        Task { await target.setSession(captureSession) }
     }
 
     func start() async throws {
@@ -64,7 +59,7 @@ actor CameraService: PreviewSource {
         DispatchQueue.global(qos: .background).async { [self] in
             captureSession.stopRunning()
         }
-        continuation?.finish()
+        streamContinuation?.finish()
     }
 
     func switchCamera() async throws {
@@ -92,15 +87,15 @@ actor CameraService: PreviewSource {
         }
         captureSession.sessionPreset = .high
 
-        let camera = AVCaptureDevice.defaultCamera
+        let camera = CameraService.defaultVideoDevice
         activeVideoInput = try addInput(for: camera)
 
-        if let mic = AVCaptureDevice.defaultMicrophone {
+        if let mic = AVCaptureDevice.default(for: .audio) {
             _ = try? addInput(for: mic)
         }
 
         videoOutput.setSampleBufferDelegate(
-            CameraOutputDelegate(continuation: continuation),
+            CameraOutputDelegate(continuation: streamContinuation),
             queue: .init(label: "camera.video.queue", qos: .userInitiated)
         )
         videoOutput.alwaysDiscardsLateVideoFrames = true
@@ -109,6 +104,16 @@ actor CameraService: PreviewSource {
         guard captureSession.canAddOutput(videoOutput) else { throw CameraError.addOutputFailed }
         captureSession.addOutput(videoOutput)
     }
+
+    private static let defaultVideoDevice: AVCaptureDevice = {
+        let device: AVCaptureDevice? = .default(.external, for: .video, position: .unspecified)
+            ?? .default(.builtInWideAngleCamera, for: .video, position: .front)
+        guard let camera = device else {
+            AppLogger.default.error("No camera device found")
+            return .default(.builtInWideAngleCamera, for: .video, position: .front)!
+        }
+        return camera
+    }()
 
     @discardableResult
     private func addInput(for device: AVCaptureDevice) throws -> AVCaptureDeviceInput {

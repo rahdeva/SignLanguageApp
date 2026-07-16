@@ -1,12 +1,16 @@
 import Observation
 
+import Observation
+
+import Observation
+
 @MainActor
 @Observable
 final class AppStore {
     // MARK: - Services
-    private(set) var cameraService = CameraService()
-    private(set) var speechService = SpeechRecognizerService()
-    private(set) var synthesizerService = SpeechSynthesizerService()
+    private(set) var cameraService: CameraService
+    private(set) var speechService: SpeechRecognizerService
+    private(set) var synthesizerService: SpeechSynthesizerService
     private(set) var inferencer: SignLanguageInferencing
 
     // MARK: - Speech-to-Text State
@@ -29,6 +33,9 @@ final class AppStore {
     // MARK: - Init
     init(inferencer: SignLanguageInferencing = SignLanguageInferencer()) {
         self.inferencer = inferencer
+        cameraService = CameraService()
+        speechService = SpeechRecognizerService()
+        synthesizerService = SpeechSynthesizerService()
     }
 
     // MARK: - Actions

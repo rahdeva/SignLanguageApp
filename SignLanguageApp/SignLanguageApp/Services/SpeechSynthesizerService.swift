@@ -5,7 +5,7 @@ actor SpeechSynthesizerService {
     private let delegate = SpeechSynthesizerDelegate()
     private var continuation: CheckedContinuation<Void, Never>?
 
-    nonisolated init() {
+    init() {
         synthesizer.delegate = delegate
     }
 

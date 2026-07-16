@@ -17,7 +17,7 @@ enum InferenceError: LocalizedError {
     }
 }
 
-protocol SignLanguageInferencing: AnyActor, Sendable {
+protocol SignLanguageInferencing: Actor, Sendable {
     func predict(_ pixelBuffer: CVPixelBuffer) async throws -> SignPrediction
 }
 
