@@ -7,6 +7,13 @@
 
 import Foundation
 
+//
+//  SignPrediction.swift
+//  SignLanguageApp
+//
+//  Created by Muhammad Hisyam Kamil on 17/07/26.
+//
+
 struct SignPrediction: Identifiable, Sendable {
     let id: UUID
     let gestureLabel: String
@@ -14,7 +21,7 @@ struct SignPrediction: Identifiable, Sendable {
     let timestamp: Date
     let rawOutput: [String: Float]
 
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         gestureLabel: String,
         confidence: Float,

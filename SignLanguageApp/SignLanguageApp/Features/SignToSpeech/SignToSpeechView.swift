@@ -119,9 +119,9 @@ struct SignToSpeechView: View {
 
     @ViewBuilder
     private var flipButton: some View {
-        let isFront = appStore.cameraService.currentPosition == .front
+        let isFront = store?.isFrontCamera ?? true
         Button {
-            Task { try? await appStore.cameraService.flipCamera() }
+            Task { await store?.flipCamera() }
         } label: {
             Image(systemName: "arrow.triangle.2.circlepath")
                 .font(.title2.weight(.semibold))

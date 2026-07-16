@@ -23,7 +23,7 @@ final class SpeechToTextStore {
 
     func startRecording() {
         guard !isRecording else { return }
-        Task {
+        Task { [appStore] in
             do {
                 isAuthorized = await PermissionService.requestMicrophone()
                 guard isAuthorized else {
@@ -35,7 +35,7 @@ final class SpeechToTextStore {
                 isRecording = true
                 appStore.isTranscribing = true
 
-                for try await text in try await appStore.speechService.start() {
+                for try await text in await appStore.speechService.start() {
                     transcribedText = text
                     appStore.speechToTextOutput = text
                 }

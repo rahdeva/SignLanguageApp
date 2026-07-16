@@ -5,6 +5,7 @@
 //  Created by Muhammad Hisyam Kamil on 17/07/26.
 //
 
+import AVFoundation
 import CoreImage
 import Observation
 
@@ -17,6 +18,7 @@ final class SignToSpeechStore {
     var predictedText: String = ""
     var isCapturing = false
     var isAuthorized = false
+    private(set) var isFrontCamera = true
 
     init(appStore: AppStore) {
         self.appStore = appStore
@@ -24,6 +26,7 @@ final class SignToSpeechStore {
 
     func startCapture() {
         guard !isCapturing else { return }
+        let stream = appStore.cameraService.pixelBufferStream
         Task { [self] in
             do {
                 isAuthorized = await PermissionService.requestCamera()
@@ -35,11 +38,10 @@ final class SignToSpeechStore {
                 isCapturing = true
                 appStore.isPredicting = true
                 try await appStore.cameraService.start()
+                isFrontCamera = await appStore.cameraService.currentPosition == .front
 
-                predictionTask = Task { [weak self] in
-                    for await pixelBuffer in appStore.cameraService
-                        .pixelBufferStream
-                    {
+                predictionTask = Task { [appStore, weak self] in
+                    for await _ in stream {
                         try? await Task.sleep(for: .milliseconds(500))
                         self?.predictedText = "Sign detected..."
                         appStore.signPredictionOutput = "Sign detected..."
@@ -52,6 +54,11 @@ final class SignToSpeechStore {
                 appStore.isPredicting = false
             }
         }
+    }
+
+    func flipCamera() async {
+        try? await appStore.cameraService.flipCamera()
+        isFrontCamera = await appStore.cameraService.currentPosition == .front
     }
 
     func speakPrediction() {
