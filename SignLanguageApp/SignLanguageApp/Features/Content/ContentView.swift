@@ -1,15 +1,8 @@
-//
-//  ContentView.swift
-//  SignLanguageApp
-//
-//  Created by rahdeva on 16/07/26.
-//
-
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
+        VStack(spacing: 16) {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundStyle(.tint)
