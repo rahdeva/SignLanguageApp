@@ -82,7 +82,7 @@ struct GameScreen: View {
         lastTypingTimestamp = now
 
         let result = TypingEngine.validate(typed: text, target: target.name)
-        if result.correctChars > gameStore.stationProgress {
+        if Double(result.correctChars) > gameStore.stationProgress {
             gameStore.onCorrectChar()
         }
         if result.errors > gameStore.errorsInCurrentSegment {

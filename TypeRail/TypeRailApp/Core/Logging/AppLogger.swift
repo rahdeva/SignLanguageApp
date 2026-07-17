@@ -3,6 +3,7 @@
 //  TypeRailApp
 //
 
+import Foundation
 import os
 
 /// Thin wrapper over os.Logger for consistent log categories.

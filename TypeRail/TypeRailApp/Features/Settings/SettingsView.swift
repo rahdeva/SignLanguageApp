@@ -3,6 +3,7 @@
 //  TypeRailApp
 //
 
+import SwiftData
 import SwiftUI
 
 struct SettingsView: View {
