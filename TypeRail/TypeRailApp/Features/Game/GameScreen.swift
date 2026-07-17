@@ -60,7 +60,9 @@ struct GameScreen: View {
         }
         .fullScreenCover(isPresented: .init(
             get: { gameStore.phase == .docked || gameStore.phase == .exploring },
-            set: { if !$0 { gameStore.dismissExploration() } }
+            // Hanya panggil dismissExploration() jika user menutup saat sedang explore
+            // (bukan saat proceedToNextStation() sudah mengubah phase ke .traveling).
+            set: { if !$0, gameStore.phase == .exploring { gameStore.dismissExploration() } }
         )) {
             ArrivalScreen(
                 station: gameStore.currentStation,

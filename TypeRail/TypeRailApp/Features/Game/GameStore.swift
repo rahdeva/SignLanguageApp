@@ -130,11 +130,12 @@ final class GameStore {
         phase = .docked
     }
 
-    /// Simulate tunnel for segments where tunnel is known (near Senayan–Istora).
+    /// Deteksi zona terowongan berdasarkan koordinat akurat jalur Senayan–Istora.
     func updateTunnelState(at coordinate: CLLocationCoordinate2D) {
-        // Simplified tunnel zone detection: constant region
-        let tunnelZoneLatitudes: ClosedRange<Double> = (-6.228)...(-6.212)
-        let tunnelZoneLongitudes: ClosedRange<Double> = (106.795)...(106.810)
+        // Segmen bawah tanah MRT Jakarta: antara Senayan (-6.22668) dan Istora (-6.22233).
+        // Ditambah buffer ±0.002 derajat untuk transisi yang mulus.
+        let tunnelZoneLatitudes: ClosedRange<Double> = (-6.229)...(-6.220)
+        let tunnelZoneLongitudes: ClosedRange<Double> = (106.800)...(106.812)
         let wasTunnel = isTunnel
         isTunnel = tunnelZoneLatitudes.contains(coordinate.latitude)
             && tunnelZoneLongitudes.contains(coordinate.longitude)
