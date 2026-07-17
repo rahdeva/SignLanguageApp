@@ -11,7 +11,8 @@ import SwiftUI
 struct SignLanguageAppApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+//            ContentView()
+            SpeechToTextExampleView()
         }
     }
 }

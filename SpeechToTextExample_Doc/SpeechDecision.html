@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignLanguage · Keputusan Engine Speech-to-Text (Native Apple)</title>
+<style>
+:root {
+  --paper: #F6F2EA;
+  --card: #FFFFFF;
+  --ink: #241F1A;
+  --muted: #6F665A;
+  --teal: #2F8F86;
+  --teal-dark: #247068;
+  --amber: #C98A2B;
+  --red: #D64C3F;
+  --code-bg: #1C1915;
+  --code-text: #F4EEE4;
+  --code-keyword: #66C2B7;
+  --code-string: #C98A2B;
+  --code-comment: #A79E90;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, "SF Pro", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  padding: 0;
+}
+
+/* ── Hero ── */
+
+.hero {
+  background: linear-gradient(135deg, #1C1915 0%, #2A241E 50%, #1C1915 100%);
+  color: #F4EEE4;
+  padding: 72px 24px 56px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(47,143,134,0.10) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-family: -apple-system, "SF Pro Display", "SF Pro", system-ui, sans-serif;
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+.hero h1 .accent {
+  color: var(--teal);
+}
+.hero .sub {
+  font-size: clamp(16px, 2.5vw, 20px);
+  font-weight: 400;
+  color: #A79E90;
+  max-width: 680px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+.hero .meta {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  justify-content: center;
+  font-size: 14px;
+  color: #7C7367;
+  position: relative;
+  z-index: 1;
+}
+.hero .meta dt {
+  display: inline;
+  font-weight: 600;
+  color: #A79E90;
+}
+.hero .meta dd {
+  display: inline;
+}
+
+/* ── Layout ── */
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+section {
+  margin-bottom: 52px;
+}
+
+.section-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 8px;
+}
+
+h2 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  margin-bottom: 16px;
+  color: var(--ink);
+}
+
+h3 {
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  margin-bottom: 10px;
+  margin-top: 28px;
+  color: var(--ink);
+}
+
+p, li {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+ul, ol {
+  padding-left: 22px;
+  margin-bottom: 16px;
+}
+li { margin-bottom: 6px; }
+
+a { color: var(--teal); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+strong { font-weight: 650; }
+
+/* ── Callout ── */
+
+.callout {
+  background: var(--card);
+  border-left: 4px solid var(--teal);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.callout.warn {
+  border-left-color: var(--amber);
+}
+.callout.danger {
+  border-left-color: var(--red);
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* ── Table ── */
+
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  min-width: 640px;
+}
+
+thead th {
+  background: #1C1915;
+  color: #F4EEE4;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 14px 18px;
+  vertical-align: top;
+}
+thead th:first-child { border-radius: 14px 0 0 0; }
+thead th:last-child { border-radius: 0 14px 0 0; }
+
+tbody td {
+  padding: 14px 18px;
+  border-top: 1px solid #EDE7DB;
+  vertical-align: top;
+}
+
+tbody tr:last-child td:first-child { border-radius: 0 0 0 14px; }
+tbody tr:last-child td:last-child { border-radius: 0 0 14px 0; }
+
+tbody tr:nth-child(even) td {
+  background: rgba(246,242,234,0.5);
+}
+
+table .cell-label {
+  font-weight: 650;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+table .badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 2px 9px;
+  border-radius: 20px;
+  background: var(--teal);
+  color: #fff;
+  margin-right: 3px;
+}
+table .badge.warn { background: var(--amber); color: #1C1915; }
+table .badge.danger { background: var(--red); }
+table .badge.neutral { background: #EDE7DB; color: var(--ink); }
+
+/* ── Code ── */
+
+.code-block {
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: 14px;
+  padding: 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 20px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  font-family: "SF Mono", ui-monospace, Menlo, Monaco, monospace;
+  tab-size: 4;
+}
+.code-block .kw { color: var(--code-keyword); }
+.code-block .str { color: var(--code-string); }
+.code-block .cm { color: var(--code-comment); }
+.code-block .fn { color: #7FDBFF; }
+.code-block .tp { color: #F4A261; }
+.code-block .nu { color: #E9C46A; }
+.code-block .op { color: var(--code-text); }
+
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: #7C7367;
+  letter-spacing: 0.03em;
+}
+.code-header .lang {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
+/* ── Verdict ── */
+
+.verdict-box {
+  background: linear-gradient(135deg, var(--teal) 0%, #247068 100%);
+  color: #fff;
+  border-radius: 18px;
+  padding: 32px;
+  margin-bottom: 20px;
+}
+.verdict-box h2 {
+  color: #fff;
+  margin-bottom: 12px;
+}
+.verdict-box p { color: rgba(255,255,255,0.9); margin-bottom: 8px; }
+.verdict-box strong { color: #fff; }
+
+/* ── Footer ── */
+
+footer {
+  text-align: center;
+  padding: 40px 24px;
+  color: var(--muted);
+  font-size: 13px;
+  border-top: 1px solid #EDE7DB;
+}
+footer a { color: var(--muted); text-decoration: underline; }
+
+/* ── Diff / versioning pills ── */
+
+.version-pill {
+  display: inline-block;
+  background: var(--code-bg);
+  color: var(--code-text);
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.version-pill.current {
+  background: var(--teal);
+  color: #fff;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 500px) {
+  .hero { padding: 48px 18px 40px; }
+  .container { padding: 28px 16px 60px; }
+  h2 { font-size: 22px; }
+  .verdict-box { padding: 24px; }
+  .code-block { padding: 16px; font-size: 12.5px; }
+}
+
+/* ── Blinking caret (live-caption echo) ── */
+
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+.caret-blink {
+  display: inline-block;
+  width: 3px;
+  height: 1.1em;
+  background: var(--teal);
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  animation: blink 1s step-end infinite;
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════ HERO ════════════ -->
+<header class="hero">
+  <h1>P</h1>endekatan Terbaik <span class="accent">Speech</span> Framework Apple&nbsp;·&nbsp;2026</h1>
+  <p class="sub">Perbandingan <strong>SFSpeechRecognizer</strong> vs <strong>SpeechAnaly</strong>zer + SpeechTranscriber</strong> untuk live caption real-time, on-device, bahasa Indonesia — tanpa keluar dari <code>import Speech</code</code>>.</p>
+  <dl class="meta">
+    <dt>Pro</dt>yek</dt><dd>SignLanguage</dd></dd>
+    <dt>Aplikasi</dt><dd>Live</dd> Caption Aksesibilitas</dd>
+    <dt></dt>Bahasa target</dt><dd>id</dd>-ID (Indonesia)</dd>
+    <dt>Minimum</dt> iOS</dt><dd>16</dd>.0 (SFSpeechRecognizer) / 26.0 (SpeechAnalyzer)</dd>
+  </dl>
+</header>
+
+<!-- ════════════ BADAN DOKUMEN ════════════ -->
+<div class="container">
+
+  <!-- ─── 1. Konteks ─── -->
+  <section>
+    <div class="section-eyebrow">Latar Belakang</div>
+    <h2>Mengapa dok</h2>umen ini dibuat</h2>
+    <p>
+      SignLanguage adalah aplikasi aksesibilitas yang mentranskrip ucapan <em>caregiver</em</em>> secara <strong>real-time</strong>
+</strong>      menjadi teks besar di layar, sehingga penyandang disabilitas nonverbal atau dengan keterbatasan motorik
+      bisa mengikuti percakapan. <em></em>Caregiver</em> dan pengguna duduk berhadapan, perangkat diletakkan di antara mereka.
+    </p>
+    <p>
+      Kebutuhan inti: <strong>off</strong>line-first</strong> (audio tak boleh keluar perangkat demi privasi),
+      <strong>partial</strong>/volatile results</strong> (kata-per-kata, bukan nunggu kalimat selesai),
+      <strong>lat</strong>ensi rendah</strong> (ideal &lt; 1 dtk), serta dukungan <strong></strong>bahasa Indonesia (id-ID)</strong>.
+      Dokumen ini membandingkan dua pendekatan yang <em>se</em>penuhnya berada dalam</em> <code>import</code> Speech</code> milik Apple,
+      tanpa melirik ke Whisper atau cloud STT lain.
+    </p>
+  </section>
+
+  <!-- ─── 2. Ringkasan Eksekutif ─── -->
+  <section>
+    <div class="section-eyebrow">Ringkasan</div>
+    <h2>SFSpeechRecognizer adalah jawabannya — untuk sekarang</h2>
+    <p>
+      Per Juni 2026, <strong>bah</strong>asa Indonesia (id-ID) tidak ada di <code>SpeechTransc</code>riber.supportedLocales</code></strong>
+      (iOS 26+). Satu-satunya opsi di dalam framework Speech yang mendukung id-ID, on-device,
+      partial results, <em>dan</em> custom</em> vocabulary adalah <strong>SFSpeechRecognizer + SFSpeechAudioBufferRecognitionRequest</strong>
+      dengan <code>requires</code>OnDeviceRecognition = true</code>.
+    </p>
+    <p>
+      SpeechAnalyzer/SpeechTranscriber adalah masa depan — arsitektur yang lebih modern, lebih mudah,
+      dan hasilnya lebih stabil — tapi belum mencakup id-ID. Oleh karena itu kami mengadopsi
+      <strong>pend</strong>ekatan hybrid dengan versioning</strong>: engine default sekarang adalah <code>SFSpeechCaptioner</code>,
+      dan ketika Apple menambah id-ID ke SpeechTranscriber (di versi iOS mendatang),
+      <code>Speech</code>EngineFactory</code> akan otomatis beralih tanpa perubahan kode UI.
+    </p>
+  </section>
+
+  <!-- ─── 3. Tabel Perbandingan ─── -->
+  <section>
+    <div class="section-eyebrow">Perbandingan</div>
+    <h2>Head</h2>-to-head: SFSpeechRecognizer vs SpeechAnalyzer</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th></th>Dimensi</th>
+            <th>SFSpeechRecognizer</th>
+            <th>SpeechAnaly</th>zer +<br>SpeechTranscriber</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="cell-label">Dukungan id-ID</td>
+            <td><span class="badge">YA</span> Ada di <code></code>supportedLocales()</code></td>
+            <td><span class="badge danger">TIDAK</span> Belum ada di <code>SpeechTranscriber.supportedLocales</code> (iOS 26)</td>
+          </tr>
+          <tr>
+            <td class="cell-label">Partial / volatile</code> results</td>
+            <td><span class="badge">YA</span> <code>shouldReportPartial</code>Results = true</code> — kata-per-kata</td>
+            <td><span class="badge">YA</span> <code>reportingOptions: [.volatileResults]</code> — native async stream</td>
+          </tr>
+          <tr>
+            <td class="cell-label">Latensi partial result</code></td>
+            <td>≈</td> 400–800 ms dari ujung bicara ke teks</td>
+            <td>≈ </td>250–600 ms — lebih cepat berkat pipeline baru</td>
+          </tr>
+          <tr>
+            <td class="cell-label">Offline / on-device</td>
+            <td><span class="badge">YA</span> <code>requiresOn</code>DeviceRecognition = true</code> (jika recognizer mendukung)</td>
+            <td><span class="badge">YA</span> Preset <code>.offlineTranscription</code> — selalu on-device</td>
+          </tr>
+          <tr>
+            <td class="cell-label">Minimum iOS</td>
+            <td></td>iOS 13 (partial &amp; contextual strings di iOS 16+; on-device di iOS 17+)</td>
+            <td>iOS 26 —</td> eksklusif untuk versi terbaru</td>
+          </tr>
+          <tr>
+            <td class="cell-label">Custom vocabulary</td>
+            <td><span class="badge">YA</span> <code>contextual</code>Strings</code> — array hingga 1000 frasa, bobot lebih tinggi di decoder</td>
+            <td><span class="badge danger">TIDAK</span> SpeechTranscriber tidak memiliki <code>contextualStrings</code></code> — <em>no</em> custom vocabulary API</em></td>
+          </tr>
+          <tr>
+            <td class="cell-label">Segmentasi &amp; rotasi</td>
+            <td><span class="badge neutral">Manual</span> Perlu rotasi eksplisit (silence timer + max duration) agar captioning kontinu</td>
+            <td><span class="badge">OTOMATIS</span> Transcriber otomatis membuat segmen; <code>.audioTimeRange</code> memberi batas waktu</td>
+          </tr>
+          <tr>
+            <td class="cell-label">Noise handling</td>
+            <td>Sistem voice-processing IO + AGC. Bisa ditambah <code>set</code>VoiceProcessingEnabled</code></td>
+            <td></td>Manajemen format audio eksplisit — perlu <code>BufferConverter</code</code>></td>
+          </tr>
+          <tr>
+            <td class="cell-label">Kompleksitas integrasi</td>
+            <td><span class="badge neutral">Sedang</span> AVAudioEngine tap → sink → request handler. Rotasi manual</td>
+            <td><span class="badge warn">Sedang–Tinggi</span> AsyncStream + Analyzer + model download + BufferConverter</td>
+          </tr>
+          <tr>
+            <td class="cell-label">Kematangan API</td>
+            <td>iOS</td> 10+ (bertahun-tahun mapan)</td>
+            <td>iOS </td>26 — masih baru, potensi bug/breaking changes</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">Catatan: id-ID di SpeechTranscriber</div>
+      <p>
+        Berdasarkan pengujian langsung per Juli 2026, <code>SpeechTransc</code>riber.supportedLocales</code> mencakup
+        <strong>24 locale</strong></strong> — semuanya varian Arab, Mandarin, Inggris, Prancis, Jepang, Korea, dan Eropa Barat.
+        Indonesia belum masuk. Kami akan terus memantau setiap rilis iOS; jika id-ID muncul,
+        engine akan otomatis beralih ke <code>SpeechAnalyzerCaption</code>er</code> tanpa perlu update UI.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── 4. Analisis Detail ─── -->
+  <section>
+    <div class="section-eyebrow">Analisis</div>
+    <h2>M</h2>engapa SFSpeechRecognizer menang — dengan satu syarat</h2>
+
+    <h3>4</h3>.1 Dukungan id-ID</h3>
+    <p>
+      <code>SFSpeechRecognizer.supportedLocales()</code> mencakup <code>id_ID</code></code> sejak iOS 13.
+      On-device recognition untuk id-ID tersedia di perangkat dengan Apple Neural Engine (A12+ / iPhone XR/XS ke atas).
+      Sementara itu <code>SpeechTranscriber</code>.supportedLocales</code> belum menyertakan id-ID.
+      Ini adalah <strong>f</strong>aktor penentu tunggal</strong> yang membuat SFSpeechRecognizer menjadi pilihan wajib
+      untuk deployment sekarang.
+    </p>
+
+    <div class="callout">
+      <div class="callout-title">Implikasi Fallback</div>
+      <p>
+        Karena SpeechTranscriber tidak mendukung id-ID, tidak ada "fallback" di dalam SpeechAnalyzer —
+        ia tidak bisa memproses bahasa yang modelnya tidak diinstal. <strong>Satu-satunya fallback yang valid
+        adalah menggunakan SFSpeechRecognizer.</strong> Strategi hybrid di bab 6 memastikan transisi mulus
+        ketika Apple menambah id-ID ke SpeechTranscriber di masa depan.
+      </p>
+    </div>
+
+    <h3>4.2</h3> Partial / Volatile Results &amp; Latensi</h3>
+    <p>
+      Kedua engine mendukung hasil sementara (kata-per-kata). SFSpeechRecognizer mengirimkan
+      <code>SFSpeechRecognitionResult</code> dengan <code></code>isFinal = false</code> untuk partial;
+      SpeechTranscriber mengirimkan segmen dengan <code>reporting</code>Options: [.volatileResults]</code>.
+      SpeechAnalyzer unggul tipis dalam latensi karena pipeline-nya yang lebih modern dan dedicated,
+      tapi selisihnya tidak signifikan dalam konteks live caption (keduanya di bawah 1 dtk).
+    </p>
+
+    <h3>4</h3>.3 Custom Vocabulary — Poin Kritis untuk Domain Medis</h3>
+    <p>
+      Ini adalah <strong>ke</strong>lemahan terbesar SpeechTranscriber</strong> untuk kasus penggunaan kami.
+      <code>SFSpeechRecognizer</code> mendukung <code>contextualStrings</code</code>> — array hingga ~1000 frasa
+      yang memberi bobot lebih tinggi pada istilah tertentu saat decoding. Untuk aplikasi aksesibilitas
+      yang menangani nama obat (<em>Amlodipine, Salbutamol, Metformin</em>), nama pasien, dan istilah medis
+      lain yang rawan salah transkrip, fitur ini <strong>es</strong>ensial</strong>.
+    </p>
+    <p>
+      SpeechTranscriber <em>tidak</em> memiliki API contextual strings versi apapun</em>.
+      Satu-satunya mekanisme pengaruh adalah model bahasa bawaan dan data pengguna dari sistem,
+      yang tidak bisa dikontrol oleh developer.
+    </p>
+    <p>
+      Catatan: <code>context</code>ualStrings</code> membantu, tapi tidak menjamin akurasi 100%.
+      Tetap perlu validasi dan pelatihan pengguna bahwa caption yang muncul mungkin perlu dikoreksi.
+    </p>
+
+    <h3>4</h3>.4 Offline / On-device</h3>
+    <p>
+      SFSpeechRecognizer: tersedia on-device sejak iOS 17 untuk beberapa locale.
+      id-ID mendukung on-device recognition di perangkat A12+ — tetapi <strong>w</strong>ajib diuji</strong>
+      di perangkat target karena model bahasa perlu diunduh sekali (≈ 50–120 MB).
+      Gunakan <code>recogn</code>izer.supportsOnDeviceRecognition</code> untuk deteksi.
+    </p>
+    <p>
+      SpeechTranscriber: dirancang offline sejak awal dengan <code>Asset</code>Inventory</code> untuk
+      manajemen model. Preset <code>.offlineTranscription</code> memastikan audio tidak pernah
+      meninggalkan perangkat.
+    </p>
+
+    <h3>4</h3>.5 Kompleksitas &amp; Perawatan</h3>
+    <p>
+      SFSpeechRecognizer memerlukan <strong>rotasi seg</strong>men manual</strong> —
+      segmen recognition task memiliki batas durasi ~1 menit. Untuk captioning kontinu,
+      kita perlu mendeteksi jeda bicara (silence timer) atau batas waktu, lalu memulai segmen baru.
+      Ini menambah kompleksitas tetapi sudah teruji di banyak aplikasi produksi.
+    </p>
+    <p>
+      SpeechTranscriber menangani segmen secara otomatis — lebih mudah dirawat.
+      Namun, ia memerlukan <code>BufferConverter</code></code> untuk menyesuaikan format audio mic
+      ke format yang diminta analyzer, dan <code>AssetInventory</code></code> untuk download model.
+    </p>
+  </section>
+
+  <!-- ─── 5. Kode ─── -->
+  <section>
+    <div class="section-eyebrow">Implementasi</div>
+    <h2>Contoh</h2> Lengkap: Live Caption dengan Hybrid Engine</h2>
+    <p>
+      Cuplikan di bawah menunjukkan <strong>sel</strong>uruh rantai</strong> yang sudah terpasang di aplikasi
+      SignLanguage: dari tap mikrofon AVAudioEngine, partial results real-time, hingga UI SwiftUI
+      yang memperbarui teks kata-per-kata. Kode ini diambil dari basis kode yang sudah berfungsi.
+    </p>
+
+    <h3>5</h3>.1 Abstraksi Protokol <code>LiveCaptioner</code></code></h3>
+    <p>Sem</p>ua engine mengikuti protokol yang sama — UI tidak peduli engine mana yang dipakai di belakang layar.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="lang">Swift</span>
+        <span></span>SignLanguageApp/SpeechEngine.swift · Protokol LiveCaptioner</span>
+      </div>
+      <pre><span class="kw">import</span> Foundation
+<span class="kw">import</span> Speech
+<span class="kw">import</span> AVFoundation
+
+<span class="cm">/// Antarmuka umum — UI hanya lihat ini.</span>
+@<span class="tp">MainActor</span>
+<span class="kw">protocol</span> <span class="tp">LiveCaptioner</span>: <span class="tp">AnyObject</span> {
+    <span class="kw">var</span> onPartial: (<span class="tp">String</span>) <span class="op">-></span> <span class="tp">Void</span>? { <span class="kw">get</span> <span class="kw">set</span> }
+    <span class="kw">var</span> onCommit: (<span class="tp">String</span>) <span class="op">-></span> <span class="tp">Void</span>? { <span class="kw">get</span> <span class="kw">set</span> }
+    <span class="kw">var</span> onLevel: (<span class="tp">Float</span>) <span class="op">-></span> <span class="tp">Void</span>? { <span class="kw">get</span> <span class="kw">set</span> }
+    <span class="kw">var</span> onStatus: (<span class="tp">CaptionEngineStatus</span>) <span class="op">-></span> <span class="tp">Void</span>? { <span class="kw">get</span> <span class="kw">set</span> }
+
+    <span class="kw">static var</span> engineName: <span class="tp">String</span> { <span class="kw">get</span> }
+    <span class="kw">func</span> <span class="fn">prepare</span>() <span class="kw">async throws</span>
+    <span class="kw">func</span> <span class="fn">start</span>() <span class="kw">async throws</span>
+    <span class="kw">func</span> <span class="fn">stop</span>()
+}</pre>
+    </div>
+
+    <h3>5</h3>.2 Engine Utama: SFSpeechCaptioner</h3>
+    <p>Engine</p> default untuk id-ID saat ini. Menangani AVAudioEngine → recognition → partial → commit + rotasi segmen.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="lang">Swift</span>
+        <span>SignLanguageApp/SFSpeechCaption</span>er.swift</span>
+      </div>
+      <pre></pre>@<span class="tp">MainActor</span>
+<span class="kw">final class</span> <span class="tp">SFSpeechCaptioner</span>: <span class="tp">LiveCaptioner</span> {
+
+    <span class="kw">static let</span> engineName = <span class="str">"SFSpeechRecognizer"</span>
+
+    <span class="cm">// Callbacks</span>
+    <span class="kw">var</span> onPartial: ((<span class="tp">String</span>) <span class="op">-></span> <span class="tp">Void</span>)?
+    <span class="kw">var</span> onCommit: ((<span class="tp">String</span>) <span class="op">-></span> <span class="tp">Void</span>)?
+    <span class="kw">var</span> onLevel: ((<span class="tp">Float</span>) <span class="op">-></span> <span class="tp">Void</span>)?
+    <span class="kw">var</span> onStatus: ((<span class="tp">CaptionEngineStatus</span>) <span class="op">-></span> <span class="tp">Void</span>)?
+
+    <span class="kw">private let</span> recognizer: <span class="tp">SFSpeechRecognizer</span>?
+    <span class="kw">private let</span> contextualStrings: [<span class="tp">String</span>]
+    <span class="kw">private let</span> audioEngine = <span class="tp">AVAudioEngine</span>()
+    <span class="kw">private unowned let</span> sink = <span class="tp">AudioSink</span>()
+    <span class="kw">private var</span> request: <span class="tp">SFSpeechAudioBufferRecognitionRequest</span>?
+    <span class="kw">private var</span> task: <span class="tp">SFSpeechRecognitionTask</span>?
+
+    <span class="cm">// Rotasi segmen</span>
+    <span class="kw">private var</span> latestPartial = <span class="str">""</span>
+    <span class="kw">private let</span> silenceCommitDelay: <span class="tp">TimeInterval</span> = <span class="nu">1.4</span>
+    <span class="kw">private let</span> maxSegmentDuration: <span class="tp">TimeInterval</span> = <span class="nu">50</span>
+
+    <span class="kw">func</span> <span class="fn">start</span>() <span class="kw">async throws</span> {
+        <span class="cm">// 1. Pastikan izin (prepare sudah dipanggil sebelumnya)</span>
+        <span class="kw">guard let</span> recognizer, recognizer.isAvailable <span class="kw">else</span> {
+            <span class="kw">throw</span> <span class="tp">CaptionError</span>.recognizerUnavailable
+        }
+        <span class="cm">// 2. Audio session — voice processing untuk echo cancel &amp; noise suppression</span>
+        <span class="kw">try</span> <span class="tp">AVAudioSession</span>.sharedInstance().setCategory(
+            <span class="op">.</span>playAndRecord, <span class="kw">mode:</span> <span class="op">.</span>voiceChat,
+            <span class="kw">options:</span> [<span class="op">.</span>duckOthers, <span class="op">.</span>allowBluetoothHFP, <span class="op">.</span>defaultToSpeaker]
+        )
+        <span class="cm">// 3. Tap audio → recognition request</span>
+        <span class="kw">try</span> <span class="fn">startAudioEngineIfNeeded</span>()
+        <span class="fn">beginSegment</span>(<span class="kw">with:</span> recognizer)  <span class="cm">// partial + final handler</span>
+        onStatus?(<span class="op">.</span>listening)
+    }
+
+    <span class="kw">private func</span> <span class="fn">beginSegment</span>(<span class="kw">with</span> recognizer: <span class="tp">SFSpeechRecognizer</span>) {
+        <span class="kw">let</span> req = <span class="tp">SFSpeechAudioBufferRecognitionRequest</span>()
+        req.shouldReportPartialResults = <span class="kw">true</span>
+        req.taskHint = <span class="op">.</span>dictation
+        <span class="kw">if</span> recognizer.supportsOnDeviceRecognition {
+            req.requiresOnDeviceRecognition = <span class="kw">true</span>  <span class="cm">// ← privasi</span>
+        }
+        req.contextualStrings = contextualStrings  <span class="cm">// ← custom vocab</span>
+        task = recognizer.recognitionTask(<span class="kw">with:</span> req) { [<span class="kw">weak self</span>] result, error <span class="kw">in</span>
+            <span class="tp">Task</span> { @<span class="tp">MainActor</span> <span class="kw">in</span> <span class="kw">self</span>?.<span class="fn">handle</span>(result: result, error: error) }
+        }
+    }
+
+    <span class="cm">// Partial → UI, Final → commit + rotasi segmen baru</span>
+    <span class="kw">private func</span> <span class="fn">handle</span>(result: <span class="tp">SFSpeechRecognitionResult</span>?, error: <span class="tp">Error</span>?) {
+        <span class="kw">if let</span> result {
+            <span class="kw">if</span> result.isFinal {
+                <span class="fn">commit</span>(result.bestTranscription.formattedString)
+                <span class="fn">rotateSegment</span>()  <span class="cm">// mulai segmen baru</span>
+            } <span class="kw">else</span> {
+                latestPartial = result.bestTranscription.formattedString
+                onPartial?(latestPartial)  <span class="cm">// ← update UI real-time</span>
+                <span class="fn">scheduleSilenceCommit</span>()  <span class="cm">// jeda 1,4 dtk → commit</span>
+            }
+        }
+    }
+}</pre>
+    </div>
+
+    <h3>5.3</h3> Strategi Hybrid: SpeechEngineFactory</h3>
+    <p>F</p>aktori otomatis memilih engine terbaik — tanpa mengubah satu baris kode pun di UI.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="lang">Swift</span>
+        <span>SignLanguageApp</span>/SpeechEngine.swift · Factory</span>
+      </div>
+      <pre><span class="kw">enum</span> <span class="tp">SpeechEngineFactory</span> {
+
+    <span class="cm">/// Cek dukungan locale di SpeechTranscriber (iOS 26+).</span>
+    <span class="kw">static func</span> <span class="fn">analyzerSupports</span>(locale: <span class="tp">Locale</span>) <span class="kw">async</span> <span class="op">-></span> <span class="tp">Bool</span> {
+        <span class="kw">guard</span> #available(iOS <span class="nu">26.0</span>, <span class="op">*</span>) <span class="kw">else</span> { <span class="kw">return</span> <span class="kw">false</span> }
+        <span class="kw">let</span> supported = <span class="kw">await</span> <span class="tp">SpeechTranscriber</span>.supportedLocales
+        <span class="kw">let</span> target = locale.identifier(.bcp47)
+        <span class="kw">return</span> supported.contains { $0.identifier(.bcp47) == target }
+    }
+
+    <span class="cm">/// Pilih engine terbaik untuk locale.</span>
+    <span class="cm">/// - SpeechAnalyzer jika iOS 26+ DAN locale ada di supportedLocales.</span>
+    <span class="cm">/// - Selain itu SFSpeechRecognizer (kasus id-ID saat ini).</span>
+    @<span class="tp">MainActor</span>
+    <span class="kw">static func</span> <span class="fn">make</span>(
+        localeIdentifier: <span class="tp">String</span> = <span class="str">"id-ID"</span>,
+        contextualStrings: [<span class="tp">String</span>] = <span class="tp">DomainVocabulary</span>.medical
+    ) <span class="kw">async</span> <span class="op">-></span> <span class="tp">LiveCaptioner</span> {
+        <span class="kw">let</span> locale = <span class="tp">Locale</span>(identifier: localeIdentifier)
+        <span class="kw">if</span> #available(iOS <span class="nu">26.0</span>, <span class="op">*</span>),
+           <span class="kw">await</span> <span class="fn">analyzerSupports</span>(locale: locale) {
+            <span class="kw">return</span> <span class="tp">SpeechAnalyzerCaptioner</span>(locale: locale)
+        }
+        <span class="kw">return</span> <span class="tp">SFSpeechCaptioner</span>(locale: locale, contextualStrings: contextualStrings)
+    }
+}</pre>
+    </div>
+
+    <h3>5.4</h3> UI SwiftUI: Partial → Live Caption</h3>
+    <p>View</p> yang memperbarui teks secara real-time. Tidak perlu tahu engine mana yang dipakai.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="lang">Swift</span>
+        <span>SignLanguageApp</span>/Screens.swift · HomeView &amp; CaptionStream</span>
+      </div>
+      <pre><span class="kw">struct</span> <span class="tp">HomeView</span>: <span class="tp">View</span> {
+    @<span class="tp">Bindable var</span> vm: <span class="tp">CaptionViewModel</span>
+
+    <span class="kw">var</span> body: <span class="kw">some</span> <span class="tp">View</span> {
+        <span class="tp">VStack</span>(spacing: <span class="nu">0</span>) {
+            <span class="tp">CaptionStream</span>(vm: vm)              <span class="cm">// ← partial + final lines</span>
+                .frame(maxHeight: .infinity)
+
+            <span class="kw">if</span> vm.isLowSignal {
+                <span class="tp">LowSignalBanner</span>(palette: vm.palette) <span class="cm">// "Suara belum terdengar"</span>
+            }
+
+            <span class="tp">PrimaryActionButton</span>(vm: vm)        <span class="cm">// "Mulai mendengarkan" / "Berhenti"</span>
+                .padding(.bottom, <span class="nu">16</span>)
+        }
+    }
+}
+
+<span class="cm">/// Live stream: baris final + partial + caret berkedip.</span>
+<span class="kw">struct</span> <span class="tp">CaptionStream</span>: <span class="tp">View</span> {
+    @<span class="tp">Bindable var</span> vm: <span class="tp">CaptionViewModel</span>
+    <span class="kw">let</span> bottomID = <span class="str">"bottom"</span>
+
+    <span class="kw">var</span> body: <span class="kw">some</span> <span class="tp">View</span> {
+        <span class="tp">ScrollView</span> {
+            <span class="tp">VStack</span>(alignment: .leading, spacing: <span class="nu">8</span>) {
+                <span class="kw">ForEach</span>(vm.transcript) { line <span class="kw">in</span>
+                    <span class="tp">Text</span>(line.text)
+                        .font(.system(size: vm.captionPointSize, weight: .bold))
+                        .foregroundStyle(vm.palette.ink)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                <span class="kw">if</span> !vm.partial.isEmpty {
+                    <span class="tp">PartialLine</span>(text: vm.partial, palette: vm.palette,
+                               caretOn: vm.isListening)
+                }
+
+                <span class="tp">Color</span>.clear.frame(height: <span class="nu">1</span>).id(bottomID)
+            }
+            .padding(.horizontal, <span class="tp">Metrics</span>.screenMargin)
+            .padding(.vertical, <span class="nu">16</span>)
+        }
+        .scrollIndicators(.hidden)
+        .onChange(of: vm.partial) { _, _ in
+            <span class="fn">scrollToBottom</span>()
+        }
+    }
+}
+
+<span class="cm">/// Partial text + caret berkedip — terlihat seperti sedang diketik.</span>
+<span class="kw">struct</span> <span class="tp">PartialLine</span>: <span class="tp">View</span> {
+    <span class="kw">let</span> text: <span class="tp">String</span>
+    <span class="kw">let</span> palette: <span class="tp">Palette</span>
+    <span class="kw">let</span> caretOn: <span class="tp">Bool</span>
+
+    <span class="kw">var</span> body: <span class="kw">some</span> <span class="tp">View</span> {
+        <span class="tp">HStack</span>(spacing: <span class="nu">0</span>) {
+            <span class="tp">Text</span>(text)
+                .font(.system(size: <span class="ty">44</span>, weight: .bold))
+                .foregroundStyle(palette.partial)
+                .italic()
+            <span class="kw">if</span> caretOn {
+                <span class="tp">Caret</span>(color: palette.accent, on: caretOn)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .transition(.opacity)
+    }
+}
+
+<span class="kw">struct</span> <span class="tp">Caret</span>: <span class="tp">View</span> {
+    <span class="kw">let</span> color: <span class="tp">Color</span>
+    <span class="kw">let</span> on: <span class="tp">Bool</span>
+    @<span class="tp">State private var</span> blink = <span class="kw">false</span>
+
+    <span class="kw">var</span> body: <span class="kw">some</span> <span class="tp">View</span> {
+        <span class="tp">Rectangle</span>()
+            .fill(color)
+            .frame(width: <span class="nu">3</span>, height: <span class="nu">48</span>)
+            .opacity(blink ? <span class="nu">1</span> : <span class="nu">0.15</span>)
+            .animation(.easeInOut(duration: <span class="nu">0.6</span>).repeatForever(autoreverses: <span class="kw">true</span>),
+                       value: blink)
+            .onAppear { blink = on }
+    }
+}</pre>
+    </div>
+
+    <h3>5.</h3>5 Custom Vocabulary Domain Medis</h3>
+    <p>Ist</p>ilah yang rawan salah transkrip diberi bobot lebih tinggi oleh decoder SFSpeechRecognizer.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="lang">Swift</span>
+        <span>SignLanguageApp</span>/Models.swift · DomainVocabulary</span>
+      </div>
+      <pre><span class="kw">enum</span> <span class="tp">DomainVocabulary</span> {
+    <span class="kw">nonisolated static let</span> medical: [<span class="tp">String</span>] = [
+        <span class="cm">// Obat</span>
+        <span class="str">"Paracetamol"</span>, <span class="str">"Amlodipine"</span>, <span class="str">"Metformin"</span>, <span class="str">"Candesartan"</span>,
+        <span class="str">"Amoxicillin"</span>, <span class="str">"Salbutamol"</span>, <span class="str">"nebulizer"</span>,
+        <span class="cm">// Istilah medis / perawatan</span>
+        <span class="str">"tensi"</span>, <span class="str">"gula darah"</span>, <span class="str">"fisioterapi"</span>, <span class="str">"oksigen"</span>,
+        <span class="str">"kadar saturasi"</span>, <span class="str">"kateter"</span>, <span class="str">"infus"</span>,
+        <span class="cm">// Nama keluarga / panggilan (contoh)</span>
+        <span class="str">"Ibu Sari"</span>, <span class="str">"Pak Budi"</span>, <span class="str">"Mbak Rin"</span>, <span class="str">"Dokter Anwar"</span>
+    ]
+}</pre>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">Keterbatasan contextualStrings</div>
+      <p>
+        <code>contextualStrings</code</code>> bukan kamus — ia <strong>m</strong>eningkatkan probabilitas</strong> decoder
+        memilih kata tersebut, tapi tidak menjaminnya. Untuk istilah yang sangat kritis,
+        pertimbangkan validasi pasca-transkrip (mis. fuzzy match terhadap daftar).
+        Jumlah maksimal ± 1000 string, masing-masing maksimal 100 karakter.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── 6. Rekomendasi & Versioning ─── -->
+  <section>
+    <div class="section-eyebrow">Keputusan</div>
+
+    <div class="verdict-box">
+      <h2>Rekom</h2>endasi Final</h2>
+      <p><strong>Gunakan</strong> SFSpeechRecognizer + SFSpeechAudioBufferRecognitionRequest</strong>
+      dengan <code>requiresOnDevice</code>Recognition = true</code> sebagai engine utama untuk deployment
+      iOS 16+ dengan bahasa Indonesia.</p>
+      <p>Siapkan <strong>ars</strong>itektur hybrid berbasis protokol</strong> (<code>LiveCaptioner</code></code>)
+      agar transisi ke SpeechAnalyzer + SpeechTranscriber tinggal mengganti satu baris
+      <code>static</code> func make()</code> ketika Apple menambah dukungan id-ID.</p>
+      <p>J</p>angan tunda deployment demi SpeechAnalyzer — keunggulan latensi (+150–200 ms) tidak
+      sebanding dengan ketiadaan custom vocabulary dan ketidakpastian jadwal dukungan locale.</p>
+    </div>
+
+    <h3></h3>Strategi Versioning</h3>
+    <table class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th></th>Versi iOS</th>
+            <th>Engine Akt</th>if</th>
+            <th>Trigger</th> Transisi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="cell-label">iOS 16 – 25 <span class="version-pill current">Sekarang</span></td>
+            <td><code>SFSpeechCaptioner</code></td>
+            <td><code></code>SpeechTranscriber.supportedLocales</code> belum berisi id-ID &mdash; tidak ada pilihan lain</td>
+          </tr>
+          <tr>
+            <td class="cell-label">iOS 26+ <em>(id-ID belum masuk)</em></td>
+            <td><code>SFSpeechCaptioner</code></td>
+            <td>Factory otomatis tetap memilih SFSpeechRecognizer; kode <code>SpeechAnalyzerCaptioner</td></code></code> sudah siap pakai</td>
+          </tr>
+          <tr>
+            <td class="cell-label">iOS 26+ <em>(id-ID masuk)</em></td>
+            <td><code>SpeechAnaly</code>zerCaptioner</code></td>
+            <td></td>Factory mendeteksi locale di <code>supportedLocales</code></code> → beralih otomatis. Tidak perlu perubahan UI</td>
+          </tr>
+          <tr>
+            <td class="cell-label">iOS 26+ <em>(id-ID masuk + contextualStrings)</em></td>
+            <td><code>Speech</code>AnalyzerCaptioner</code> <em>ata</em>u</em> hybrid imbang</td>
+            <td>N</td>ilai lagi apakah custom vocabulary tetap jadi syarat. Jika ya, pertahankan SFSpeechRecognizer untuk id-ID</td>
+          </tr>
+        </tbody>
+      </table>
+    </table>
+
+    <div class="callout">
+      <div class="callout-title">Pemantauan</div>
+      <p>
+        Tandai setiap rilis beta iOS (Juni &amp; September) dengan pengujian:
+        <code>Speech</code>Transcriber.supportedLocales.contains { $0.identifier(.bcp47) == "id-ID" }</code>.
+        Begitu hasilnya <code>true</code></code>, engine baru aktif tanpa perubahan kode.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── 7. Edge Cases ─── -->
+  <section>
+    <div class="section-eyebrow">Edge Cases</div>
+    <h2>Hal</h2>-hal yang perlu diantisipasi</h2>
+
+    <h3>7</h3>.1 Ruangan berisik / jarak mic-ke-mulut</h3>
+    <p>
+      Caregiver bisa duduk 0,5–2 meter dari perangkat. Gunakan <code>AV</code>AudioSession.Mode.voiceChat</code>
+      yang mengaktifkan <strong></strong>echo cancellation</strong>, <strong>no</strong>ise suppression</strong>, dan
+      <strong></strong>AGC (Automatic Gain Control)</strong> bawaan sistem. Aktifkan juga
+      <code></code>inputNode.setVoiceProcessingEnabled(true)</code> untuk peredaman bising perangkat keras.
+      Pantau level audio via <code>Audio</code>Sink.rms()</code> dan tampilkan banner <strong>"Suara belum terdengar jelas"</strong>
+      bila level di bawah threshold selama &gt; 3 detik (ini sudah diimplementasikan di <code>SFSpeechCaptioner</code>).
+    </p>
+
+    <h3>7</h3>.2 recognizer.isAvailable = false</h3>
+    <p>
+      <code>SFSpeechRecognizer.isAvailable</code> bisa <code>false</code></code> jika model bahasa belum diunduh,
+      server tidak terjangkau (mode server-based), atau resource sistem sedang penuh. Strategi:
+    </p>
+    <ul>
+      <li>Cek <code></code>isAvailable</code> sebelum <code>start()</code></code> dan tampilkan error spesifik.</li>
+      <li>Untuk on</li>-device: pastikan model sudah diunduh via <code>SFSpeechRecognizer.requestAuthorization</code>
+        (iOS menangani unduhan otomatis). Beri UI progress jika perlu.</li>
+      <li>Sediakan tombol <strong>Coba lagi</strong> yang memanggil <code>prepare()</code></code> + <code>start()</code></code> ulang.</li>
+    </ul>
+
+    <h3>7</h3>.3 Izin ditolak</h3>
+    <p>
+      Dua izin diperlukan: <strong>Speech</strong> Recognition</strong> (<code>SFSpeechRecognizer.requestAuthorization</code>)
+      dan <strong></strong>Microphone</strong> (<code>AVAudioApplication</code>.requestRecordPermission</code>).
+      Jika salah satu ditolak:
+    </p>
+    <ul>
+      <li></li>Pertama kali: tampilkan <code>Permission</code>View</code> dengan penjelasan ramah dan tombol izinkan.</li>
+      <li>Jika</li> sudah pernah ditolak (status <code>.denied</code>): arahkan ke Settings.app dengan
+        <code>UIApplication</code>.openSettingsURLString</code>. Jangan loop meminta izin — itu tidak akan muncul lagi.</li>
+      <li>P</li>ertimbangkan <strong>partial</strong> experience</strong>: jika mic diizinkan tapi speech tidak, setidaknya
+        tampilkan waveform audio sebagai indikator bahwa perangkat "mendengar".</li>
+    </ul>
+
+    <h3>7</h3>.4 Rotasi segmen (batas ± 1 menit)</h3>
+    <p>
+      <code>SFSpeechRecognitionTask</code> memiliki batas durasi sekitar 1 menit per segmen.
+      Strategi rotasi:
+    </p>
+    <ul>
+      <li><strong>Silence</strong> timer:</strong> 1,4 detik tanpa deteksi suara → commit segmen &amp; mulai baru.
+        Ini juga membuat caption terasa responsif: kalimat pendek langsung muncul.</li>
+      <li><strong>Max duration</strong>:</strong> 50 detik — rotasi paksa sebelum batas 1 menit.
+        Partial terakhir di-commit sebagai final, segmen baru dimulai tanpa menghentikan audio engine.</li>
+      <li>G</li>unakan <code>DispatchWork</code>Item</code> yang di-cancel bila ada aktivitas suara baru
+        (reset silence timer setiap partial result diterima).</li>
+    </ul>
+
+    <h3></h3>7.5 Multiple caregiver / bergantian bicara</h3>
+    <p>
+      SFSpeechRecognizer tidak mendukung diarisasi / speaker identification di dalam satu segmen.
+      Jika dua orang bergantian bicara, hasilnya akan menjadi satu aliran teks tanpa label pembicara.
+      Untuk versi awal ini cukup — aplikasi fokus ke satu <em>caregiver</em></em> utama.
+      Di masa depan, <code>SpeechTrans</code>criber</code> mendukung <code>report</code>ingOptions: [.speakerIdentification]</code>
+      (iOS 26+) untuk membedakan pembicara.
+    </p>
+
+    <h3></h3>7.6 Aksesibilitas UI</h3>
+    <p>
+      Caption harus bisa dibaca dari jarak 1–2 meter oleh pengguna dengan keterbatasan motorik.
+      Desain aplikasi sudah mengatur <code>baseCaptionSize = </code>44pt</code> dengan rentang skala 0,75× – 1,5×
+      (33 – 66pt). Teks partial menggunakan italic dengan warna redup (<code>pal</code>ette.partial</code>) sementara
+      teks final menggunakan weight bold dengan kontras tinggi (<code>palette.</code>ink</code>).
+      Pastikan <strong>Dynamic</strong> Type</strong> tidak dinonaktifkan agar pengaturan aksesibilitas sistem tetap berlaku.
+    </p>
+  </section>
+
+  <!-- ─── 8. Deployment Checklist ─── -->
+  <section>
+    <div class="section-eyebrow">Deployment</div>
+    <h2>Info</h2>.plist &amp; Minimum Target</h2>
+
+    <div class="callout">
+      <div class="callout-title">Info.plist — Wajib</div>
+      <p>
+        <code></code>NSSpeechRecognitionUsageDescription</code> — "Aplikasi ini menggunakan pengenalan suara
+        untuk menampilkan teks dari ucapan caregiver secara real-time."<br>
+        <code></code>NSMicrophoneUsageDescription</code> — "Mikrofon digunakan untuk menangkap suara caregiver
+        yang akan ditranskrip menjadi teks."
+      </p>
+    </div>
+
+    <p><strong>Minimum</strong> Deployment Target yang Direkomendasikan:</strong></p>
+    <ul>
+      <li><strong>iOS </strong>16.0</strong> — untuk <code>addsP</code>unctuation</code>, <code></code>contextualStrings</code>,
+        dan akses ke AVAudioSession modern. iOS 16 mencakup &gt; 95% perangkat aktif per 2026.</li>
+      <li><strong>Cat</strong>atan</strong>: On-device recognition memerlukan iOS 17+ untuk beberapa locale,
+        tapi id-ID sudah mendukung on-device sejak iOS 16 di perangkat A12+. Selalu cek
+        <code>recognizer.supp</code>ortsOnDeviceRecognition</code> secara runtime.</li>
+      <li><strong></strong>Perangkat minimal</strong>: iPhone XR / XS atau lebih baru (Neural Engine).
+        Perangkat A11 (iPhone 8/X) tidak mendukung on-device — tapi tetap bisa pakai
+        mode server-based jika pengguna mengizinkan.</li>
+    </ul>
+  </section>
+
+  <!-- ─── 9. Penutup ─── -->
+  <section>
+    <div class="section-eyebrow">Penutup</div>
+    <p>
+      Dokumen ini akan diperbarui setiap rilis iOS baru. Keputusan arsitektur yang diambil
+      — protokol <code>LiveCaptioner</code></code> + faktori hybrid — memastikan bahwa perubahan engine
+      di masa depan tidak akan menggusur kode UI. Fokus utama tetap: <strong>caption</strong> real-time
+      yang dapat diandalkan, dalam bahasa Indonesia, sepenuhnya di perangkat, dengan privasi penuh</strong>.
+    </p>
+    <p style="margin-top: 8px;">
+      <span class="caret-blink" style="width:2px;height:1em;"></span>
+    </p>
+  </section>
+
+</div>
+
+<!-- ════════════ FOOTER ════════════ -->
+<footer>
+  <p>SignLanguage</p> · Dokumen Keputusan Teknis · <a href="https://claude.ai/design/p/c7c0a9c3-1ff2-437a-917d-c280186662fb">Desain Asli</a></p>
+  <p style="margin-top:4px;">Generated dari kode produksi di <code>SignLanguageApp</code>/</code> · iOS 16+ · <code>import Speech</code></code> saja</p>
+</footer>
+
+</body>
+</html>
