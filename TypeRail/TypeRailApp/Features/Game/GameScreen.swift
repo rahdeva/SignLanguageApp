@@ -93,7 +93,8 @@ struct GameScreen: View {
         if text.lowercased().trimmingCharacters(in: .whitespaces) == target.name.lowercased() {
             gameStore.onStationTypingComplete(result: result)
             typedText = ""
-            gameStore.stationProgress = 0.95 // Trigger auto-arrive
+            gameStore.stationProgress = 0.95
+            gameStore.onCorrectChar() // Triggers updateTrainPosition() → auto-arrive
         }
     }
 }

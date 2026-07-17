@@ -12,6 +12,6 @@ struct TypeRailApp: App {
         WindowGroup {
             RootView()
         }
-        .modelContainer(try! GamePersistence().container)
+        .modelContainer(for: TripRecord.self)
     }
 }
