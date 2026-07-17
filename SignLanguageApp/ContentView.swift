@@ -12,7 +12,10 @@ class TranslatorViewModel {
     var activeTokens: [String] = []
     let availableTokens: [String] = [
         "saya", "kamu", "ibu", "makan", "nasi", "pergi", "mana",
-        "tolong", "ambil", "air", "sakit", "kepala", "rumah", "tidur", "pulang"
+        "tolong", "ambil", "air", "sakit", "kepala", "rumah", "tidur", "pulang",
+        " ",
+        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+        "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
     ]
     
     var generatedPrompt: String = ""
@@ -25,14 +28,12 @@ class TranslatorViewModel {
     private let speechSynthesizer = AVSpeechSynthesizer()
     
     func addToken(_ token: String) {
-        if !activeTokens.contains(token) {
-            activeTokens.append(token)
-            updatePrompt()
-        }
+        activeTokens.append(token)
+        updatePrompt()
     }
     
-    func removeToken(_ token: String) {
-        activeTokens.removeAll { $0 == token }
+    func removeToken(at index: Int) {
+        activeTokens.remove(at: index)
         updatePrompt()
     }
     
@@ -59,7 +60,7 @@ class TranslatorViewModel {
         correctedSentence = ""
         
         do {
-            let result = try await translator.translateOnDevice(tokens: activeTokens)
+            let result = try await checkFM(input: activeTokens)
             correctedSentence = result
         } catch {
             errorMessage = error.localizedDescription
@@ -132,14 +133,14 @@ struct ContentView: View {
                         } else {
                             // Display selected tokens as chips
                             FlowLayout(spacing: 8) {
-                                ForEach(viewModel.activeTokens, id: \.self) { token in
+                                ForEach(Array(viewModel.activeTokens.enumerated()), id: \.offset) { index, token in
                                     HStack(spacing: 6) {
-                                        Text(token)
+                                        Text(token == " " ? "[spasi]" : token)
                                             .font(.subheadline)
                                             .fontWeight(.medium)
                                         Button {
                                             withAnimation(.spring(duration: 0.3)) {
-                                                viewModel.removeToken(token)
+                                                viewModel.removeToken(at: index)
                                             }
                                         } label: {
                                             Image(systemName: "xmark.circle.fill")
@@ -158,6 +159,21 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color(.secondarySystemBackground))
                             .clipShape(.rect(cornerRadius: 16))
+                            
+                            // Display merged/preprocessed result
+                            let clean = BISINDOTranslator().preprocessTokens(viewModel.activeTokens)
+                            if !clean.isEmpty {
+                                HStack(spacing: 6) {
+                                    Text("Gabungan Kata:")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(clean.joined(separator: ", "))
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.indigo)
+                                }
+                                .padding(.horizontal, 4)
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -174,12 +190,11 @@ struct ContentView: View {
                                         viewModel.addToken(token)
                                     }
                                 } label: {
-                                    Text(token)
+                                    Text(token == " " ? "spasi" : token)
                                         .font(.subheadline)
                                 }
                                 .buttonStyle(.bordered)
-                                .tint(viewModel.activeTokens.contains(token) ? .secondary : .indigo)
-                                .disabled(viewModel.activeTokens.contains(token))
+                                .tint(.indigo)
                                 .sensoryFeedback(.selection, trigger: viewModel.activeTokens.count)
                             }
                         }

@@ -8,32 +8,64 @@ import FoundationModels
 
 struct BISINDOTranslator {
     let systemPrompt = """
-    Anda adalah penerjemah BISINDO (Bahasa Isyarat Indonesia) ke Bahasa Indonesia yang natural dan grammatically correct.
-    Tugas Anda:
-    1. Mengubah urutan kata kunci (tokens) kasar hasil deteksi kamera menjadi kalimat lengkap.
-    2. Menambahkan kata hubung, kata depan (di, ke, dari), imbuhan, atau kata bantu yang hilang agar terdengar sopan dan alami.
-    3. Mempertahankan maksud asli tanpa menambah informasi di luar konteks.
-    4. Menghasilkan HANYA kalimat akhir. Jangan beri penjelasan atau pengantar.
+    You are a translation assistant for BISINDO (Indonesian Sign Language).
+    Your task is to take a list of raw Indonesian gesture tokens and reconstruct them into a complete, natural, and grammatically correct INDONESIAN sentence.
+    Rules:
+    1. Output the final sentence in INDONESIAN.
+    2. Add missing words (conjunctions, prepositions, prefixes/suffixes, helping verbs) to make the Indonesian sentence natural.
+    3. Retain the original meaning of the gesture tokens.
+    4. Output ONLY the corrected Indonesian sentence. Do not include explanations, translation notes, or introductory text.
     """
     
     let examples = [
         (input: ["saya", "makan", "nasi"], output: "Saya sedang makan nasi."),
         (input: ["kamu", "pergi", "mana"], output: "Kamu mau pergi ke mana?"),
         (input: ["tolong", "ambil", "air"], output: "Tolong ambilkan saya air minum."),
-        (input: ["saya", "sakit", "kepala"], output: "Kepala saya terasa sakit."),
+        (input: ["saya", "nama", "Budi"], output: "Nama saya Budi."),
+        (input: ["saya", "senang"], output: "Saya merasa senang."),
         (input: ["ibu", "rumah", "pulang"], output: "Ibu sudah pulang ke rumah.")
     ]
     
+    /// Merges consecutive single-letter tokens separated by space tokens into complete words.
+    func preprocessTokens(_ rawTokens: [String]) -> [String] {
+        var processed: [String] = []
+        var currentWordLetters: [String] = []
+        
+        for token in rawTokens {
+            if token == " " {
+                if !currentWordLetters.isEmpty {
+                    processed.append(currentWordLetters.joined())
+                    currentWordLetters.removeAll()
+                }
+            } else if token.count == 1 {
+                currentWordLetters.append(token)
+            } else {
+                if !currentWordLetters.isEmpty {
+                    processed.append(currentWordLetters.joined())
+                    currentWordLetters.removeAll()
+                }
+                processed.append(token)
+            }
+        }
+        
+        if !currentWordLetters.isEmpty {
+            processed.append(currentWordLetters.joined())
+        }
+        
+        return processed
+    }
+    
     /// Construct prompt for LLM
     func buildPrompt(for tokens: [String]) -> String {
+        let cleanTokens = preprocessTokens(tokens)
         var prompt = "\(systemPrompt)\n\n"
-        prompt += "Contoh penerjemahan:\n"
+        prompt += "Examples:\n"
         for example in examples {
             prompt += "Input: \(example.input.joined(separator: ", "))\n"
             prompt += "Output: \(example.output)\n\n"
         }
-        prompt += "Sekarang terjemahkan input berikut:\n"
-        prompt += "Input: \(tokens.joined(separator: ", "))\n"
+        prompt += "Now translate and correct this input:\n"
+        prompt += "Input: \(cleanTokens.joined(separator: ", "))\n"
         prompt += "Output:"
         return prompt
     }
@@ -43,25 +75,35 @@ struct BISINDOTranslator {
         let prompt = buildPrompt(for: tokens)
         
         #if canImport(FoundationModels)
-        // Check model availability on-device
         let model = SystemLanguageModel.default
         guard model.isAvailable else {
-            throw NSError(domain: "BISINDOTranslator", code: 1, userInfo: [NSLocalizedDescriptionKey: "Apple Intelligence model not available/downloaded yet."])
+            throw NSError(
+                domain: "BISINDOTranslator",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Apple Intelligence model is not available or not downloaded yet. Please verify device settings."]
+            )
         }
         
-        // Create language model session and get response
         let session = LanguageModelSession()
         let response = try await session.respond(to: prompt)
-        
-        // Clean up the output
         return response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         
         #else
-        // Fallback simulation for platforms without FoundationModels support (e.g. older SDKs, command line tools)
-        try await Task.sleep(nanoseconds: 500_000_000) // 0.5s mock latency
-        return "Saya ingin pulang ke rumah untuk tidur." // Mock output for ["saya", "rumah", "tidur"]
+        throw NSError(
+            domain: "BISINDOTranslator",
+            code: 2,
+            userInfo: [NSLocalizedDescriptionKey: "FoundationModels framework is not supported on this platform/SDK."]
+        )
         #endif
     }
+}
+
+// MARK: - Global Helper Function
+
+/// Global utility function to translate and correct BISINDO tokens using Apple's Foundation Models on-device.
+func checkFM(input: [String]) async throws -> String {
+    let translator = BISINDOTranslator()
+    return try await translator.translateOnDevice(tokens: input)
 }
 
 // MARK: - Execution
@@ -69,14 +111,13 @@ struct BISINDOTranslator {
 @main
 struct MainApp {
     static func main() async {
-        let translator = BISINDOTranslator()
         let rawTokens = ["saya", "rumah", "tidur"]
         
         print("Tokens: \(rawTokens)")
         print("Generating correction...")
         
         do {
-            let result = try await translator.translateOnDevice(tokens: rawTokens)
+            let result = try await checkFM(input: rawTokens)
             print("Result: \"\(result)\"")
         } catch {
             print("Error: \(error.localizedDescription)")
