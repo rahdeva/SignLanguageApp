@@ -178,8 +178,8 @@ final class GameStore {
 
         updateTunnelState(at: trainPosition)
 
-        // Auto-arrive when progress > 95%
-        if stationProgress >= 0.95 {
+        // Auto-arrive when progress > 95% (guard prevents re-fire)
+        if stationProgress >= 0.95, phase != .docked {
             onArriveAtStation()
         }
     }
