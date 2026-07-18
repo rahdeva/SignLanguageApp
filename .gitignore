@@ -1,0 +1,112 @@
+# macOS
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Xcode
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+*.xcuserdatad
+*.dSYM.zip
+*.dSYM
+*.xcodedoc
+*.xcscheme
+
+# Swift Package Manager
+.build/
+.build
+Package.pins
+*.resolved
+.swiftpm/
+
+# CocoaPods
+Pods/
+!*.podspec
+!*.podspec.json
+
+# Carthage
+Carthage/
+Carthage.build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Bundler
+.bundle/
+Gemfile.lock
+vendor/bundle/
+
+# Mint
+Mintfile
+.mint/
+
+# Testing
+.xctestdata/
+*.xctest
+*.xctestrun
+
+# Playgrounds
+*.playgroundbook
+Timeline.xctimeline
+
+# App packaging
+*.app
+*.appex
+*.bundle
+*.framework
+*.xcframework
+*.dylib
+*.o
+
+# SwiftLint
+.swiftlint.lintable
+
+# SwiftFormat
+.swiftformat
+
+# Periphery
+.build/periphery/
+periphery.index/
+
+# Tuist
+Tuist/.build/
+!Tuist/ProjectDescriptionHelpers/
+.graph.json
+
+# Accio
+Dependencies/
+.accio/
+
+# Sourcery
+Templates/.generated/
+*.sourcery.swift
+
+# R.swift and Sourcery generated
+*.generated.swift
+R.generated.swift

@@ -1,0 +1,30 @@
+# Xcode project
+xcuserdata/
+
+# Derived data
+DerivedData/
+
+# Build products
+*.app
+*.appex
+*.dSYM
+*.dSYM.zip
+*.framework
+*.xcframework
+
+# Swift Package Manager
+.swiftpm/
+
+# Core ML compiled models
+*.mlmodelc
+
+# Core ML temporary
+.metal
+*.bin
+
+# Playgrounds
+*.playground
+Timeline.xctimeline
+
+# macOS metadata
+.DS_Store
