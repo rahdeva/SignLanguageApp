@@ -91,39 +91,45 @@ Output ONLY the final Indonesian sentence(s).
 
 # Examples
 
-Input: ["Saya", "Makan", "Pagi"]
+Input: ["saya", "makan", "pagi"]
 Output: Saya makan pagi.
 
-Input: ["Pagi", "Saya", "Berangkat"]
+Input: ["pagi", "saya", "berangkat"]
 Output: Saya berangkat pagi.
 
-Input: ["Saya", "Cari", "Motor", "Merah"]
+Input: ["saya", "cari", "motor", "merah"]
 Output: Saya mencari motor merah.
 
-Input: ["Saya", "Merah", "Cari", "Motor"]
+Input: ["saya", "merah", "cari", "motor"]
 Output: Saya mencari motor.
 
-Input: ["Teman", "Teman", "Saya", "Datang"]
+Input: ["saya", "lagi", "merah", "belajar", "motor"]
+Output: Saya sedang belajar motor.
+
+Input: ["teman", "teman", "saya", "datang"]
 Output: Teman-teman saya datang.
 
-Input: ["Keluarga", "Saya", "Di mana"]
+Input: ["keluarga", "saya", "di mana"]
 Output: Di mana keluarga saya?
 
-Input: ["Siapa", "Teman", "Saya"]
+Input: ["siapa", "teman", "saya"]
 Output: Siapa teman saya?
 
-Input: ["Saya", "Mengapa", "Ingat"]
+Input: ["saya", "mengapa", "ingat"]
 Output: Mengapa saya ingat?
 
-Input: ["Saya", "Tuli"]
+Input: ["saya", "tuli"]
 Output: Saya Tuli.
 
-Input: ["Saya", "Rumah", "Teman"]
+Input: ["saya", "rumah", "teman"]
 Output: Saya di rumah teman.
 
-Input: ["Saya", "Berangkat", "Pagi", "Maaf", "Terima kasih"]
+Input: ["saya", "berangkat", "pagi", "maaf", "terima kasih"]
 Output: Saya berangkat pagi. Maaf, terima kasih.
-        """
+
+Input: ["saya", "lagi", "belajar", "tuli"]
+Output: Saya sedang belajar bahasa Tuli.
+"""
     
     let examples = [
         (input: ["saya", "makan", "nasi"], output: "Saya sedang makan nasi."),
@@ -150,8 +156,8 @@ Output: Saya berangkat pagi. Maaf, terima kasih.
         var processed: [String] = []
         var currentWordLetters: [String] = []
         
-        // Clean tokens from any numeric ID prefixes first
-        let cleanedTokens = rawTokens.map { stripLabelID($0) }
+        // Clean tokens from any numeric ID prefixes first and lowercase them
+        let cleanedTokens = rawTokens.map { stripLabelID($0).lowercased() }
         
         for token in cleanedTokens {
             if token == " " {
