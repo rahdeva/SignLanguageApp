@@ -30,6 +30,17 @@ struct SkeletonPoints {
     var mouthPoints: [CGPoint]                                          = []  // 8 mouth contour pts
 }
 
+// MARK: - Model Mode
+enum ModelMode: String, CaseIterable {
+    /// Hand-only: 21 joints → MyHandActionBisindoClassifier_1  [60, 3, 21]
+    case handOnly   = "Hand Only"
+    /// Full multi-modal: 46 joints → BisindoHandActionClassifier [60, 3, 46]
+    case multiModal = "Multi-Modal"
+
+    var totalJoints: Int    { self == .handOnly ? 21 : 46 }
+    var sfSymbol:    String { self == .handOnly ? "hand.raised.fill" : "brain.filled.head.profile" }
+}
+
 // MARK: - CameraManager
 class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
 
@@ -42,6 +53,7 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
     @Published var isFrontCamera: Bool       = true
     @Published var isRunning: Bool           = false
     @Published var permissionGranted: Bool   = false
+    @Published var modelMode: ModelMode        = .handOnly
 
     // Legacy accessor so ContentView / HandOverlayView compile without changes
     var handPoints: [VNHumanHandPoseObservation.JointName: CGPoint] { skeleton.handPoints }
@@ -75,6 +87,8 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
 
     // MARK: - Camera State Cache
     nonisolated(unsafe) private var currentIsFrontCamera: Bool = true
+    /// Cached model mode for use on captureQueue (mirrors @Published modelMode)
+    nonisolated(unsafe) private var cachedModelMode: ModelMode = .handOnly
 
     // MARK: - Joint Order (must match training data exactly)
 
@@ -101,9 +115,10 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
         .leftAnkle,     .rightAnkle
     ]
 
-    /// Total joint count: hand(21) + body(17) + mouth(8) = 46
-    private let totalJoints = 46
-    private let mouthJointCount = 8  // indices 38..45 in the combined vector
+    /// Active joint count — updated in loadModel() when mode changes (captureQueue only)
+    nonisolated(unsafe) private var activeJoints: Int = 21
+    /// Mouth landmark count — 0 in handOnly mode, 8 in multiModal
+    private let mouthJointCount = 8
 
     // MARK: - Reuse Buffer
     nonisolated(unsafe) private var reuseMultiArray: MLMultiArray? = nil
@@ -116,22 +131,44 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
 
     // MARK: - Model Loading
     private func loadModel() {
+        let mode = modelMode   // capture before entering async block
         captureQueue.async { [weak self] in
             guard let self else { return }
             do {
                 let config = MLModelConfiguration()
                 config.computeUnits = .all
-                let wrapper = try MyHandActionBisindoClassifier_1(configuration: config)
-                self.mlModel = wrapper.model
 
-                // Pre-allocate reuse buffer — shape [window, 3, totalJoints]
+                switch mode {
+                case .handOnly:
+                    // 21-joint hand-only model (generated Swift class)
+                    let wrapper = try MyHandActionBisindoClassifier_1(configuration: config)
+                    self.mlModel    = wrapper.model
+                    self.activeJoints = 21
+
+                case .multiModal:
+                    // 46-joint multi-modal model (.mlpackage compiled to .mlmodelc in bundle)
+                    guard let url = Bundle.main.url(forResource: "BisindoHandActionClassifier",
+                                                    withExtension: "mlmodelc")
+                              ?? Bundle.main.url(forResource: "BisindoHandActionClassifier",
+                                                 withExtension: "mlpackage") else {
+                        print("❌ BisindoHandActionClassifier not found in bundle.",
+                              "Add BisindoHandActionClassifier.mlpackage to the Xcode target.")
+                        return
+                    }
+                    self.mlModel    = try MLModel(contentsOf: url, configuration: config)
+                    self.activeJoints = 46
+                }
+
+                self.cachedModelMode = mode
+
+                // Re-allocate reuse buffer for the new shape [window, 3, activeJoints]
                 self.reuseMultiArray = try? MLMultiArray(
                     shape: [NSNumber(value: self.windowSize),
                             3,
-                            NSNumber(value: self.totalJoints)],
+                            NSNumber(value: self.activeJoints)],
                     dataType: .float32
                 )
-                print("✅ Model loaded. Feature shape: [\(self.windowSize), 3, \(self.totalJoints)]")
+                print("✅ Model loaded: \(mode.rawValue). Feature shape: [\(self.windowSize), 3, \(self.activeJoints)]")
             } catch {
                 print("❌ Error loading CoreML model: \(error.localizedDescription)")
             }
@@ -186,13 +223,10 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
             if self.session.canAddOutput(self.videoDataOutput) {
                 self.session.addOutput(self.videoDataOutput)
                 if let conn = self.videoDataOutput.connection(with: .video) {
-                    if #available(iOS 17.0, *) {
-                        if conn.isVideoRotationAngleSupported(90.0) {
-                            conn.videoRotationAngle = 90.0
-                        }
-                    } else if conn.isVideoOrientationSupported {
-                        conn.videoOrientation = .portrait
-                    }
+                    // Do NOT set videoRotationAngle here — it only writes metadata;
+                    // it does NOT physically rotate the pixel buffer data.
+                    // The raw sensor buffer orientation is handled via
+                    // CGImagePropertyOrientation in VNImageRequestHandler below.
                     if conn.isVideoMirroringSupported { conn.isVideoMirrored = false }
                 }
             }
@@ -208,6 +242,14 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
         isFrontCamera.toggle()
         resetBuffer()
         setupCamera()
+    }
+
+    /// Switch between hand-only and multi-modal inference models.
+    func switchModel(_ mode: ModelMode) {
+        guard mode != modelMode else { return }
+        modelMode = mode
+        resetBuffer()
+        loadModel()
     }
 
     func resetBuffer() {
@@ -235,6 +277,9 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
 
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
+        // iPhone sensor raw orientation (no rotation applied to the buffer):
+        //   Back camera in portrait  → .right   (scene top is on the right of the raw landscape frame)
+        //   Front camera in portrait → .leftMirrored (same + horizontal mirror from selfie lens)
         let orientation: CGImagePropertyOrientation = currentIsFrontCamera ? .leftMirrored : .right
         let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer,
                                             orientation: orientation,
@@ -324,7 +369,12 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
 
         // ── 5. Combine features ────────────────────────────────────────────────
         // frameJoints[i] = [x, y, confidence]  for i in 0..<totalJoints (46)
-        let frameJoints: [[Float]] = handFeats + bodyFeats + mouthFeats
+        // ── 5. Combine features based on active model mode ─────────────────────
+        //    handOnly   → 21 joints [60, 3, 21]
+        //    multiModal → 46 joints [60, 3, 46]
+        let frameJoints: [[Float]] = cachedModelMode == .handOnly
+            ? handFeats
+            : handFeats + bodyFeats + mouthFeats
 
         // Guard: if *everything* is zero (no detection at all), treat as empty
         let hasAnyDetection = !handDisplay.isEmpty || !bodyDisplay.isEmpty || !mouthDisplay.isEmpty
@@ -346,14 +396,24 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
             guard let self else { return }
             self.bufferCount = count
             if let layer = self.previewLayer {
+                // Vision (.right / .leftMirrored) returns portrait coordinates with
+                // origin at BOTTOM-LEFT and y going UP.
+                // layerPointConverted() expects AVFoundation "capture device" coordinates:
+                // origin at TOP-LEFT of the RAW LANDSCAPE sensor frame, y going DOWN.
+                //
+                // Vision coordinates are 180° rotated relative to the capture device
+                // coordinate space expected by layerPointConverted. Apply 180° rotation
+                // (flip both axes around the centre) to align the skeleton overlay.
+                func toCapture(_ p: CGPoint) -> CGPoint { CGPoint(x: 1 - p.x, y: 1 - p.y) }
+
                 let convertedHand = Dictionary(uniqueKeysWithValues: handDisplay.map {
-                    ($0.key, layer.layerPointConverted(fromCaptureDevicePoint: $0.value))
+                    ($0.key, layer.layerPointConverted(fromCaptureDevicePoint: toCapture($0.value)))
                 })
                 let convertedBody = Dictionary(uniqueKeysWithValues: bodyDisplay.map {
-                    ($0.key, layer.layerPointConverted(fromCaptureDevicePoint: $0.value))
+                    ($0.key, layer.layerPointConverted(fromCaptureDevicePoint: toCapture($0.value)))
                 })
                 let convertedMouth = mouthDisplay.map {
-                    layer.layerPointConverted(fromCaptureDevicePoint: $0)
+                    layer.layerPointConverted(fromCaptureDevicePoint: toCapture($0))
                 }
                 self.skeleton = SkeletonPoints(handPoints: convertedHand,
                                                bodyPoints: convertedBody,
@@ -396,7 +456,7 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
                 self.currentConfidence = 0.0
             }
         } else if !frameBuffer.isEmpty {
-            let zero = [[Float]](repeating: [0, 0, 0], count: totalJoints)
+            let zero = [[Float]](repeating: [0, 0, 0], count: activeJoints)
             frameBuffer.append(zero)
             if frameBuffer.count > windowSize { frameBuffer.removeFirst() }
             let c = frameBuffer.count
@@ -408,16 +468,17 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
     private func runInference(snapshot: [[[Float]]]) -> InferenceResult? {
         guard let model = mlModel, snapshot.count == windowSize else { return nil }
 
+        let joints = activeJoints
         guard let ma = reuseMultiArray ?? (try? MLMultiArray(
-            shape: [NSNumber(value: windowSize), 3, NSNumber(value: totalJoints)],
+            shape: [NSNumber(value: windowSize), 3, NSNumber(value: joints)],
             dataType: .float32)) else { return nil }
 
-        // Fill: shape [60, 3, 46] → index = f*(3*46) + c*46 + j
-        let stride3J = 3 * totalJoints
+        // Fill: shape [window, 3, joints] → index = f*(3*joints) + c*joints + j
+        let stride3J = 3 * joints
         for f in 0..<windowSize {
             for c in 0..<3 {
-                for j in 0..<totalJoints {
-                    ma[f * stride3J + c * totalJoints + j] =
+                for j in 0..<joints {
+                    ma[f * stride3J + c * joints + j] =
                         NSNumber(value: snapshot[f][j][c])
                 }
             }

@@ -129,6 +129,25 @@ struct ContentView: View {
                         .background(Circle().fill(.ultraThinMaterial))
                         .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
                 }
+                // Model mode toggle: Hand Only ↔ Multi-Modal
+                Button(action: {
+                    withAnimation(.spring()) {
+                        cameraManager.switchModel(
+                            cameraManager.modelMode == .handOnly ? .multiModal : .handOnly
+                        )
+                    }
+                }) {
+                    let isMulti = cameraManager.modelMode == .multiModal
+                    Image(systemName: cameraManager.modelMode.sfSymbol)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(isMulti ? .cyan : .white)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(.ultraThinMaterial))
+                        .overlay(Circle().stroke(
+                            isMulti ? Color.cyan.opacity(0.5) : Color.white.opacity(0.2),
+                            lineWidth: 1
+                        ))
+                }
                 Button(action: { withAnimation(.spring()) { cameraManager.toggleCamera() } }) {
                     Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
                         .font(.system(size: 14, weight: .semibold))
