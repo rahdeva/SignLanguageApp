@@ -36,6 +36,9 @@ struct ContentView: View {
 
                     HandOverlayView(handPoints: cameraManager.handPoints)
                         .ignoresSafeArea()
+
+                    BodyOverlayView(skeleton: cameraManager.skeleton)
+                        .ignoresSafeArea()
                 }
             } else {
                 permissionDeniedView
