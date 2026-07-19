@@ -1,0 +1,60 @@
+/* Tab titles */
+"tab.speech"             = "Bicara";
+"tab.sign"               = "Isyarat";
+"tab.history"            = "Riwayat";
+"tab.settings"           = "Pengaturan";
+
+/* Settings — General */
+"settings.title"                     = "Pengaturan";
+"settings.section.general"           = "Umum";
+"settings.onboarding.toggle"         = "Tampilkan Pengantar saat Buka";
+"settings.onboarding.description"    = "Putar ulang layar pengantar saat berikutnya membuka aplikasi";
+
+/* Settings — Language */
+"settings.section.language"          = "Bahasa";
+"settings.language.app"              = "Bahasa Aplikasi";
+"settings.language.tts"              = "Suara Isyarat-ke-Ucapan";
+"settings.language.speech"           = "Pengenalan Suara";
+"settings.language.footer"           = "Bahasa Aplikasi mengatur semua teks antarmuka. Suara Isyarat-ke-Ucapan menentukan bahasa yang diucapkan saat isyarat terdeteksi. Pengenalan Suara menentukan bahasa masukan mikrofon.";
+
+/* Settings — Privacy */
+"settings.section.privacy"           = "Privasi";
+"settings.privacy.permissions"       = "Izin Aplikasi";
+"settings.privacy.footer"            = "Izin kamera, mikrofon, dan pengenalan suara dapat diubah di Pengaturan sistem.";
+
+/* Settings — Team */
+"settings.section.team"              = "Tim";
+"settings.team.about"                = "Tentang Tim";
+
+/* Settings — App info */
+"settings.version"                   = "Versi";
+
+/* Sign-to-Speech */
+"sign.detecting"                     = "Mendeteksi…";
+"sign.uncertain"                     = "Tidak Pasti";
+"sign.buffer.filling"                = "Memuat…";
+"sign.buffer.ready"                  = "SIAP";
+"sign.confidence"                    = "Keyakinan";
+"sign.top_predictions"               = "Prediksi teratas";
+"sign.reset"                         = "Setel ulang buffer";
+"sign.flip_camera"                   = "Ganti kamera";
+"sign.speak"                         = "Ucapkan";
+
+/* Speech-to-Text */
+"speech.start"                       = "Mulai Rekam";
+"speech.stop"                        = "Berhenti";
+"speech.placeholder"                 = "Ketuk mikrofon untuk mulai berbicara…";
+
+/* History */
+"history.title"                      = "Riwayat";
+"history.empty"                      = "Belum ada riwayat percakapan.";
+
+/* Onboarding */
+"onboarding.continue"                = "Lanjutkan";
+"onboarding.get_started"             = "Mulai";
+
+/* Errors */
+"error.permission.camera"            = "Izin kamera ditolak. Harap izinkan akses kamera di Pengaturan.";
+"error.permission.microphone"        = "Izin mikrofon ditolak. Harap izinkan akses mikrofon di Pengaturan.";
+"error.camera_unavailable"           = "Kamera tidak tersedia.";
+"error.unknown"                      = "Terjadi kesalahan yang tidak terduga.";
