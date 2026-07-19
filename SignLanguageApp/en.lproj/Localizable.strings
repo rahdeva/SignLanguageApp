@@ -116,6 +116,7 @@
 "conv.hint_open_eyes"                = "Open both eyes to speak via TTS";
 "conv.speaking"                      = "SPEAKING VIA TTS...";
 "conv.eye_control"                   = "Eye Control";
+"conv.ai_refinement"                 = "AI Grammar";
 "conv.face_none"                     = "No Face";
 "conv.eyes_closed"                   = "Eyes Closed";
 "conv.eyes_wink"                     = "Winking";

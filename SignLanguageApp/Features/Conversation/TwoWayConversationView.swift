@@ -44,7 +44,9 @@ struct TwoWayConversationView: View {
                             cameraManager: cameraManager
                         )
 
-                        HandOverlayView(handPoints: cameraManager.handPoints)
+                        if store.isSignDetectionActiveForOverlay {
+                            HandOverlayView(handPoints: cameraManager.handPoints)
+                        }
                     }
                     .rotationEffect(.degrees(90))
                     .frame(width: geo.size.height, height: geo.size.width)
@@ -257,17 +259,29 @@ struct TwoWayConversationView: View {
                     )
             }
 
-            // Word Sequence Chips
+            // Word Sequence Chips (removable on tap)
             if !recognizer.wordSequence.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(recognizer.wordSequence) { item in
-                            Text(item.text)
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                            Button(action: {
+                                withAnimation { recognizer.removeWord(id: item.id) }
+                            }) {
+                                HStack(spacing: 6) {
+                                    Text(item.text)
+                                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.secondary)
+                                }
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
                                 .background(Capsule().fill(Color.cyan.opacity(0.2)))
                                 .overlay(Capsule().stroke(Color.cyan, lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundColor(.white)
+                            .accessibilityLabel("Remove \(item.text)")
                         }
                     }
                 }
@@ -353,7 +367,7 @@ struct TwoWayConversationView: View {
 
     // MARK: - Controls Footer Bar
     private var controlsBar: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 10) {
             // Camera Flip
             Button(action: { cameraManager.toggleCamera() }) {
                 Image(systemName: "camera.rotate.fill")
@@ -364,22 +378,71 @@ struct TwoWayConversationView: View {
                     .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
             }
 
-            Spacer()
+            Spacer(minLength: 4)
 
-            // Eye Tracking Enable/Disable Toggle
-            Toggle(isOn: $store.isEyeControlledEnabled) {
-                Label(
-                    LocalizedStringKey("conv.eye_control"),
-                    systemImage: "eye.tracking"
+            // Minimalist AI Refinement Chip Toggle
+            Button(action: {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    store.isAIRefinementEnabled.toggle()
+                }
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(store.isAIRefinementEnabled ? .yellow : .secondary)
+                    Text("conv.ai_refinement", tableName: "Localizable")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(store.isAIRefinementEnabled ? .white : .secondary)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                    Circle()
+                        .fill(store.isAIRefinementEnabled ? Color.yellow : Color.secondary.opacity(0.4))
+                        .frame(width: 6, height: 6)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(store.isAIRefinementEnabled ? Color.yellow.opacity(0.2) : Color.white.opacity(0.08))
                 )
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .overlay(
+                    Capsule()
+                        .stroke(store.isAIRefinementEnabled ? Color.yellow.opacity(0.8) : Color.white.opacity(0.18), lineWidth: 1)
+                )
             }
-            .toggleStyle(SwitchToggleStyle(tint: .cyan))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(.ultraThinMaterial))
-            .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
+            .buttonStyle(.plain)
+
+            // Minimalist Eye Control Chip Toggle
+            Button(action: {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    store.isEyeControlledEnabled.toggle()
+                }
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: store.isEyeControlledEnabled ? "eye.tracking" : "eye.slash")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(store.isEyeControlledEnabled ? .cyan : .secondary)
+                    Text("conv.eye_control", tableName: "Localizable")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(store.isEyeControlledEnabled ? .white : .secondary)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                    Circle()
+                        .fill(store.isEyeControlledEnabled ? Color.cyan : Color.secondary.opacity(0.4))
+                        .frame(width: 6, height: 6)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(store.isEyeControlledEnabled ? Color.cyan.opacity(0.2) : Color.white.opacity(0.08))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(store.isEyeControlledEnabled ? Color.cyan.opacity(0.8) : Color.white.opacity(0.18), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
 
