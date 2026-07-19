@@ -69,4 +69,9 @@ final class AppStore {
     func speak(_ text: String) async {
         await synthesizerService.speak(text, language: languageSettings.ttsLanguage)
     }
+
+    /// Stop speaking immediately.
+    func stopSpeaking() {
+        Task { await synthesizerService.stop() }
+    }
 }

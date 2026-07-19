@@ -90,3 +90,25 @@
 "error.permission.microphone"        = "Izin mikrofon ditolak. Harap izinkan akses mikrofon di Pengaturan.";
 "error.camera_unavailable"           = "Kamera tidak tersedia.";
 "error.unknown"                      = "Terjadi kesalahan yang tidak terduga.";
+
+/* Two-Way Conversation Mode */
+"tab.conversation"                   = "Percakapan";
+"conv.badge_listening"               = "MENDENGARKAN SUARA";
+"conv.badge_winking"                 = "PEJAMKAN 1 DETIK UNTUK ISYARAT";
+"conv.badge_signing"                 = "ISYARAT AKTIF";
+"conv.badge_speaking"                = "MEMBACAKAN SUARA";
+"conv.partner_speech"                = "UCAPAN PARTNER";
+"conv.listening"                     = "Mendengarkan...";
+"conv.wink_prompt"                   = "Memejamkan (1 d)...";
+"conv.hint_speech"                   = "Ucapan partner akan muncul di sini secara langsung.";
+"conv.hint_wink"                     = "Pejamkan satu mata 1 detik untuk mulai berisyarat";
+"conv.btn_sign"                      = "Mode Isyarat";
+"conv.your_signing"                  = "ISYARAT ANDA";
+"conv.hint_open_eyes"                = "Buka kedua mata untuk membacakan via TTS";
+"conv.speaking"                      = "MEMBACAKAN VIA TTS...";
+"conv.eye_control"                   = "Kontrol Mata";
+"conv.face_none"                     = "Wajah Tidak Terdeteksi";
+"conv.eyes_closed"                   = "Mata Terpejam";
+"conv.eyes_wink"                     = "Satu Mata Terpejam";
+"conv.eyes_open"                     = "Mata Terbuka";
+

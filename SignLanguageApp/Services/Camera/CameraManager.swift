@@ -53,6 +53,11 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
     @Published var permissionGranted: Bool   = false
     @Published var modelMode: ModelMode        = .handOnly
 
+    // Face & Eye Tracking
+    @Published var isFaceDetected: Bool      = false
+    @Published var isLeftEyeClosed: Bool     = false
+    @Published var isRightEyeClosed: Bool    = false
+
     // Legacy accessor so ContentView / HandOverlayView compile without changes
     var handPoints: [VNHumanHandPoseObservation.JointName: CGPoint] { skeleton.handPoints }
 
@@ -281,15 +286,30 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
                                             orientation: orientation,
                                             options: [:])
 
-        // ── 1. Build Vision request (hand only) ───────────────────────────────
+        // ── 1. Build Vision requests (hand & face) ─────────────────────────────
         let handRequest = VNDetectHumanHandPoseRequest()
         handRequest.maximumHandCount = 1
 
+        let faceRequest = VNDetectFaceLandmarksRequest()
+
         do {
-            try handler.perform([handRequest])
+            try handler.perform([handRequest, faceRequest])
         } catch {
-            handleEmptyFrame()
+            handleEmptyFrame(faceDetected: false, leftClosed: false, rightClosed: false)
             return
+        }
+
+        var faceDetected = false
+        var leftClosed = false
+        var rightClosed = false
+        if let faceObs = faceRequest.results?.first, let landmarks = faceObs.landmarks {
+            faceDetected = true
+            if let leftEAR = Self.calculateEAR(region: landmarks.leftEye) {
+                leftClosed = leftEAR < 0.18
+            }
+            if let rightEAR = Self.calculateEAR(region: landmarks.rightEye) {
+                rightClosed = rightEAR < 0.18
+            }
         }
 
         // ── 2. Extract Hand keypoints (21: wrist + 5 fingers × 4) ─────────────
@@ -315,9 +335,9 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
         // ── 3. Combine features (hand-only, 21 joints) ─────────────────────────
         let frameJoints: [[Float]] = handFeats
 
-        // Guard: no hand detected → treat as empty
+        // Guard: no hand detected → treat as empty for hand buffer, but update eye states
         guard !handDisplay.isEmpty else {
-            handleEmptyFrame()
+            handleEmptyFrame(faceDetected: faceDetected, leftClosed: leftClosed, rightClosed: rightClosed)
             return
         }
 
@@ -333,6 +353,9 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.bufferCount = count
+            self.isFaceDetected = faceDetected
+            self.isLeftEyeClosed = leftClosed
+            self.isRightEyeClosed = rightClosed
             if let layer = self.previewLayer {
                 // Vision (.right / .leftMirrored) returns portrait coordinates with
                 // origin at BOTTOM-LEFT and y going UP.
@@ -370,9 +393,14 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
     }
 
     // MARK: - Empty Frame Handling
-    private func handleEmptyFrame() {
+    private func handleEmptyFrame(faceDetected: Bool = false, leftClosed: Bool = false, rightClosed: Bool = false) {
         emptyFrameCounter += 1
-        DispatchQueue.main.async { self.skeleton = SkeletonPoints() }
+        DispatchQueue.main.async {
+            self.skeleton = SkeletonPoints()
+            self.isFaceDetected = faceDetected
+            self.isLeftEyeClosed = leftClosed
+            self.isRightEyeClosed = rightClosed
+        }
 
         if emptyFrameCounter >= 30 {
             frameBuffer.removeAll()
@@ -390,6 +418,26 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
             let c = frameBuffer.count
             DispatchQueue.main.async { self.bufferCount = c }
         }
+    }
+
+    // MARK: - Eye Aspect Ratio (EAR) Calculation
+    private static func calculateEAR(region: VNFaceLandmarkRegion2D?) -> Double? {
+        guard let region = region, region.pointCount >= 6 else { return nil }
+        let pts = region.normalizedPoints
+        let dxW = pts[0].x - pts[3].x
+        let dyW = pts[0].y - pts[3].y
+        let width = sqrt(dxW * dxW + dyW * dyW)
+        guard width > 0.0001 else { return nil }
+
+        let dxH1 = pts[1].x - pts[5].x
+        let dyH1 = pts[1].y - pts[5].y
+        let h1 = sqrt(dxH1 * dxH1 + dyH1 * dyH1)
+
+        let dxH2 = pts[2].x - pts[4].x
+        let dyH2 = pts[2].y - pts[4].y
+        let h2 = sqrt(dxH2 * dxH2 + dyH2 * dyH2)
+
+        return Double((h1 + h2) / (2.0 * width))
     }
 
     // MARK: - CoreML Inference
