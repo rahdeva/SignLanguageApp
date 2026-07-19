@@ -10,17 +10,31 @@ import AVFoundation
 import SwiftUI
 
 struct SignToSpeechView: View {
+    @Environment(AppStore.self) private var appStore
     @StateObject private var cameraManager = CameraManager()
     @StateObject private var recognizer = SignRecognitionEngine(
         stableThreshold: 2, cooldownThreshold: 5, maxWords: 12
     )
     @State private var showConfidenceDetails: Bool = true
 
-    // Feed new inference results into the recognition engine
+    // Helper to clean and translate any sign label for UI display and TTS
+    private func displaySign(for raw: String) -> String {
+        if raw == "Detecting..." || raw == "Uncertain" {
+            return raw == "Detecting..."
+                ? NSLocalizedString("sign.detecting", tableName: "Localizable", comment: "")
+                : NSLocalizedString("sign.uncertain", tableName: "Localizable", comment: "")
+        }
+        let cleaned = SignRecognitionEngine.cleanLabel(raw)
+        return SignLabelTranslator.translate(cleaned, to: appStore.languageSettings.ttsLanguage)
+    }
+
+    // Feed new inference results into the recognition engine.
+    // Translates the raw Indonesian label to English when ttsLanguage == .english.
     private func handleNewSign(_ sign: String, confidence: Double) {
-        guard sign != "Detecting..." else { return }
+        guard sign != "Detecting...", sign != "Uncertain" else { return }
+        let translated = displaySign(for: sign)
         Task { @MainActor in
-            recognizer.feed(rawLabel: sign, confidence: confidence)
+            recognizer.feed(rawLabel: translated, confidence: confidence)
         }
     }
 
@@ -328,7 +342,7 @@ struct SignToSpeechView: View {
                         .tracking(1.0)
                         .foregroundColor(.secondary)
 
-                    Text(cameraManager.currentSign.uppercased())
+                    Text(displaySign(for: cameraManager.currentSign).uppercased())
                         .font(.system(size: 34, weight: .heavy, design: .rounded))
                         .foregroundColor(
                             cameraManager.currentSign == "Uncertain" ||
@@ -387,7 +401,7 @@ struct SignToSpeechView: View {
                         VStack(spacing: 8) {
                             ForEach(cameraManager.topPredictions, id: \.label) { item in
                                 HStack {
-                                    Text(SignRecognitionEngine.cleanLabel(item.label))
+                                    Text(displaySign(for: item.label))
                                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                                         .foregroundColor(item.label == cameraManager.currentSign
                                                          ? .white : .white.opacity(0.7))
