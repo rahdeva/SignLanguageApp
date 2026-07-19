@@ -11,51 +11,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		655B08B1300BE172004A57FE /* SignLanguageApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SignLanguageApp.xcodeproj; sourceTree = "<group>"; };
 		65D1A313300944C90034B3B7 /* MyHandActionBisindoClassifier 1.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = "MyHandActionBisindoClassifier 1.mlmodel"; sourceTree = "<group>"; };
 		E6CDA8A530090D84006D829E /* SignLanguageApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SignLanguageApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		E6CDA8B330090D86006D829E /* Exceptions for "SignLanguageApp" folder in "SignLanguageApp" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				SignLanguageApp/App/SignLanguageApp.swift,
-				SignLanguageApp/Assets.xcassets,
-				"SignLanguageApp/Core/Extensions/AVCaptureDevice+Extensions.swift",
-				SignLanguageApp/Core/Logging/AppLogger.swift,
-				SignLanguageApp/Core/Permissions/PermissionService.swift,
-				SignLanguageApp/Features/Content/RootView.swift,
-				SignLanguageApp/Features/History/HistoryView.swift,
-				SignLanguageApp/Features/Onboarding/OnboardingView.swift,
-				SignLanguageApp/Features/Settings/AboutTeamView.swift,
-				SignLanguageApp/Features/Settings/SettingsView.swift,
-				SignLanguageApp/Features/SignToSpeech/CameraPreviewView.swift,
-				SignLanguageApp/Features/SignToSpeech/SignToSpeechStore.swift,
-				SignLanguageApp/Features/SignToSpeech/SignToSpeechView.swift,
-				SignLanguageApp/Features/SpeechToText/SpeechToTextStore.swift,
-				SignLanguageApp/Features/SpeechToText/SpeechToTextView.swift,
-				SignLanguageApp/Models/Conversation.swift,
-				SignLanguageApp/Models/SignPrediction.swift,
-				SignLanguageApp/Models/Transcription.swift,
-				SignLanguageApp/Services/CameraPreviewSource.swift,
-				SignLanguageApp/Services/CameraService.swift,
-				SignLanguageApp/Services/Pipeline/AppError.swift,
-				SignLanguageApp/Services/Pipeline/AppStore.swift,
-				SignLanguageApp/Services/SignLanguageInferencer.swift,
-				SignLanguageApp/Services/SpeechRecognizerService.swift,
-				SignLanguageApp/Services/SpeechSynthesizerService.swift,
-			);
-			target = E6CDA8A430090D84006D829E /* SignLanguageApp */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E6CDA8A730090D84006D829E /* SignLanguageApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				E6CDA8B330090D86006D829E /* Exceptions for "SignLanguageApp" folder in "SignLanguageApp" target */,
-			);
 			path = SignLanguageApp;
 			sourceTree = "<group>";
 		};
@@ -72,13 +34,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		655B08B3300BE172004A57FE /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		E6CDA89C30090D84006D829E = {
 			isa = PBXGroup;
 			children = (
@@ -148,12 +103,6 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E6CDA8A630090D84006D829E /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = 655B08B3300BE172004A57FE /* Products */;
-					ProjectRef = 655B08B1300BE172004A57FE /* SignLanguageApp.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				E6CDA8A430090D84006D829E /* SignLanguageApp */,
@@ -217,6 +166,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				COREML_CODEGEN_LANGUAGE = Swift;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 9W3BCB8Z6Z;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -281,6 +231,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				COREML_CODEGEN_LANGUAGE = Swift;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 9W3BCB8Z6Z;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -310,6 +261,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				COREML_CODEGEN_LANGUAGE = Swift;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 828B5GGY6S;
 				ENABLE_PREVIEWS = YES;
@@ -344,6 +296,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				COREML_CODEGEN_LANGUAGE = Swift;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 828B5GGY6S;
 				ENABLE_PREVIEWS = YES;
