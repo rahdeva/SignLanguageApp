@@ -23,11 +23,9 @@ struct InferenceResult {
     let top3: [(label: String, confidence: Double)]
 }
 
-// MARK: - Multi-modal Skeleton Points (for overlay rendering)
+// MARK: - Skeleton Points (hand overlay only)
 struct SkeletonPoints {
-    var handPoints:  [VNHumanHandPoseObservation.JointName: CGPoint]  = [:]
-    var bodyPoints:  [VNHumanBodyPoseObservation.JointName: CGPoint]   = [:]
-    var mouthPoints: [CGPoint]                                          = []  // 8 mouth contour pts
+    var handPoints: [VNHumanHandPoseObservation.JointName: CGPoint] = [:]
 }
 
 // MARK: - Model Mode
@@ -117,8 +115,6 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
 
     /// Active joint count — updated in loadModel() when mode changes (captureQueue only)
     nonisolated(unsafe) private var activeJoints: Int = 21
-    /// Mouth landmark count — 0 in handOnly mode, 8 in multiModal
-    private let mouthJointCount = 8
 
     // MARK: - Reuse Buffer
     nonisolated(unsafe) private var reuseMultiArray: MLMultiArray? = nil
@@ -285,22 +281,18 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
                                             orientation: orientation,
                                             options: [:])
 
-        // ── 1. Build Vision requests ───────────────────────────────────────────
+        // ── 1. Build Vision request (hand only) ───────────────────────────────
         let handRequest = VNDetectHumanHandPoseRequest()
         handRequest.maximumHandCount = 1
 
-        let bodyRequest = VNDetectHumanBodyPoseRequest()
-
-        let faceRequest = VNDetectFaceLandmarksRequest()
-
         do {
-            try handler.perform([handRequest, bodyRequest, faceRequest])
+            try handler.perform([handRequest])
         } catch {
             handleEmptyFrame()
             return
         }
 
-        // ── 2. Extract Hand keypoints (21) ────────────────────────────────────
+        // ── 2. Extract Hand keypoints (21: wrist + 5 fingers × 4) ─────────────
         var handDisplay: [VNHumanHandPoseObservation.JointName: CGPoint] = [:]
         var handFeats: [[Float]] = []
 
@@ -320,78 +312,24 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
             handFeats = Array(repeating: [0, 0, 0], count: handJoints.count)
         }
 
-        // ── 3. Extract Body keypoints (17) ────────────────────────────────────
-        var bodyDisplay: [VNHumanBodyPoseObservation.JointName: CGPoint] = [:]
-        var bodyFeats: [[Float]] = []
+        // ── 3. Combine features (hand-only, 21 joints) ─────────────────────────
+        let frameJoints: [[Float]] = handFeats
 
-        if let obs = bodyRequest.results?.first,
-           let pts = try? obs.recognizedPoints(.all) {
-            for j in bodyJoints {
-                if let p = pts[j], p.confidence > 0.1 {
-                    bodyFeats.append([Float(p.location.x),
-                                      Float(p.location.y),
-                                      Float(p.confidence)])
-                    bodyDisplay[j] = CGPoint(x: p.location.x, y: p.location.y)
-                } else {
-                    bodyFeats.append([0, 0, 0])
-                }
-            }
-        } else {
-            bodyFeats = Array(repeating: [0, 0, 0], count: bodyJoints.count)
-        }
-
-        // ── 4. Extract Face / Mouth keypoints (8) ─────────────────────────────
-        var mouthDisplay: [CGPoint] = []
-        var mouthFeats: [[Float]] = []
-
-        if let faceObs = faceRequest.results?.first,
-           let landmarks = faceObs.landmarks,
-           let outerLips = landmarks.outerLips {
-
-            // Sample 8 evenly-spaced points from the outer lip contour
-            let allPts = outerLips.normalizedPoints   // in face bounding box coords
-            let faceBox = faceObs.boundingBox         // in image-normalised coords
-            let step = max(1, allPts.count / mouthJointCount)
-            let sampled = stride(from: 0, to: allPts.count, by: step).prefix(mouthJointCount).map {
-                allPts[$0]
-            }
-            // Convert face-local coordinates → image-normalised coordinates
-            for lp in sampled {
-                let imgX = Float(faceBox.minX + lp.x * faceBox.width)
-                let imgY = Float(faceBox.minY + lp.y * faceBox.height)
-                mouthFeats.append([imgX, imgY, 1.0])
-                mouthDisplay.append(CGPoint(x: Double(imgX), y: Double(imgY)))
-            }
-        }
-        // Zero-pad if fewer than 8 mouth points detected
-        while mouthFeats.count < mouthJointCount { mouthFeats.append([0, 0, 0]) }
-        while mouthDisplay.count < mouthJointCount { mouthDisplay.append(.zero) }
-
-        // ── 5. Combine features ────────────────────────────────────────────────
-        // frameJoints[i] = [x, y, confidence]  for i in 0..<totalJoints (46)
-        // ── 5. Combine features based on active model mode ─────────────────────
-        //    handOnly   → 21 joints [60, 3, 21]
-        //    multiModal → 46 joints [60, 3, 46]
-        let frameJoints: [[Float]] = cachedModelMode == .handOnly
-            ? handFeats
-            : handFeats + bodyFeats + mouthFeats
-
-        // Guard: if *everything* is zero (no detection at all), treat as empty
-        let hasAnyDetection = !handDisplay.isEmpty || !bodyDisplay.isEmpty || !mouthDisplay.isEmpty
-        guard hasAnyDetection else {
+        // Guard: no hand detected → treat as empty
+        guard !handDisplay.isEmpty else {
             handleEmptyFrame()
             return
         }
 
-        // ── 6. Update rolling buffer ───────────────────────────────────────────
+        // ── 4. Update rolling buffer ───────────────────────────────────────────
         emptyFrameCounter = 0
         frameBuffer.append(frameJoints)
         if frameBuffer.count > windowSize { frameBuffer.removeFirst() }
 
-        let count     = frameBuffer.count
+        let count      = frameBuffer.count
         let bufferFull = count == windowSize
 
-        // ── 7. Convert coordinates → layer pixels on main thread ───────────────
+        // ── 5. Convert coordinates → layer pixels on main thread ───────────────
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.bufferCount = count
@@ -409,19 +347,9 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
                 let convertedHand = Dictionary(uniqueKeysWithValues: handDisplay.map {
                     ($0.key, layer.layerPointConverted(fromCaptureDevicePoint: toCapture($0.value)))
                 })
-                let convertedBody = Dictionary(uniqueKeysWithValues: bodyDisplay.map {
-                    ($0.key, layer.layerPointConverted(fromCaptureDevicePoint: toCapture($0.value)))
-                })
-                let convertedMouth = mouthDisplay.map {
-                    layer.layerPointConverted(fromCaptureDevicePoint: toCapture($0))
-                }
-                self.skeleton = SkeletonPoints(handPoints: convertedHand,
-                                               bodyPoints: convertedBody,
-                                               mouthPoints: convertedMouth)
+                self.skeleton = SkeletonPoints(handPoints: convertedHand)
             } else {
-                self.skeleton = SkeletonPoints(handPoints: handDisplay,
-                                               bodyPoints: bodyDisplay,
-                                               mouthPoints: mouthDisplay)
+                self.skeleton = SkeletonPoints(handPoints: handDisplay)
             }
         }
 

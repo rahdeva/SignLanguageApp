@@ -1,15 +1,17 @@
 //
-//  ContentView.swift
+//  SignToSpeechView.swift
 //  SignLanguageApp
 //
-//  Created by rahdeva on 16/07/26.
+//  Created by Muhammad Hisyam Kamil on 17/07/26.
+//  Updated by Antigravity to unify with multi-modal CoreML vision & sentence engine.
 //
 
+import AVFoundation
 import SwiftUI
 
-struct ContentView: View {
-    @StateObject private var cameraManager   = CameraManager()
-    @StateObject private var recognizer      = SignRecognitionEngine(
+struct SignToSpeechView: View {
+    @StateObject private var cameraManager = CameraManager()
+    @StateObject private var recognizer = SignRecognitionEngine(
         stableThreshold: 2, cooldownThreshold: 5, maxWords: 12
     )
     @State private var showConfidenceDetails: Bool = true
@@ -26,20 +28,23 @@ struct ContentView: View {
         ZStack {
             // MARK: - Camera & Skeleton Overlay
             if cameraManager.permissionGranted {
-                ZStack {
-                    CameraPreviewView(
-                        session: cameraManager.session,
-                        isFrontCamera: cameraManager.isFrontCamera,
-                        cameraManager: cameraManager
-                    )
-                    .ignoresSafeArea()
+                GeometryReader { geo in
+                    ZStack {
+                        CameraPreviewView(
+                            session: cameraManager.session,
+                            isFrontCamera: cameraManager.isFrontCamera,
+                            cameraManager: cameraManager
+                        )
 
-                    HandOverlayView(handPoints: cameraManager.handPoints)
-                        .ignoresSafeArea()
-
-                    BodyOverlayView(skeleton: cameraManager.skeleton)
-                        .ignoresSafeArea()
+                        HandOverlayView(handPoints: cameraManager.handPoints)
+                    }
+                    // The raw sensor frame is landscape; rotate the whole ZStack 90°
+                    // so it fills the screen in portrait without touching AVFoundation.
+                    .rotationEffect(.degrees(90))
+                    .frame(width: geo.size.height, height: geo.size.width)
+                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
                 }
+                .ignoresSafeArea()
             } else {
                 permissionDeniedView
             }
@@ -148,6 +153,7 @@ struct ContentView: View {
                             lineWidth: 1
                         ))
                 }
+                // Flip camera button
                 Button(action: { withAnimation(.spring()) { cameraManager.toggleCamera() } }) {
                     Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
                         .font(.system(size: 14, weight: .semibold))
@@ -456,5 +462,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    SignToSpeechView()
 }
