@@ -80,12 +80,12 @@ final class SignToSpeechStore {
         isFrontCamera = await appStore.cameraService.currentPosition == .front
     }
 
-    /// Speak the latest prediction aloud.
+    /// Speak the latest prediction aloud using the current TTS language.
     func speakPrediction() {
         let text = predictedText
         guard !text.isEmpty else { return }
         Task {
-            await appStore.synthesizerService.speak(text)
+            await appStore.speak(text)
             appStore.addToHistory(message: text, role: .assistantSpoke)
         }
     }

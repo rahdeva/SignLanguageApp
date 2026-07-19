@@ -17,6 +17,9 @@ final class AppStore {
     private(set) var synthesizerService: SpeechSynthesizerService
     private(set) var inferencer: SignLanguageInferencing
 
+    // MARK: - Language
+    var languageSettings: LanguageSettings = LanguageSettings()
+
     // MARK: - Speech-to-Text
     var speechToTextOutput: String = ""
     var isTranscribing = false
@@ -60,5 +63,10 @@ final class AppStore {
 
     func addToHistory(message: String, role: ConversationRole) {
         conversationHistory.append(Conversation(message: message, role: role))
+    }
+
+    /// Speak text aloud using the current TTS language setting.
+    func speak(_ text: String) async {
+        await synthesizerService.speak(text, language: languageSettings.ttsLanguage)
     }
 }

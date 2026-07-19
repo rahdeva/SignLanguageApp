@@ -31,7 +31,9 @@ enum SpeechError: LocalizedError {
 actor SpeechRecognizerService {
     private let audioEngine = AVAudioEngine()
     private var recognitionTask: SFSpeechRecognitionTask?
+    private var audioRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognizer: SFSpeechRecognizer?
+    private var isStopping = false
 
     /// Start recognition for the given locale. Outputs partial results as they arrive.
     func start(locale: Locale = .current) -> AsyncThrowingStream<String, Error>
@@ -51,6 +53,7 @@ actor SpeechRecognizerService {
                         throw SpeechError.unavailable
                     }
                     self.recognizer = recognizer
+                    self.isStopping = false
 
                     let audioSession = AVAudioSession.sharedInstance()
                     try audioSession.setCategory(
@@ -68,6 +71,7 @@ actor SpeechRecognizerService {
 
                     let request = SFSpeechAudioBufferRecognitionRequest()
                     request.shouldReportPartialResults = true
+                    self.audioRequest = request
 
                     inputNode.installTap(
                         onBus: 0,
@@ -81,17 +85,29 @@ actor SpeechRecognizerService {
                     try audioEngine.start()
 
                     recognitionTask = recognizer.recognitionTask(with: request)
-                    { result, error in
+                    { [weak self] result, error in
                         if let error {
-                            continuation.finish(
-                                throwing: SpeechError.recognitionFailed(error)
-                            )
+                            let nsError = error as NSError
+                            let isCancelled = nsError.domain == "kAFAssistantErrorDomain" ||
+                                              nsError.code == 2160 || nsError.code == 2048 ||
+                                              error.localizedDescription.localizedCaseInsensitiveContains("cancel") ||
+                                              (self?.isStopping ?? false)
+                            if isCancelled {
+                                continuation.finish()
+                            } else {
+                                continuation.finish(
+                                    throwing: SpeechError.recognitionFailed(error)
+                                )
+                            }
                             return
                         }
                         if let result {
                             continuation.yield(
                                 result.bestTranscription.formattedString
                             )
+                            if result.isFinal {
+                                continuation.finish()
+                            }
                         }
                     }
 
@@ -107,16 +123,21 @@ actor SpeechRecognizerService {
         }
     }
 
-    /// Cancel current recognition and release audio resources.
+    /// Cancel current recognition and release audio resources cleanly.
     func stop() {
+        isStopping = true
+        audioRequest?.endAudio()
         cleanup()
     }
 
     private func cleanup() {
         recognitionTask?.cancel()
         recognitionTask = nil
-        audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
+        audioRequest = nil
+        if audioEngine.isRunning {
+            audioEngine.stop()
+            audioEngine.inputNode.removeTap(onBus: 0)
+        }
         try? AVAudioSession.sharedInstance().setActive(false)
     }
 }

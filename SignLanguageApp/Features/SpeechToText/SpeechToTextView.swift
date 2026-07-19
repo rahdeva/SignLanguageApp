@@ -24,7 +24,7 @@ struct SpeechToTextView: View {
                             .font(.system(size: 60))
                             .symbolEffect(.bounce, options: .repeating)
                             .foregroundStyle(.tint)
-                        Text("Listening...")
+                        Text("speech.listening", tableName: "Localizable")
                             .font(.headline)
                             .foregroundStyle(.secondary)
                     }
@@ -38,7 +38,7 @@ struct SpeechToTextView: View {
                 Text(
                     (store?.transcribedText ?? appStore.speechToTextOutput)
                         .isEmpty
-                        ? "Tap the microphone to start"
+                        ? "speech.placeholder_short".localized(for: appStore.languageSettings.appLanguage)
                         : appStore.speechToTextOutput
                 )
                 .font(.title2)
@@ -55,17 +55,17 @@ struct SpeechToTextView: View {
                 recordButton
             }
             .padding()
-            .navigationTitle("Speech to Text")
+            .navigationTitle(Text("speech.title", tableName: "Localizable"))
             .onAppear { store = SpeechToTextStore(appStore: appStore) }
             .alert(
-                "Error",
+                Text("common.error", tableName: "Localizable"),
                 isPresented: Binding(
                     get: { appStore.showingError },
                     set: { appStore.showingError = $0 }
                 )
             ) {
-                Button("OK") { appStore.dismissError() }
-                Button("Settings") { PermissionService.openSettings() }
+                Button(LocalizedStringKey("common.ok")) { appStore.dismissError() }
+                Button(LocalizedStringKey("common.settings")) { PermissionService.openSettings() }
             } message: {
                 Text(appStore.error?.localizedDescription ?? "")
             }
@@ -85,7 +85,9 @@ struct SpeechToTextView: View {
             }
         } label: {
             Label(
-                isRecording ? "Stop Recording" : "Start Recording",
+                isRecording
+                    ? LocalizedStringKey("speech.stop")
+                    : LocalizedStringKey("speech.start"),
                 systemImage: isRecording
                     ? "stop.circle.fill" : "mic.circle.fill"
             )

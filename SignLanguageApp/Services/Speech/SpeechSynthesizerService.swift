@@ -17,11 +17,10 @@ actor SpeechSynthesizerService {
         synthesizer.delegate = delegate
     }
 
-    /// Speak the given text. Defaults to Indonesian voice, falls back to English.
-    func speak(_ text: String, voice: AVSpeechSynthesisVoice? = nil) async {
+    /// Speak the given text in the specified `AppLanguage`.
+    func speak(_ text: String, language: AppLanguage = .indonesian) async {
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice =
-            voice ?? .init(language: "id-ID") ?? .init(language: "en-US")
+        utterance.voice = language.voice
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
 
         try? AVAudioSession.sharedInstance().setCategory(

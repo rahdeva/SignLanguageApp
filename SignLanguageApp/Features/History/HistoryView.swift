@@ -15,13 +15,14 @@ struct HistoryView: View {
         NavigationStack {
             Group {
                 if appStore.conversationHistory.isEmpty {
-                    ContentUnavailableView(
-                        "No History",
-                        systemImage: "clock.arrow.circlepath",
-                        description: Text(
-                            "Start transcribing or signing to build your conversation history."
+                    ContentUnavailableView {
+                        Label(
+                            LocalizedStringKey("history.empty_title"),
+                            systemImage: "clock.arrow.circlepath"
                         )
-                    )
+                    } description: {
+                        Text("history.empty_desc", tableName: "Localizable")
+                    }
                 } else {
                     List(appStore.conversationHistory.reversed()) { entry in
                         VStack(alignment: .leading, spacing: 4) {
@@ -42,7 +43,7 @@ struct HistoryView: View {
                     .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("History")
+            .navigationTitle(Text("history.title", tableName: "Localizable"))
         }
     }
 }
