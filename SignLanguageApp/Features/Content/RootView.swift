@@ -55,17 +55,17 @@ struct RootView: View {
                         }
                         .tag(AppTab.conversation)
 
-                    SpeechToTextView()
-                        .tabItem {
-                            Label(AppTab.speechToText.titleKey, systemImage: AppTab.speechToText.icon)
-                        }
-                        .tag(AppTab.speechToText)
+//                    SpeechToTextView()
+//                        .tabItem {
+//                            Label(AppTab.speechToText.titleKey, systemImage: AppTab.speechToText.icon)
+//                        }
+//                        .tag(AppTab.speechToText)
 
-                    SignToSpeechView()
-                        .tabItem {
-                            Label(AppTab.signToSpeech.titleKey, systemImage: AppTab.signToSpeech.icon)
-                        }
-                        .tag(AppTab.signToSpeech)
+//                    SignToSpeechView()
+//                        .tabItem {
+//                            Label(AppTab.signToSpeech.titleKey, systemImage: AppTab.signToSpeech.icon)
+//                        }
+//                        .tag(AppTab.signToSpeech)
 
                     HistoryView()
                         .tabItem {
@@ -73,11 +73,11 @@ struct RootView: View {
                         }
                         .tag(AppTab.history)
                     
-                    UnifiedView()
-                        .tabItem {
-                            Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
-                        }
-                        .tag(AppTab.history)
+//                    UnifiedView()
+//                        .tabItem {
+//                            Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
+//                        }
+//                        .tag(AppTab.history)
 
                     SettingsView()
                         .tabItem {

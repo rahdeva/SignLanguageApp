@@ -32,6 +32,19 @@ final class TwoWayConversationStore: ObservableObject {
     @Published var winkProgress: Double = 0.0
     @Published var lastTTSMessage: String = ""
     @Published var isEyeControlledEnabled: Bool = true
+    /// Toggle to enable/disable AI sentence refinement right before TTS speaking
+    @Published var isAIRefinementEnabled: Bool = true {
+        didSet { recognizer.isAIRefinementEnabled = isAIRefinementEnabled }
+    }
+    /// Whether sign language detection mode is currently active (winking or actively signing)
+    var isSignDetectionActiveForOverlay: Bool {
+        switch state {
+        case .signLanguageActive, .winkingTrigger:
+            return true
+        case .speechToTextActive, .speakingTTS:
+            return false
+        }
+    }
 
     // MARK: - Dependencies
     let cameraManager: CameraManager
@@ -233,25 +246,33 @@ final class TwoWayConversationStore: ObservableObject {
         guard case .signLanguageActive = state else { return }
         state = .speakingTTS
 
-        // Prepare sentence to speak
-        var textToSpeak = recognizer.builtSentence
-        if textToSpeak.isEmpty && !recognizer.wordSequence.isEmpty {
-            recognizer.buildSentence()
-            textToSpeak = recognizer.wordSequence.map(\.text).joined(separator: " ")
-        }
-
-        guard !textToSpeak.isEmpty else {
-            // Nothing signed, smoothly return to speech-to-text
-            state = .speechToTextActive
-            speechStore?.startRecording()
-            return
-        }
-
-        lastTTSMessage = textToSpeak
-
         Task {
+            // Prepare sentence to speak
+            var textToSpeak = recognizer.builtSentence
+            if isAIRefinementEnabled && !recognizer.wordSequence.isEmpty {
+                // When signer opens both eyes, run FoundationModels to refine raw tokens into a natural sentence before TTS
+                if textToSpeak.isEmpty || recognizer.isBuildingSentence {
+                    textToSpeak = await recognizer.buildSentenceAsync()
+                }
+            } else if !recognizer.wordSequence.isEmpty {
+                // If AI refinement is disabled, join raw words directly if builtSentence is empty
+                if textToSpeak.isEmpty {
+                    textToSpeak = recognizer.wordSequence.map(\.text).joined(separator: " ")
+                }
+            }
+
+            guard !textToSpeak.isEmpty else {
+                // Nothing signed, smoothly return to speech-to-text
+                self.state = .speechToTextActive
+                self.speechStore?.startRecording()
+                return
+            }
+
+            self.lastTTSMessage = textToSpeak
+
             // Speak text aloud and suspend until speech finished (`didFinish`)
-            if let appStore {
+            if let appStore = self.appStore {
+                appStore.addToHistory(message: textToSpeak, role: .userSigned)
                 await appStore.speak(textToSpeak)
             }
 

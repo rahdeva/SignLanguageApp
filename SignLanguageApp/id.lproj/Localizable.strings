@@ -116,6 +116,7 @@
 "conv.hint_open_eyes"                = "Buka kedua mata untuk membacakan via TTS";
 "conv.speaking"                      = "MEMBACAKAN VIA TTS...";
 "conv.eye_control"                   = "Kontrol Mata";
+"conv.ai_refinement"                 = "AI Tata Bahasa";
 "conv.face_none"                     = "Wajah Tidak Terdeteksi";
 "conv.eyes_closed"                   = "Mata Terpejam";
 "conv.eyes_wink"                     = "Satu Mata Terpejam";

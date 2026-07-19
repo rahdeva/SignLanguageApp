@@ -32,6 +32,8 @@ final class SignRecognitionEngine: ObservableObject {
     @Published var sentenceError: String? = nil
     /// Countdown to auto-build, 0.0 when idle (not waiting)
     @Published var silenceProgress: Double = 0.0
+    /// Toggle to enable or disable AI grammar refinement (`checkFM`) via FoundationModels
+    @Published var isAIRefinementEnabled: Bool = true
 
     // MARK: - Configuration
     /// Consecutive inference windows that must agree before accepting a word.
@@ -147,6 +149,18 @@ final class SignRecognitionEngine: ObservableObject {
         }
     }
 
+    func buildSentenceAsync() async -> String {
+        cancelSilenceTimer()
+        let words = wordSequence.map(\.text)
+        guard !words.isEmpty else { return "" }
+        isBuildingSentence = true
+        sentenceError = nil
+        let result = await buildWithFoundationModels(words: words)
+        builtSentence = result
+        isBuildingSentence = false
+        return result
+    }
+
     // MARK: - Private Helpers
 
     private func acceptWord(_ word: String) {
@@ -222,13 +236,16 @@ final class SignRecognitionEngine: ObservableObject {
 
     // MARK: - Foundation Models
     private func buildWithFoundationModels(words: [String]) async -> String {
-        if #available(iOS 26.0, macOS 26.0, *) {
+        guard isAIRefinementEnabled else {
+            return fallbackSentence(words: words)
+        }
+        if #available(iOS 18.0, macOS 15.0, *) {
             return await buildWithAI(words: words)
         }
         return fallbackSentence(words: words)
     }
 
-    @available(iOS 26.0, macOS 26.0, *)
+    @available(iOS 18.0, macOS 15.0, *)
     private func buildWithAI(words: [String]) async -> String {
         if let sentence = try? await checkFM(input: words), !sentence.isEmpty {
             return sentence

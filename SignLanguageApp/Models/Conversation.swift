@@ -11,11 +11,22 @@ import Foundation
 enum ConversationRole: String, Sendable, Codable {
     case userSigned, userSpoke, assistantSpoke
 
+    func label(for language: AppLanguage) -> String {
+        switch self {
+        case .userSigned:
+            return language == .indonesian ? "Anda (Isyarat)" : "You (Sign)"
+        case .userSpoke:
+            return language == .indonesian ? "Caregiver (Suara)" : "Caregiver (Speech)"
+        case .assistantSpoke:
+            return language == .indonesian ? "Asisten" : "Assistant"
+        }
+    }
+
     var label: String {
         switch self {
-        case .userSigned: "You (Sign)"
-        case .userSpoke: "You (Speech)"
-        case .assistantSpoke: "Assistant"
+        case .userSigned: "Anda (Isyarat)"
+        case .userSpoke: "Caregiver (Suara)"
+        case .assistantSpoke: "Asisten"
         }
     }
 }

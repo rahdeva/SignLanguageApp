@@ -27,7 +27,7 @@ struct HistoryView: View {
                     List(appStore.conversationHistory.reversed()) { entry in
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
-                                Text(entry.role.label)
+                                Text(entry.role.label(for: appStore.languageSettings.appLanguage))
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(.tint)
                                 Spacer()
