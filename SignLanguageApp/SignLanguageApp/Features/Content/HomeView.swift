@@ -32,21 +32,25 @@ struct HomeView: View {
                         NavigationLink(destination: SignToSpeechView()) {
                             FeatureCard(
                                 title: "Sign to Speech",
-                                subtitle: "Translate sign language into spoken words.",
-                                iconName: "hand.raised.fill",
-                                gradientColors: [Color.blue, Color.cyan]
+                                description: "Translate sign language into spoken words.",
+                                characterAsset: "person_signing",
+                                cardColor: Color("CardColor1")
                             )
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .buttonStyle(.plain)
                         
                         // FEATURE 2: Speech to Text
                         NavigationLink(destination: SpeechToTextView()) {
                             FeatureCard(
                                 title: "Speech to Text",
-                                subtitle: "Transcribe spoken words for you to read.",
-                                iconName: "waveform.circle.fill",
-                                gradientColors: [Color.teal, Color.mint]
+                                description: "Transcribe spoken words for you to read.",
+                                characterAsset: "person_speech",
+                                cardColor: Color("CardColor2")
                             )
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .buttonStyle(.plain)
                     }
                     .padding(.horizontal)
                 }

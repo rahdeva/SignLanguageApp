@@ -29,6 +29,9 @@ enum AppStyle {
         static let caption: SwiftUI.Font = .caption
         static let emphasizedCaption: SwiftUI.Font = .caption.weight(.semibold)
         static let smallCaption: SwiftUI.Font = .caption2
+        static let featureCardTitle: SwiftUI.Font = .title3.weight(.bold)
+        static let featureCardDescription: SwiftUI.Font = .subheadline
+        static let featureCardButton: SwiftUI.Font = .caption.weight(.semibold)
     }
 
     enum Color {
@@ -38,5 +41,24 @@ enum AppStyle {
         static let stopAction = SwiftUI.Color.red
         static let panelBackground = SwiftUI.Color(.quaternaryLabel).opacity(0.3)
         static let shadow = SwiftUI.Color.black.opacity(0.15)
+        static let featureCardButtonBackground = SwiftUI.Color(uiColor: .systemBackground)
+    }
+
+    enum Layout {
+        static let featureCardHeight: CGFloat = 190
+        static let featureCardHorizontalSpacing: CGFloat = 12
+        static let featureCardTextSpacing: CGFloat = 6
+        static let featureCardContentInset: CGFloat = 24
+        static let featureCardTopImageSpacing: CGFloat = 8
+        static let featureCardCharacterWidth: CGFloat = 130
+        static let featureCardCharacterHeight: CGFloat = 130
+        static let featureCardCharacterScale: CGFloat = 1.2
+        static let featureCardTextTrailingSpace: CGFloat = 132
+        static let featureCardTextBottomPadding: CGFloat = 20
+        static let featureCardButtonHorizontalPadding: CGFloat = 32
+        static let featureCardButtonVerticalPadding: CGFloat = 12
+        static let featureCardButtonBottomPadding: CGFloat = 20
+        static let featureCardCornerRadius: CGFloat = 32
+        static let featureCardButtonCornerRadius: CGFloat = 14
     }
 }
