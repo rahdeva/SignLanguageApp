@@ -76,6 +76,7 @@ struct RootView: View {
             }
         }
         // Re-render entire subtree when app language changes
+        .id(appStore.languageSettings.appLanguage)
         .environment(\.locale, appStore.languageSettings.appLanguage.locale)
         .animation(.default, value: showOnboarding)
     }

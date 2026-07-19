@@ -21,8 +21,8 @@ struct SignToSpeechView: View {
     private func displaySign(for raw: String) -> String {
         if raw == "Detecting..." || raw == "Uncertain" {
             return raw == "Detecting..."
-                ? NSLocalizedString("sign.detecting", tableName: "Localizable", comment: "")
-                : NSLocalizedString("sign.uncertain", tableName: "Localizable", comment: "")
+                ? "sign.detecting".localized(for: appStore.languageSettings.appLanguage)
+                : "sign.uncertain".localized(for: appStore.languageSettings.appLanguage)
         }
         let cleaned = SignRecognitionEngine.cleanLabel(raw)
         return SignLabelTranslator.translate(cleaned, to: appStore.languageSettings.ttsLanguage)
@@ -107,7 +107,7 @@ struct SignToSpeechView: View {
                     .fill(cameraManager.bufferCount == 60 ? Color.green : Color.orange)
                     .frame(width: 10, height: 10)
                     .shadow(color: cameraManager.bufferCount == 60 ? .green : .orange, radius: 4)
-                Text("BISINDO AI")
+                Text("sign.app_badge", tableName: "Localizable")
                     .font(.system(size: 14, weight: .black, design: .rounded))
                     .tracking(1.2)
                     .foregroundColor(.white)
@@ -128,7 +128,7 @@ struct SignToSpeechView: View {
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .foregroundColor(.cyan)
                 } else {
-                    Text("LIVE")
+                    Text("sign.live", tableName: "Localizable")
                         .font(.system(size: 11, weight: .heavy, design: .rounded))
                         .foregroundColor(.black)
                         .padding(.horizontal, 8).padding(.vertical, 3)
@@ -184,7 +184,7 @@ struct SignToSpeechView: View {
     private var wordSequenceRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Label("KATA TERDETEKSI", systemImage: "text.word.spacing")
+                Label(LocalizedStringKey("sign.words_detected"), systemImage: "text.word.spacing")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .tracking(0.8)
                     .foregroundColor(.secondary)
@@ -261,7 +261,7 @@ struct SignToSpeechView: View {
     private var sentencePanel: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label("KALIMAT", systemImage: "text.bubble.fill")
+                Label(LocalizedStringKey("sign.sentence_label"), systemImage: "text.bubble.fill")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .tracking(0.8)
                     .foregroundColor(.secondary)
@@ -280,7 +280,7 @@ struct SignToSpeechView: View {
                 HStack(spacing: 10) {
                     ProgressView()
                         .tint(.cyan)
-                    Text("Menyusun kalimat...")
+                    Text("sign.sentence_building", tableName: "Localizable")
                         .font(.system(size: 14, design: .rounded))
                         .foregroundColor(.secondary)
                 }
@@ -295,7 +295,7 @@ struct SignToSpeechView: View {
                     Button(action: {
                         UIPasteboard.general.string = recognizer.builtSentence
                     }) {
-                        Label("Salin", systemImage: "doc.on.doc")
+                        Label(LocalizedStringKey("sign.copy"), systemImage: "doc.on.doc")
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
                     }
                     .foregroundColor(.cyan)
@@ -303,7 +303,7 @@ struct SignToSpeechView: View {
                     Spacer()
 
                     Button(action: { recognizer.buildSentence() }) {
-                        Label("Ulangi", systemImage: "arrow.clockwise")
+                        Label(LocalizedStringKey("sign.retry"), systemImage: "arrow.clockwise")
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
                     }
                     .foregroundColor(.cyan.opacity(0.7))
@@ -313,7 +313,7 @@ struct SignToSpeechView: View {
                     .font(.system(size: 13, design: .rounded))
                     .foregroundColor(.orange)
             } else {
-                Text("Menyusun otomatis setelah jeda...")
+                Text("sign.sentence_auto", tableName: "Localizable")
                     .font(.system(size: 13, design: .rounded))
                     .foregroundColor(.secondary)
             }
@@ -337,7 +337,7 @@ struct SignToSpeechView: View {
             // Main Action Title
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("DETECTED BISINDO SIGN")
+                    Text("sign.detected_title", tableName: "Localizable")
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .tracking(1.0)
                         .foregroundColor(.secondary)
@@ -372,7 +372,7 @@ struct SignToSpeechView: View {
                     VStack(spacing: 0) {
                         Text("\(Int(cameraManager.currentConfidence * 100))%")
                             .font(.system(size: 14, weight: .black, design: .rounded))
-                        Text("CONF")
+                        Text("sign.conf", tableName: "Localizable")
                             .font(.system(size: 8, weight: .bold, design: .rounded))
                             .foregroundColor(.secondary)
                     }
@@ -386,7 +386,7 @@ struct SignToSpeechView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("TOP CANDIDATES")
+                        Text("sign.top_candidates", tableName: "Localizable")
                             .font(.system(size: 10, weight: .bold, design: .rounded))
                             .foregroundColor(.secondary)
                         Spacer()
@@ -452,9 +452,9 @@ struct SignToSpeechView: View {
             Image(systemName: "camera.fill.badge.ellipsis")
                 .font(.system(size: 60))
                 .foregroundColor(.orange)
-            Text("Camera Access Required")
+            Text("sign.camera_required_title", tableName: "Localizable")
                 .font(.system(size: 22, weight: .bold, design: .rounded))
-            Text("To detect Bisindo hand signs in real-time, please allow camera access in your device settings.")
+            Text("sign.camera_required_desc", tableName: "Localizable")
                 .font(.system(size: 15)).foregroundColor(.secondary)
                 .multilineTextAlignment(.center).padding(.horizontal, 32)
             Button(action: {
@@ -462,7 +462,7 @@ struct SignToSpeechView: View {
                     UIApplication.shared.open(url)
                 }
             }) {
-                Text("Open Settings")
+                Text("sign.open_settings", tableName: "Localizable")
                     .font(.system(size: 16, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .padding(.horizontal, 24).padding(.vertical, 14)
