@@ -27,15 +27,15 @@ struct HistoryView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text(entry.role.label)
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.tint)
+                                    .font(AppStyle.Font.emphasizedCaption)
+                                    .foregroundStyle(AppStyle.Color.accent)
                                 Spacer()
                                 Text(entry.timestamp, style: .time)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .font(AppStyle.Font.smallCaption)
+                                    .foregroundStyle(AppStyle.Color.secondaryText)
                             }
                             Text(entry.message)
-                                .font(.body)
+                                .font(AppStyle.Font.body)
                         }
                         .padding(.vertical, 4)
                     }

@@ -21,17 +21,17 @@ struct SpeechToTextView: View {
                 if appStore.isTranscribing {
                     VStack(spacing: 16) {
                         Image(systemName: "waveform")
-                            .font(.system(size: 60))
+                            .font(AppStyle.Font.recordingIcon)
                             .symbolEffect(.bounce, options: .repeating)
-                            .foregroundStyle(.tint)
+                            .foregroundStyle(AppStyle.Color.accent)
                         Text("Listening...")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
+                            .font(AppStyle.Font.headline)
+                            .foregroundStyle(AppStyle.Color.secondaryText)
                     }
                 } else {
                     Image(systemName: "mic.slash")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.tertiary)
+                        .font(AppStyle.Font.idleIcon)
+                        .foregroundStyle(AppStyle.Color.tertiaryText)
                 }
 
                 // Transcribed text display
@@ -41,12 +41,12 @@ struct SpeechToTextView: View {
                         ? "Tap the microphone to start"
                         : appStore.speechToTextOutput
                 )
-                .font(.title2)
+                .font(AppStyle.Font.sectionTitle)
                 .multilineTextAlignment(.center)
                 .padding()
                 .frame(maxWidth: .infinity, minHeight: 100)
                 .background(
-                    .quaternary.opacity(0.3),
+                    AppStyle.Color.panelBackground,
                     in: .rect(cornerRadius: 16)
                 )
 
@@ -89,12 +89,12 @@ struct SpeechToTextView: View {
                 systemImage: isRecording
                     ? "stop.circle.fill" : "mic.circle.fill"
             )
-            .font(.title2.weight(.semibold))
+            .font(AppStyle.Font.actionTitle)
             .frame(maxWidth: .infinity)
             .padding()
         }
         .buttonStyle(.glass)
-        .tint(isRecording ? .red : nil)
+        .tint(isRecording ? AppStyle.Color.stopAction : nil)
         .padding(.horizontal)
         .disabled(appStore.error != nil)
     }

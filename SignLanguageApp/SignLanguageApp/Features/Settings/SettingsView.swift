@@ -21,12 +21,12 @@ struct SettingsView: View {
                     Toggle(isOn: $hasSeenOnboarding) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Show Onboarding on Launch")
-                                .font(.body)
+                                .font(AppStyle.Font.body)
                             Text(
                                 "Replay the introduction screens next time you open the app"
                             )
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(AppStyle.Font.caption)
+                            .foregroundStyle(AppStyle.Color.secondaryText)
                         }
                     }
                     .onChange(of: hasSeenOnboarding) { _, newValue in
@@ -77,7 +77,7 @@ struct SettingsView: View {
                                 "CFBundleShortVersionString"
                             ] as? String ?? "1.0"
                         )
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppStyle.Color.secondaryText)
                     }
                 }
             }

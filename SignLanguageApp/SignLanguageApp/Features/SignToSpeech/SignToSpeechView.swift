@@ -26,7 +26,7 @@ struct SignToSpeechView: View {
                             .overlay(alignment: .topTrailing) {
                                 if appStore.isPredicting {
                                     Image(systemName: "viewfinder")
-                                        .font(.title3)
+                                        .font(AppStyle.Font.toolbarIcon)
                                         .symbolEffect(.pulse)
                                         .padding(8)
                                         .background(
@@ -54,12 +54,12 @@ struct SignToSpeechView: View {
 
                 // Prediction output
                 Text(store?.predictedText ?? "No sign detected")
-                    .font(.title2.weight(.medium))
+                    .font(AppStyle.Font.emphasizedSectionTitle)
                     .multilineTextAlignment(.center)
                     .padding()
                     .frame(maxWidth: .infinity, minHeight: 80)
                     .background(
-                        .quaternary.opacity(0.3),
+                        AppStyle.Color.panelBackground,
                         in: .rect(cornerRadius: 12)
                     )
 
@@ -88,7 +88,7 @@ struct SignToSpeechView: View {
                             .padding()
                         }
                         .buttonStyle(.glass)
-                        .tint(store.isCapturing ? .red : nil)
+                        .tint(store.isCapturing ? AppStyle.Color.stopAction : nil)
                         .disabled(isBusy)
                         .opacity(isBusy ? 0.6 : 1)
 
@@ -97,7 +97,7 @@ struct SignToSpeechView: View {
                                 store.speakPrediction()
                             } label: {
                                 Image(systemName: "speaker.wave.2.fill")
-                                    .font(.title2)
+                                    .font(AppStyle.Font.sectionTitle)
                                     .frame(width: 52, height: 52)
                             }
                             .buttonStyle(.glassProminent)
@@ -132,13 +132,13 @@ struct SignToSpeechView: View {
             Task { await store?.flipCamera() }
         } label: {
             Image(systemName: "arrow.triangle.2.circlepath")
-                .font(.title2.weight(.semibold))
+                .font(AppStyle.Font.actionTitle)
                 .padding(10)
                 .background(.ultraThinMaterial, in: .circle)
                 .clipShape(.circle)
         }
         .buttonStyle(.plain)
-        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+        .shadow(color: AppStyle.Color.shadow, radius: 4, y: 2)
         .help(isFront ? "Switch to rear camera" : "Switch to front camera")
     }
 }

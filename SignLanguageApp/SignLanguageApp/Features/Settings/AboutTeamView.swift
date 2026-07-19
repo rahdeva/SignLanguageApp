@@ -28,7 +28,7 @@ struct AboutTeamView: View {
             ForEach(shuffled.indices, id: \.self) { index in
                 HStack {
                     Text(shuffled[index].emoji)
-                        .font(.title2)
+                        .font(AppStyle.Font.sectionTitle)
                     Text(shuffled[index].name)
                 }
             }

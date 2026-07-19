@@ -42,7 +42,7 @@ struct OnboardingView: View {
                     }
                 } label: {
                     Text(isLastPage ? "Get Started" : "Next")
-                        .font(.headline.weight(.semibold))
+                        .font(AppStyle.Font.emphasizedHeadline)
                         .frame(maxWidth: .infinity)
                         .padding()
                 }
@@ -51,8 +51,8 @@ struct OnboardingView: View {
 
                 // Info about replaying via Settings
                 Text("You can replay this anytime in Settings")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(AppStyle.Font.caption)
+                    .foregroundStyle(AppStyle.Color.secondaryText)
             }
             .padding(.bottom, 40)
             .padding(.top, 16)
@@ -65,17 +65,17 @@ struct OnboardingView: View {
             Spacer()
 
             Image(systemName: page.icon)
-                .font(.system(size: 72))
-                .foregroundStyle(.tint)
+                .font(AppStyle.Font.largeIcon)
+                .foregroundStyle(AppStyle.Color.accent)
                 .symbolEffect(.bounce, options: .repeating)
 
             Text(page.title)
-                .font(.largeTitle.weight(.bold))
+                .font(AppStyle.Font.primaryTitle)
                 .multilineTextAlignment(.center)
 
             Text(page.subtitle)
-                .font(.body)
-                .foregroundStyle(.secondary)
+                .font(AppStyle.Font.body)
+                .foregroundStyle(AppStyle.Color.secondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 

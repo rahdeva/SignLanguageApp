@@ -52,7 +52,7 @@ struct HomeView: View {
                 }
                 .padding(.bottom, 40)
             }
-            .navigationTitle("SignConnect")
+            .navigationTitle("SigningOut")
             .background(Color(UIColor.systemGroupedBackground).edgesIgnoringSafeArea(.all))
         }
         .tint(.primary)
