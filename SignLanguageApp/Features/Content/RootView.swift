@@ -67,10 +67,7 @@ struct RootView: View {
                     
                     UnifiedView()
                         .tabItem {
-                            Label(
-                                AppTab.history.title,
-                                systemImage: AppTab.history.icon
-                            )
+                            Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
                         }
                         .tag(AppTab.history)
 
