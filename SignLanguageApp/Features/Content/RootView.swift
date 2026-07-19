@@ -9,10 +9,11 @@ import SwiftUI
 
 /// Navigation tabs for the two main pipelines plus history log.
 enum AppTab: String, CaseIterable {
-    case speechToText, signToSpeech, history, settings
+    case conversation, speechToText, signToSpeech, history, settings
 
     var titleKey: LocalizedStringKey {
         switch self {
+        case .conversation: "tab.conversation"
         case .speechToText: "tab.speech"
         case .signToSpeech: "tab.sign"
         case .history:      "tab.history"
@@ -22,6 +23,7 @@ enum AppTab: String, CaseIterable {
 
     var icon: String {
         switch self {
+        case .conversation: "person.2.wave.2"
         case .speechToText: "mic"
         case .signToSpeech: "camera"
         case .history:      "clock"
@@ -35,7 +37,7 @@ enum AppTab: String, CaseIterable {
 /// child views automatically render in the correct language.
 struct RootView: View {
     @State private var appStore = AppStore()
-    @State private var selectedTab: AppTab = .speechToText
+    @State private var selectedTab: AppTab = .conversation
     @State private var showOnboarding = !UserDefaults.standard.bool(
         forKey: "hasSeenOnboarding"
     )
@@ -47,6 +49,12 @@ struct RootView: View {
                     .transition(.opacity)
             } else {
                 TabView(selection: $selectedTab) {
+                    TwoWayConversationView()
+                        .tabItem {
+                            Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
+                        }
+                        .tag(AppTab.conversation)
+
                     SpeechToTextView()
                         .tabItem {
                             Label(AppTab.speechToText.titleKey, systemImage: AppTab.speechToText.icon)

@@ -52,9 +52,9 @@ struct SignToSpeechView: View {
 
                         HandOverlayView(handPoints: cameraManager.handPoints)
                     }
-                    // The raw sensor frame is landscape; rotate the whole ZStack 90°
+                    // The raw sensor frame is landscape; rotate the whole ZStack -90°
                     // so it fills the screen in portrait without touching AVFoundation.
-                    .rotationEffect(.degrees(90))
+                    .rotationEffect(.degrees(-90))
                     .frame(width: geo.size.height, height: geo.size.width)
                     .position(x: geo.size.width / 2, y: geo.size.height / 2)
                 }
