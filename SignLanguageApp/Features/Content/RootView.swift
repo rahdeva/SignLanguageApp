@@ -9,13 +9,14 @@ import SwiftUI
 
 /// Navigation tabs for the two main pipelines plus history log.
 enum AppTab: String, CaseIterable {
-    case speechToText, signToSpeech, history
+    case speechToText, signToSpeech, history, settings
 
-    var title: String {
+    var titleKey: LocalizedStringKey {
         switch self {
-        case .speechToText: "Speech"
-        case .signToSpeech: "Sign"
-        case .history: "History"
+        case .speechToText: "tab.speech"
+        case .signToSpeech: "tab.sign"
+        case .history:      "tab.history"
+        case .settings:     "tab.settings"
         }
     }
 
@@ -23,12 +24,15 @@ enum AppTab: String, CaseIterable {
         switch self {
         case .speechToText: "mic"
         case .signToSpeech: "camera"
-        case .history: "clock"
+        case .history:      "clock"
+        case .settings:     "gearshape"
         }
     }
 }
 
 /// Root view — shows onboarding on first launch, then the tabbed main interface.
+/// Injects both `AppStore` and the chosen `Locale` into the environment so all
+/// child views automatically render in the correct language.
 struct RootView: View {
     @State private var appStore = AppStore()
     @State private var selectedTab: AppTab = .speechToText
@@ -45,38 +49,34 @@ struct RootView: View {
                 TabView(selection: $selectedTab) {
                     SpeechToTextView()
                         .tabItem {
-                            Label(
-                                AppTab.speechToText.title,
-                                systemImage: AppTab.speechToText.icon
-                            )
+                            Label(AppTab.speechToText.titleKey, systemImage: AppTab.speechToText.icon)
                         }
                         .tag(AppTab.speechToText)
 
                     SignToSpeechView()
                         .tabItem {
-                            Label(
-                                AppTab.signToSpeech.title,
-                                systemImage: AppTab.signToSpeech.icon
-                            )
+                            Label(AppTab.signToSpeech.titleKey, systemImage: AppTab.signToSpeech.icon)
                         }
                         .tag(AppTab.signToSpeech)
 
                     HistoryView()
                         .tabItem {
-                            Label(
-                                AppTab.history.title,
-                                systemImage: AppTab.history.icon
-                            )
+                            Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
                         }
                         .tag(AppTab.history)
 
                     SettingsView()
-                        .tabItem { Label("Settings", systemImage: "gearshape") }
+                        .tabItem {
+                            Label(AppTab.settings.titleKey, systemImage: AppTab.settings.icon)
+                        }
+                        .tag(AppTab.settings)
                 }
                 .environment(appStore)
                 .task { await appStore.checkPermissions() }
             }
         }
+        // Re-render entire subtree when app language changes
+        .environment(\.locale, appStore.languageSettings.appLanguage.locale)
         .animation(.default, value: showOnboarding)
     }
 }

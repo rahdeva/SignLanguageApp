@@ -1,0 +1,60 @@
+/* Tab titles */
+"tab.speech"             = "Speech";
+"tab.sign"               = "Sign";
+"tab.history"            = "History";
+"tab.settings"           = "Settings";
+
+/* Settings — General */
+"settings.title"                     = "Settings";
+"settings.section.general"           = "General";
+"settings.onboarding.toggle"         = "Show Onboarding on Launch";
+"settings.onboarding.description"    = "Replay the introduction screens next time you open the app";
+
+/* Settings — Language */
+"settings.section.language"          = "Language";
+"settings.language.app"              = "App Language";
+"settings.language.tts"              = "Sign-to-Speech Voice";
+"settings.language.speech"           = "Speech Recognition";
+"settings.language.footer"           = "App Language controls all UI text. Sign-to-Speech Voice sets the spoken output when a sign is detected. Speech Recognition sets the language for the microphone input.";
+
+/* Settings — Privacy */
+"settings.section.privacy"           = "Privacy";
+"settings.privacy.permissions"       = "App Permissions";
+"settings.privacy.footer"            = "Camera, microphone, and speech recognition permissions can be changed in system Settings.";
+
+/* Settings — Team */
+"settings.section.team"              = "Team";
+"settings.team.about"                = "About Team";
+
+/* Settings — App info */
+"settings.version"                   = "Version";
+
+/* Sign-to-Speech */
+"sign.detecting"                     = "Detecting…";
+"sign.uncertain"                     = "Uncertain";
+"sign.buffer.filling"                = "Warming up…";
+"sign.buffer.ready"                  = "LIVE";
+"sign.confidence"                    = "Confidence";
+"sign.top_predictions"               = "Top predictions";
+"sign.reset"                         = "Reset buffer";
+"sign.flip_camera"                   = "Flip camera";
+"sign.speak"                         = "Speak";
+
+/* Speech-to-Text */
+"speech.start"                       = "Start Recording";
+"speech.stop"                        = "Stop";
+"speech.placeholder"                 = "Tap the microphone to start speaking…";
+
+/* History */
+"history.title"                      = "History";
+"history.empty"                      = "No conversation history yet.";
+
+/* Onboarding */
+"onboarding.continue"                = "Continue";
+"onboarding.get_started"             = "Get Started";
+
+/* Errors */
+"error.permission.camera"            = "Camera permission denied. Please allow camera access in Settings.";
+"error.permission.microphone"        = "Microphone permission denied. Please allow microphone access in Settings.";
+"error.camera_unavailable"           = "Camera unavailable.";
+"error.unknown"                      = "An unexpected error occurred.";
