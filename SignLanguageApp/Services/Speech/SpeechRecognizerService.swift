@@ -33,7 +33,9 @@ actor SpeechRecognizerService {
     private var recognitionTask: SFSpeechRecognitionTask?
     private var audioRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognizer: SFSpeechRecognizer?
-    private var isStopping = false
+    /// Set when `stop()` is called so the recognition callback (which runs
+    /// outside the actor) can treat the resulting cancellation error as a clean finish.
+    nonisolated(unsafe) private var isStopping = false
 
     /// Start recognition for the given locale. Outputs partial results as they arrive.
     func start(locale: Locale = .current) -> AsyncThrowingStream<String, Error>

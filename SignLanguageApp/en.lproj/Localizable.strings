@@ -59,9 +59,18 @@
 "sign.camera_required_desc"          = "To detect Bisindo hand signs in real-time, please allow camera access in your device settings.";
 "sign.open_settings"                 = "Open Settings";
 
-/* Speech-to-Text */
+/* Speech-to-Text — Idle */
 "speech.title"                       = "Speech to Text";
-"speech.start"                       = "Start Recording";
+"speech.subtitle"                    = "Read what the other person says";
+"speech.ready.heading"               = "Ready to listen";
+"speech.ready.caption"               = "Ask the other person to speak normally. Text appears instantly on screen.";
+"speech.start"                       = "Start Listening";
+"speech.privacy"                     = "Audio isn't stored · processed with your permission";
+
+/* Speech-to-Text — Listening */
+"speech.listening.title"             = "Listening…";
+"speech.listening.badge"             = "Listening…";
+"speech.listening.placeholder"       = "Waiting for speech…";
 "speech.stop"                        = "Stop";
 "speech.placeholder"                 = "Tap the microphone to start speaking…";
 "speech.placeholder_short"           = "Tap the microphone to start";

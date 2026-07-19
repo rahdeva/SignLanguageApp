@@ -280,10 +280,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				COREML_CODEGEN_LANGUAGE = Swift;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7GQ2982L53;
+				DEVELOPMENT_TEAM = 9W3BCB8Z6Z;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to detect hand signs and recognize Bisindo sign language.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is required to listen to speech and convert it to text for sign language users.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition is used to transcribe spoken words into text so sign language users can read what others say.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -315,10 +317,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				COREML_CODEGEN_LANGUAGE = Swift;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7GQ2982L53;
+				DEVELOPMENT_TEAM = 9W3BCB8Z6Z;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to detect hand signs and recognize Bisindo sign language.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is required to listen to speech and convert it to text for sign language users.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition is used to transcribe spoken words into text so sign language users can read what others say.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
