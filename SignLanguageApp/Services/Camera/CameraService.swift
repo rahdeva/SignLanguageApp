@@ -29,7 +29,7 @@ enum CameraError: LocalizedError {
 /// Manages `AVCaptureSession` and streams video frames as `CVPixelBuffer`.
 /// Conforms to `PreviewSource` to connect a SwiftUI preview without exposing the session.
 actor CameraService: PreviewSource {
-    let captureSession = AVCaptureSession()
+    nonisolated(unsafe) let captureSession = AVCaptureSession()
     private let videoOutput = AVCaptureVideoDataOutput()
     private var activeVideoInput: AVCaptureDeviceInput?
     private var hasConfiguredSession = false

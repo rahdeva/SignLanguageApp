@@ -37,8 +37,7 @@ final class SpeechToTextStore {
                 isRecording = true
                 appStore.isTranscribing = true
 
-                let locale = appStore.languageSettings.speechLanguage.locale
-                for try await text in await appStore.speechService.start(locale: locale) {
+                for try await text in await appStore.speechService.start(locale: Locale(identifier: "id-ID")) {
                     transcribedText = text
                     appStore.speechToTextOutput = text
                 }

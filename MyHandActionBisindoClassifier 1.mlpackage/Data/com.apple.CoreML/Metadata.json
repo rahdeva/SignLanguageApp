@@ -1,0 +1,13 @@
+{
+  "MLModelCreatorDefinedKey" : {
+    "Target Frame Rate" : "30.0",
+    "com.apple.createml.training.started" : "2026-07-16T13:28:37Z",
+    "com.apple.coreml.model.preview.type" : "handActionClassifier",
+    "com.apple.createml.training.finished" : "2026-07-16T14:22:12Z",
+    "com.apple.createml.app.tag" : "178.2",
+    "com.apple.createml.model.created" : "2026-07-16T14:22:12Z",
+    "com.apple.createml.app.version" : "6.2",
+    "Prediction Window Size" : "60"
+  },
+  "MLModelAuthorKey" : "Fuad Agus Salim"
+}
