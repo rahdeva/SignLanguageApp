@@ -1,8 +1,8 @@
-# SignLanguageApp Boilerplate — Implementation Plan
+# StellaApp Boilerplate — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement full production-ready boilerplate for SignLanguageApp — actor-based service layer, `@Observable` stores, camera pipeline, speech services, navigation, permissions, error handling.
+**Goal:** Implement full production-ready boilerplate for StellaApp — actor-based service layer, `@Observable` stores, camera pipeline, speech services, navigation, permissions, error handling.
 
 **Architecture:** Actor-based service layer (AVCam-inspired) + `@Observable AppStore` connecting services to SwiftUI views. `SignLanguageInferencer` gets a protocol for testability; all other services are concrete actors.
 
@@ -42,7 +42,7 @@
 | 15 | Create | `Features/SignToSpeech/SignToSpeechStore.swift` |
 | 16 | Create | `Features/SignToSpeech/SignToSpeechView.swift` |
 | 17 | Create | `Features/SignToSpeech/CameraPreviewView.swift` |
-| 18 | Modify | `App/SignLanguageApp.swift` |
+| 18 | Modify | `App/StellaApp.swift` |
 | 19 | Delete | `Features/Content/ContentView.swift` |
 
 ---
@@ -152,7 +152,7 @@ struct Conversation: Identifiable, Sendable {
 
 - [ ] **Step 5: Build check**
 
-Run: `cd SignLanguageApp && xcodebuild -scheme SignLanguageApp -destination 'generic/platform=iOS Simulator' -configuration Debug build 2>&1 | tail -5`
+Run: `cd SignLanguageApp && xcodebuild -scheme StellaApp -destination 'generic/platform=iOS Simulator' -configuration Debug build 2>&1 | tail -5`
 Expected: `** BUILD SUCCEEDED **`
 
 - [ ] **Step 6: Commit**
@@ -828,7 +828,7 @@ final class AppStore {
 
 **Files:**
 - Create: `Features/Content/RootView.swift`
-- Modify: `App/SignLanguageApp.swift`
+- Modify: `App/StellaApp.swift`
 
 **Interfaces:**
 - Consumes: `AppStore`, `SpeechToTextView`, `SignToSpeechView`
@@ -935,14 +935,14 @@ private extension ConversationRole {
 }
 ```
 
-- [ ] **Step 2: Update @main entry (App/SignLanguageApp.swift)**
+- [ ] **Step 2: Update @main entry (App/StellaApp.swift)**
 
 ```swift
-// App/SignLanguageApp.swift
+// App/StellaApp.swift
 import SwiftUI
 
 @main
-struct SignLanguageApp: App {
+struct StellaApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -1349,7 +1349,7 @@ rm -f Features/Content/ContentView.swift Features/Content/.DS_Store
 
 ```bash
 cd /Users/hisyam/Documents/ADA/XcodeProject/c4-xcode/SignLanguageApp
-xcodebuild -scheme SignLanguageApp -destination 'generic/platform=iOS Simulator' -configuration Debug build 2>&1 | grep -E "error:|BUILD"
+xcodebuild -scheme StellaApp -destination 'generic/platform=iOS Simulator' -configuration Debug build 2>&1 | grep -E "error:|BUILD"
 ```
 Expected: `** BUILD SUCCEEDED **`
 

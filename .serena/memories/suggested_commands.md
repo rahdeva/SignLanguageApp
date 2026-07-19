@@ -2,14 +2,14 @@
 
 ## Build
 ```bash
-cd SignLanguageApp
-xcodebuild -scheme SignLanguageApp -destination 'generic/platform=iOS Simulator' -configuration Debug build
+cd StellaApp
+xcodebuild -scheme StellaApp -destination 'generic/platform=iOS Simulator' -configuration Debug build
 ```
 
 ## Run Tests
 ```bash
-cd SignLanguageApp
-xcodebuild -scheme SignLanguageApp -destination 'platform=iOS Simulator,name=iPhone 17' test
+cd StellaApp
+xcodebuild -scheme StellaApp -destination 'platform=iOS Simulator,name=iPhone 17' test
 ```
 
 System note (Darwin): All standard unix commands work identically.

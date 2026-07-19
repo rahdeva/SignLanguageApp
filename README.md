@@ -1,4 +1,4 @@
-# SignLanguageApp
+# StellaApp
 
 **Bidirectional communication assistant** bridging sign language and spoken language users in real time. Built with SwiftUI, AVFoundation, and Core ML for iOS 26.0+.
 
@@ -45,9 +45,9 @@ The app follows an **actor-based service layer** pattern (inspired by Apple's AV
 ## Project structure
 
 ```
-SignLanguageApp/
+StellaApp/
 ├── App/
-│   └── SignLanguageApp.swift              # @main entry → RootView
+│   └── StellaApp.swift              # @main entry → RootView
 ├── Core/
 │   ├── Extensions/
 │   │   └── AVCaptureDevice+Extensions.swift
@@ -154,16 +154,16 @@ Every transcribed or spoken entry is saved in an in-memory timeline.
 
 ```bash
 # Clone the repository
-git clone https://github.com/rahdeva/SignLanguageApp.git
-cd SignLanguageApp/SignLanguageApp
+git clone https://github.com/rahdeva/StellaApp.git
+cd SignLanguageApp/StellaApp
 
 # Build (Debug, iOS Simulator)
-xcodebuild -scheme SignLanguageApp \
+xcodebuild -scheme StellaApp \
   -destination 'generic/platform=iOS Simulator' \
   -configuration Debug build
 
 # Run tests
-xcodebuild -scheme SignLanguageApp \
+xcodebuild -scheme StellaApp \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   test
 ```
