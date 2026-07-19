@@ -89,3 +89,16 @@ final class LanguageSettings {
         speechLanguage = load(Key.speech)
     }
 }
+
+// MARK: - Dynamic String Localization Helper
+
+extension String {
+    /// Lookup this key in the `Localizable.strings` table corresponding to the given `AppLanguage`.
+    func localized(for language: AppLanguage) -> String {
+        guard let path = Bundle.main.path(forResource: language.rawValue, ofType: "lproj"),
+              let bundle = Bundle(path: path) else {
+            return NSLocalizedString(self, tableName: "Localizable", comment: "")
+        }
+        return bundle.localizedString(forKey: self, value: nil, table: "Localizable")
+    }
+}

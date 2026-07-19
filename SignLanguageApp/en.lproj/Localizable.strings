@@ -1,3 +1,8 @@
+/* Common */
+"common.ok"              = "OK";
+"common.settings"        = "Settings";
+"common.error"           = "Error";
+
 /* Tab titles */
 "tab.speech"             = "Speech";
 "tab.sign"               = "Sign";
@@ -39,19 +44,46 @@
 "sign.reset"                         = "Reset buffer";
 "sign.flip_camera"                   = "Flip camera";
 "sign.speak"                         = "Speak";
+"sign.app_badge"                     = "BISINDO AI";
+"sign.live"                          = "LIVE";
+"sign.words_detected"                = "WORDS DETECTED";
+"sign.sentence_label"                = "SENTENCE";
+"sign.sentence_building"             = "Forming sentence...";
+"sign.sentence_auto"                 = "Auto-forms after a pause...";
+"sign.copy"                          = "Copy";
+"sign.retry"                         = "Retry";
+"sign.detected_title"                = "DETECTED BISINDO SIGN";
+"sign.conf"                          = "CONF";
+"sign.top_candidates"                = "TOP CANDIDATES";
+"sign.camera_required_title"         = "Camera Access Required";
+"sign.camera_required_desc"          = "To detect Bisindo hand signs in real-time, please allow camera access in your device settings.";
+"sign.open_settings"                 = "Open Settings";
 
 /* Speech-to-Text */
+"speech.title"                       = "Speech to Text";
 "speech.start"                       = "Start Recording";
 "speech.stop"                        = "Stop";
 "speech.placeholder"                 = "Tap the microphone to start speaking…";
+"speech.placeholder_short"           = "Tap the microphone to start";
+"speech.listening"                   = "Listening...";
 
 /* History */
 "history.title"                      = "History";
 "history.empty"                      = "No conversation history yet.";
+"history.empty_title"                = "No History";
+"history.empty_desc"                 = "Start transcribing or signing to build your conversation history.";
 
 /* Onboarding */
 "onboarding.continue"                = "Continue";
 "onboarding.get_started"             = "Get Started";
+"onboarding.next"                    = "Next";
+"onboarding.replay_hint"             = "You can replay this anytime in Settings";
+"onboarding.p1.title"                = "Speech to Text";
+"onboarding.p1.desc"                 = "Tap the microphone and start speaking. Your words appear on screen in real time.";
+"onboarding.p2.title"                = "Sign to Speech";
+"onboarding.p2.desc"                 = "Point your camera at sign language gestures. The app translates them into spoken words.";
+"onboarding.p3.title"                = "Conversation History";
+"onboarding.p3.desc"                 = "Every translation is saved so you can review, replay, or share past conversations.";
 
 /* Errors */
 "error.permission.camera"            = "Camera permission denied. Please allow camera access in Settings.";
