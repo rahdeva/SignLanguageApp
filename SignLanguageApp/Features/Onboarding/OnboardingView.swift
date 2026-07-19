@@ -41,16 +41,19 @@ struct OnboardingView: View {
                         withAnimation { currentPage += 1 }
                     }
                 } label: {
-                    Text(isLastPage ? "Get Started" : "Next")
-                        .font(.headline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding()
+                    Text(
+                        isLastPage ? "onboarding.get_started" : "onboarding.next",
+                        tableName: "Localizable"
+                    )
+                    .font(.headline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding()
                 }
                 .buttonStyle(.borderedProminent)
                 .padding(.horizontal)
 
                 // Info about replaying via Settings
-                Text("You can replay this anytime in Settings")
+                Text("onboarding.replay_hint", tableName: "Localizable")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -69,11 +72,11 @@ struct OnboardingView: View {
                 .foregroundStyle(.tint)
                 .symbolEffect(.bounce, options: .repeating)
 
-            Text(page.title)
+            Text(LocalizedStringKey(page.titleKey), tableName: "Localizable")
                 .font(.largeTitle.weight(.bold))
                 .multilineTextAlignment(.center)
 
-            Text(page.subtitle)
+            Text(LocalizedStringKey(page.subtitleKey), tableName: "Localizable")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -89,27 +92,24 @@ struct OnboardingView: View {
 
 private struct OnboardingPage {
     let icon: String
-    let title: String
-    let subtitle: String
+    let titleKey: String
+    let subtitleKey: String
 
     static let samples: [OnboardingPage] = [
         OnboardingPage(
             icon: "waveform",
-            title: "Speech to Text",
-            subtitle:
-                "Tap the microphone and start speaking. Your words appear on screen in real time."
+            titleKey: "onboarding.p1.title",
+            subtitleKey: "onboarding.p1.desc"
         ),
         OnboardingPage(
             icon: "camera.fill",
-            title: "Sign to Speech",
-            subtitle:
-                "Point your camera at sign language gestures. The app translates them into spoken words."
+            titleKey: "onboarding.p2.title",
+            subtitleKey: "onboarding.p2.desc"
         ),
         OnboardingPage(
             icon: "clock.arrow.circlepath",
-            title: "Conversation History",
-            subtitle:
-                "Every translation is saved so you can review, replay, or share past conversations."
+            titleKey: "onboarding.p3.title",
+            subtitleKey: "onboarding.p3.desc"
         ),
     ]
 }

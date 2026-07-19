@@ -64,6 +64,15 @@ struct RootView: View {
                             Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
                         }
                         .tag(AppTab.history)
+                    
+                    UnifiedView()
+                        .tabItem {
+                            Label(
+                                AppTab.history.title,
+                                systemImage: AppTab.history.icon
+                            )
+                        }
+                        .tag(AppTab.history)
 
                     SettingsView()
                         .tabItem {
@@ -76,6 +85,7 @@ struct RootView: View {
             }
         }
         // Re-render entire subtree when app language changes
+        .id(appStore.languageSettings.appLanguage)
         .environment(\.locale, appStore.languageSettings.appLanguage.locale)
         .animation(.default, value: showOnboarding)
     }

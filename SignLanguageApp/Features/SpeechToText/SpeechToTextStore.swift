@@ -37,14 +37,17 @@ final class SpeechToTextStore {
                 isRecording = true
                 appStore.isTranscribing = true
 
-                let locale = appStore.languageSettings.speechLanguage.locale
-                for try await text in await appStore.speechService.start(locale: locale) {
+                for try await text in await appStore.speechService.start(locale: Locale(identifier: "id-ID")) {
                     transcribedText = text
                     appStore.speechToTextOutput = text
                 }
             } catch {
-                appStore.error = .unknown(error.localizedDescription)
-                appStore.showingError = true
+                let msg = error.localizedDescription
+                if !msg.localizedCaseInsensitiveContains("cancel") &&
+                   !msg.localizedCaseInsensitiveContains("cancelled") {
+                    appStore.error = .unknown(msg)
+                    appStore.showingError = true
+                }
                 isRecording = false
                 appStore.isTranscribing = false
             }

@@ -1,3 +1,8 @@
+/* Common */
+"common.ok"              = "OK";
+"common.settings"        = "Pengaturan";
+"common.error"           = "Kesalahan";
+
 /* Tab titles */
 "tab.speech"             = "Bicara";
 "tab.sign"               = "Isyarat";
@@ -39,6 +44,20 @@
 "sign.reset"                         = "Setel ulang buffer";
 "sign.flip_camera"                   = "Ganti kamera";
 "sign.speak"                         = "Ucapkan";
+"sign.app_badge"                     = "BISINDO AI";
+"sign.live"                          = "LANGSUNG";
+"sign.words_detected"                = "KATA TERDETEKSI";
+"sign.sentence_label"                = "KALIMAT";
+"sign.sentence_building"             = "Menyusun kalimat...";
+"sign.sentence_auto"                 = "Menyusun otomatis setelah jeda...";
+"sign.copy"                          = "Salin";
+"sign.retry"                         = "Ulangi";
+"sign.detected_title"                = "ISYARAT BISINDO TERDETEKSI";
+"sign.conf"                          = "YAKIN";
+"sign.top_candidates"                = "KANDIDAT TERATAS";
+"sign.camera_required_title"         = "Akses Kamera Diperlukan";
+"sign.camera_required_desc"          = "Untuk mendeteksi bahasa isyarat Bisindo secara langsung, harap izinkan akses kamera di pengaturan perangkat.";
+"sign.open_settings"                 = "Buka Pengaturan";
 
 /* Speech-to-Text — Idle */
 "speech.title"                       = "Ucapan ke Teks";
@@ -53,14 +72,27 @@
 "speech.listening.badge"             = "Mendengarkan…";
 "speech.listening.placeholder"       = "Menunggu suara…";
 "speech.stop"                        = "Berhenti";
+"speech.placeholder"                 = "Ketuk mikrofon untuk mulai berbicara…";
+"speech.placeholder_short"           = "Ketuk mikrofon untuk mulai";
+"speech.listening"                   = "Mendengarkan...";
 
 /* History */
 "history.title"                      = "Riwayat";
 "history.empty"                      = "Belum ada riwayat percakapan.";
+"history.empty_title"                = "Belum Ada Riwayat";
+"history.empty_desc"                 = "Mulai rekam bicara atau isyarat untuk membangun riwayat percakapan.";
 
 /* Onboarding */
 "onboarding.continue"                = "Lanjutkan";
 "onboarding.get_started"             = "Mulai";
+"onboarding.next"                    = "Lanjut";
+"onboarding.replay_hint"             = "Anda dapat melihat pengantar ini lagi di Pengaturan";
+"onboarding.p1.title"                = "Bicara ke Teks";
+"onboarding.p1.desc"                 = "Ketuk mikrofon dan mulai berbicara. Ucapan Anda akan muncul di layar secara langsung.";
+"onboarding.p2.title"                = "Isyarat ke Ucapan";
+"onboarding.p2.desc"                 = "Arahkan kamera ke pergerakan bahasa isyarat. Aplikasi menerjemahkannya menjadi ucapan suara.";
+"onboarding.p3.title"                = "Riwayat Percakapan";
+"onboarding.p3.desc"                 = "Setiap terjemahan disimpan agar Anda dapat meninjau, memutar ulang, atau membagikan percakapan.";
 
 /* Errors */
 "error.permission.camera"            = "Izin kamera ditolak. Harap izinkan akses kamera di Pengaturan.";

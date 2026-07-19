@@ -1,0 +1,24 @@
+{
+    "fileFormatVersion": "1.0.0",
+    "itemInfoEntries": {
+        "7E42B37B-738B-4E24-B973-E354480652D9": {
+            "author": "com.apple.CoreML",
+            "description": "External FeatureDescription Overlay",
+            "name": "FeatureDescriptions.json",
+            "path": "com.apple.CoreML/FeatureDescriptions.json"
+        },
+        "7F01D6D4-29F1-4729-A1FB-99153D35AF19": {
+            "author": "com.apple.CoreML",
+            "description": "CoreML Model Specification",
+            "name": "MyHandActionBisindoClassifier 1.mlmodel",
+            "path": "com.apple.CoreML/MyHandActionBisindoClassifier 1.mlmodel"
+        },
+        "9A71A2A0-4D25-4474-8198-AB94557F0189": {
+            "author": "com.apple.CoreML",
+            "description": "External Metadata Overlay",
+            "name": "Metadata.json",
+            "path": "com.apple.CoreML/Metadata.json"
+        }
+    },
+    "rootModelIdentifier": "7F01D6D4-29F1-4729-A1FB-99153D35AF19"
+}
