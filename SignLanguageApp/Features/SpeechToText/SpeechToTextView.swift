@@ -204,8 +204,12 @@ private struct ListeningScreen: View {
 
         let trailing = words.removeLast()
         let confirmed = words.joined(separator: " ")
-        return Text(confirmed + " ").foregroundColor(STT.ink)
-            + Text(trailing).foregroundColor(STT.partial)
+
+        var confirmedRun = AttributedString(confirmed + " ")
+        confirmedRun.foregroundColor = STT.ink
+        var trailingRun = AttributedString(trailing)
+        trailingRun.foregroundColor = STT.partial
+        return Text(confirmedRun + trailingRun)
     }
 }
 

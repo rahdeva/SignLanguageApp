@@ -12,7 +12,9 @@ import Speech
 // MARK: - AppLanguage
 
 /// The two supported app languages.
-enum AppLanguage: String, CaseIterable, Identifiable, Codable {
+/// Marked `nonisolated` so value-type helpers like `voice` and `locale` can be
+/// read from any isolation domain (e.g. the speech synthesizer/recognizer actors).
+nonisolated enum AppLanguage: String, CaseIterable, Identifiable, Codable {
     case indonesian = "id"
     case english    = "en"
 

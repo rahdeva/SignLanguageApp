@@ -36,7 +36,7 @@ actor CameraService: PreviewSource {
     private var streamContinuation: AsyncStream<CVPixelBuffer>.Continuation?
 
     nonisolated(unsafe) let pixelBufferStream: AsyncStream<CVPixelBuffer>
-    nonisolated(unsafe) private let sampleBufferDelegate: CameraOutputDelegate
+    private let sampleBufferDelegate: CameraOutputDelegate
 
     private(set) var currentPosition: AVCaptureDevice.Position = .front
 
@@ -180,8 +180,8 @@ actor CameraService: PreviewSource {
 
 // MARK: - Sample Buffer Delegate
 
-private final class CameraOutputDelegate: NSObject,
-    AVCaptureVideoDataOutputSampleBufferDelegate
+private nonisolated final class CameraOutputDelegate: NSObject,
+    AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable
 {
     var continuation: AsyncStream<CVPixelBuffer>.Continuation?
 
