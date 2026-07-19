@@ -1,4 +1,4 @@
-# SignLanguageApp — Architecture & Boilerplate Design
+# StellaApp — Architecture & Boilerplate Design
 
 **Date:** 2026-07-17
 **Status:** Approved
@@ -23,9 +23,9 @@ Bidirectional communication assistant between **sign language** users and **spok
 ## 2. Folder Layout
 
 ```
-SignLanguageApp/SignLanguageApp/
+SignLanguageApp/StellaApp/
 ├── App/
-│   └── SignLanguageApp.swift             # @main entry
+│   └── StellaApp.swift             # @main entry
 ├── Core/
 │   ├── Extensions/
 │   │   └── AVCaptureDevice+Extensions.swift
@@ -327,7 +327,7 @@ No `print`, no `fatalError` in production paths. `assert` only for developer inv
 
 | # | File |
 |---|------|
-| 1 | `App/SignLanguageApp.swift` |
+| 1 | `App/StellaApp.swift` |
 | 2 | `Core/Logging/AppLogger.swift` |
 | 3 | `Core/Permissions/PermissionService.swift` |
 | 4 | `Core/Extensions/AVCaptureDevice+Extensions.swift` |

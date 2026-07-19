@@ -3,7 +3,7 @@
 Follows Airbnb Swift Style Guide. Key rules:
 
 ## Architecture
-- `@main` in `App/SignLanguageApp.swift`
+- `@main` in `App/StellaApp.swift`
 - Views in `Features/<Name>/`
 - Shared utilities in `Core/<subdir>/`
 
