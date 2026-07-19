@@ -16,9 +16,30 @@ struct ConversationComponentView: View {
     let senderLabel: String
     let messageText: String
     let isActive: Bool
+    let onReadAloud: (() -> Void)?
     
     // Custom colors or accents if needed
     var accentColor: Color = .blue
+
+    init(
+        title: String,
+        subtitle: String,
+        iconName: String,
+        senderLabel: String,
+        messageText: String,
+        isActive: Bool,
+        accentColor: Color = .blue,
+        onReadAloud: (() -> Void)? = nil
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.iconName = iconName
+        self.senderLabel = senderLabel
+        self.messageText = messageText
+        self.isActive = isActive
+        self.accentColor = accentColor
+        self.onReadAloud = onReadAloud
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -52,9 +73,23 @@ struct ConversationComponentView: View {
             
             // Transcription Text Container
             VStack(alignment: .leading, spacing: 8) {
-                Text(senderLabel)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.blue)
+                HStack(spacing: 8) {
+                    Text(senderLabel)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.blue)
+
+                    if let onReadAloud {
+                        Button(action: onReadAloud) {
+                            Image(systemName: "speaker.wave.2.fill")
+                                .font(.title3.weight(.semibold))
+                                .frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.blue)
+                        .disabled(messageText.isEmpty)
+                        .accessibilityLabel("Read \(senderLabel)")
+                    }
+                }
                 
                 Text(messageText.isEmpty ? "..." : "“\(messageText)”")
                     .font(.body)

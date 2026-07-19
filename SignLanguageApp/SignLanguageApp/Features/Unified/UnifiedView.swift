@@ -11,6 +11,14 @@ struct UnifiedView: View{
     
     @Environment(AppStore.self) private var appStore
     @State private var store: SignToSpeechStore?
+    @State private var speechStore: SpeechToTextStore?
+    @State private var hasAutoPlayedTemanTuliText = false
+
+    private let temanTuliText = "Saya sedang pergi ke rumah ibu yang sedang sakit, maaf terima kasih"
+
+    private var caregiverTranscribedText: String {
+        speechStore?.transcribedText ?? appStore.speechToTextOutput
+    }
     
     var body: some View{
         VStack {
@@ -57,18 +65,20 @@ struct UnifiedView: View{
                             subtitle: "Camera input translating in real-time",
                             iconName: "hand.raised.fill",
                             senderLabel: "Teman Tuli Transcribe:",
-                            messageText: "Saya sedang pergi ke rumah ibu yang sedang sakit, maaf terima kasih",
+                            messageText: temanTuliText,
                             isActive: true,
-                            accentColor: .blue
+                            accentColor: .blue,
+                            onReadAloud: speakTemanTuliTranscription
                         )
+
                         SeparatorLine()
                         ConversationComponentView(
                             title: "Speech to Text",
                             subtitle: "Voice input transcribing in real-time",
                             iconName: "mic.fill",
                             senderLabel: "Care Giver Transcribe:",
-                            messageText: "Oh begitu, saya paham maksud anda! Dimengerti",
-                            isActive: false,
+                            messageText: caregiverTranscribedText,
+                            isActive: speechStore?.isRecording ?? false,
                             accentColor: .blue
                         )
                     }
@@ -101,6 +111,8 @@ struct UnifiedView: View{
                     .disabled(isBusy)
                     .opacity(isBusy ? 0.6 : 1)
 
+                    micButton
+
                     if store.isCapturing {
                         Button {
                             store.speakPrediction()
@@ -118,6 +130,43 @@ struct UnifiedView: View{
         }
         .onAppear {
             store = SignToSpeechStore(appStore: appStore)
+            speechStore = SpeechToTextStore(appStore: appStore)
+        }
+        .task(id: temanTuliText) {
+            guard !temanTuliText.isEmpty, !hasAutoPlayedTemanTuliText else { return }
+            hasAutoPlayedTemanTuliText = true
+            await speakTemanTuliTranscription()
+        }
+    }
+
+    private func speakTemanTuliTranscription() {
+        Task {
+            await speakTemanTuliTranscription()
+        }
+    }
+
+    private func speakTemanTuliTranscription() async {
+        await appStore.synthesizerService.speak(temanTuliText)
+        appStore.addToHistory(message: temanTuliText, role: .assistantSpoke)
+    }
+
+    @ViewBuilder
+    private var micButton: some View {
+        if let speechStore {
+            Button {
+                if speechStore.isRecording {
+                    speechStore.stopRecording()
+                } else {
+                    speechStore.startRecording()
+                }
+            } label: {
+                Image(systemName: speechStore.isRecording ? "mic.circle.fill" : "mic.fill")
+                    .font(.title2.weight(.semibold))
+                    .frame(width: 52, height: 52)
+            }
+            .buttonStyle(.glassProminent)
+            .tint(speechStore.isRecording ? .red : .blue)
+            .accessibilityLabel(speechStore.isRecording ? "Turn off microphone" : "Turn on microphone")
         }
     }
     
