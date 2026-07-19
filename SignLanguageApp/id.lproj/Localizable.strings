@@ -40,10 +40,19 @@
 "sign.flip_camera"                   = "Ganti kamera";
 "sign.speak"                         = "Ucapkan";
 
-/* Speech-to-Text */
-"speech.start"                       = "Mulai Rekam";
+/* Speech-to-Text — Idle */
+"speech.title"                       = "Ucapan ke Teks";
+"speech.subtitle"                    = "Baca ucapan lawan bicara";
+"speech.ready.heading"               = "Siap mendengarkan";
+"speech.ready.caption"               = "Minta lawan bicara berbicara normal. Teks muncul langsung di layar.";
+"speech.start"                       = "Mulai Mendengarkan";
+"speech.privacy"                     = "Audio tidak disimpan · pemrosesan sesuai izin";
+
+/* Speech-to-Text — Listening */
+"speech.listening.title"             = "Mendengarkan…";
+"speech.listening.badge"             = "Mendengarkan…";
+"speech.listening.placeholder"       = "Menunggu suara…";
 "speech.stop"                        = "Berhenti";
-"speech.placeholder"                 = "Ketuk mikrofon untuk mulai berbicara…";
 
 /* History */
 "history.title"                      = "Riwayat";
