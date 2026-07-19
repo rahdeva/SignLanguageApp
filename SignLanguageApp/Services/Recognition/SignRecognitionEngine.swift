@@ -42,6 +42,8 @@ final class SignRecognitionEngine: ObservableObject {
     let maxWords: Int
     /// Seconds of silence after the last accepted word before auto-building.
     let silenceDelay: TimeInterval
+    /// Minimum accepted words required before generating a sentence.
+    private let minimumWordsForSentence = 2
 
     // MARK: - Private Debounce State (MainActor)
     private var pendingWord: String = ""
@@ -107,6 +109,17 @@ final class SignRecognitionEngine: ObservableObject {
         }
     }
 
+    func removeWord(id: DetectedWord.ID) {
+        guard let index = wordSequence.firstIndex(where: { $0.id == id }) else { return }
+        wordSequence.remove(at: index)
+        builtSentence = ""
+        if wordSequence.isEmpty {
+            cancelSilenceTimer()
+        } else {
+            restartSilenceTimer()
+        }
+    }
+
     func clearAll() {
         cancelSilenceTimer()
         wordSequence = []
@@ -121,7 +134,7 @@ final class SignRecognitionEngine: ObservableObject {
 
     // MARK: - Sentence Building (called automatically or manually)
     func buildSentence() {
-        guard !wordSequence.isEmpty, !isBuildingSentence else { return }
+        guard wordSequence.count >= minimumWordsForSentence, !isBuildingSentence else { return }
         cancelSilenceTimer()
         let words = wordSequence.map(\.text)
 
@@ -217,16 +230,11 @@ final class SignRecognitionEngine: ObservableObject {
 
     @available(iOS 26.0, macOS 26.0, *)
     private func buildWithAI(words: [String]) async -> String {
-        // Uncomment and add `import FoundationModels` to use on-device LLM:
-        //
-        // let session = LanguageModelSession(instructions: """
-        //     Kamu adalah penerjemah bahasa isyarat Bisindo ke Bahasa Indonesia.
-        //     Susun kata-kata yang diberikan menjadi kalimat gramatikal yang natural.
-        //     Balas HANYA dengan kalimatnya, tanpa penjelasan.
-        // """)
-        // if let response = try? await session.respond(to: words.joined(separator: ", ")) {
-        //     return response.content
-        // }
+        if let sentence = try? await checkFM(input: words), !sentence.isEmpty {
+            return sentence
+        }
+
+        sentenceError = "Apple Intelligence is unavailable. Showing raw detected words."
         return fallbackSentence(words: words)
     }
 

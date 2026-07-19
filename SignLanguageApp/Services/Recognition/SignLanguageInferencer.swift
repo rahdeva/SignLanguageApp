@@ -7,6 +7,7 @@
 
 import CoreImage
 import CoreML
+import Vision
 
 /// Errors thrown during model loading or inference.
 enum InferenceError: LocalizedError {
@@ -30,16 +31,31 @@ enum InferenceError: LocalizedError {
 /// Interface for sign-language inference. Team can provide different implementations.
 protocol SignLanguageInferencing: Actor, Sendable {
     func predict(_ pixelBuffer: CVPixelBuffer) async throws -> SignPrediction
+    func reset() async
 }
 
-/// Loads a Core ML model and runs inference on camera frames.
+/// Loads a Core ML hand-action model and runs inference on Vision hand poses.
 actor SignLanguageInferencer: SignLanguageInferencing {
+    private static let modelName = "MyHandActionBisindoClassifier 1"
+    private static let frameCount = 60
+    private static let channels = 3
+
+    private let jointNames: [VNHumanHandPoseObservation.JointName] = [
+        .wrist,
+        .thumbCMC, .thumbMP, .thumbIP, .thumbTip,
+        .indexMCP, .indexPIP, .indexDIP, .indexTip,
+        .middleMCP, .middlePIP, .middleDIP, .middleTip,
+        .ringMCP, .ringPIP, .ringDIP, .ringTip,
+        .littleMCP, .littlePIP, .littleDIP, .littleTip,
+    ]
+
     private var model: MLModel?
+    private var poseFrames: [[Double]] = []
 
     init() {}
 
     /// Load `.mlmodelc` (or `.mlmodel`) from the app bundle.
-    func loadModel(named name: String = "SignLanguageModel") async throws {
+    func loadModel(named name: String = "MyHandActionBisindoClassifier 1") async throws {
         guard
             let url = Bundle.main.url(
                 forResource: name,
@@ -60,18 +76,28 @@ actor SignLanguageInferencer: SignLanguageInferencing {
         }
     }
 
-    /// Run prediction on a single pixel buffer. Returns label + confidence + raw scores.
+    /// Run prediction on the latest 60 Vision hand-pose frames.
     func predict(_ pixelBuffer: CVPixelBuffer) async throws -> SignPrediction {
+        if model == nil {
+            try await loadModel()
+        }
         guard let model else { throw InferenceError.modelNotFound }
 
-        let input: MLFeatureProvider
-        do {
-            let value = MLFeatureValue(pixelBuffer: pixelBuffer)
-            input = try MLDictionaryFeatureProvider(dictionary: ["image": value]
-            )
-        } catch {
-            throw InferenceError.invalidInput
+        guard let poseFrame = try extractPoseFrame(from: pixelBuffer) else {
+            return SignPrediction(gestureLabel: "", confidence: 0)
         }
+
+        poseFrames.append(poseFrame)
+        if poseFrames.count > Self.frameCount {
+            poseFrames.removeFirst(poseFrames.count - Self.frameCount)
+        }
+
+        guard poseFrames.count == Self.frameCount else {
+            return SignPrediction(gestureLabel: "", confidence: 0)
+        }
+
+        let poses = try makePoseWindow()
+        let input = try MLDictionaryFeatureProvider(dictionary: ["poses": poses])
 
         let output: MLFeatureProvider
         do {
@@ -80,23 +106,92 @@ actor SignLanguageInferencer: SignLanguageInferencing {
             throw InferenceError.predictionFailed(error)
         }
 
-        let label = output.featureValue(for: "label")?.stringValue ?? "unknown"
-        let confidence =
-            output.featureValue(for: "confidence")?.multiArrayValue?[0]
-            .floatValue ?? 0
-
-        var rawOutput: [String: Float] = [:]
-        if let labelProbabilities = output.featureValue(
-            for: "labelProbability"
-        )?.dictionaryValue as? [String: Float] {
-            rawOutput = labelProbabilities
-        }
+        let rawOutput = extractProbabilities(from: output)
+        let label = output.featureValue(for: "label")?.stringValue
+            ?? rawOutput.max(by: { $0.value < $1.value })?.key
+            ?? "unknown"
+        let confidence = rawOutput[label]
+            ?? rawOutput.max(by: { $0.value < $1.value })?.value
+            ?? 0
 
         return SignPrediction(
             gestureLabel: label,
             confidence: confidence,
             rawOutput: rawOutput
         )
+    }
+
+    func reset() {
+        poseFrames.removeAll()
+    }
+
+    private func extractPoseFrame(from pixelBuffer: CVPixelBuffer) throws -> [Double]? {
+        let request = VNDetectHumanHandPoseRequest()
+        request.maximumHandCount = 1
+
+        let handler = VNImageRequestHandler(
+            cvPixelBuffer: pixelBuffer,
+            orientation: .up,
+            options: [:]
+        )
+        try handler.perform([request])
+
+        guard let observation = request.results?.first else { return nil }
+        let points = try observation.recognizedPoints(.all)
+
+        return jointNames.flatMap { jointName -> [Double] in
+            guard let point = points[jointName], point.confidence > 0 else {
+                return [0, 0, 0]
+            }
+
+            return [
+                Double(point.location.x),
+                Double(point.location.y),
+                Double(point.confidence),
+            ]
+        }
+    }
+
+    private func makePoseWindow() throws -> MLMultiArray {
+        let poses = try MLMultiArray(
+            shape: [
+                NSNumber(value: Self.frameCount),
+                NSNumber(value: Self.channels),
+                NSNumber(value: jointNames.count),
+            ],
+            dataType: .double
+        )
+
+        for frameIndex in 0..<Self.frameCount {
+            let frame = poseFrames[frameIndex]
+            for jointIndex in 0..<jointNames.count {
+                for channelIndex in 0..<Self.channels {
+                    let sourceIndex = jointIndex * Self.channels + channelIndex
+                    poses[
+                        [
+                            NSNumber(value: frameIndex),
+                            NSNumber(value: channelIndex),
+                            NSNumber(value: jointIndex),
+                        ]
+                    ] = NSNumber(value: frame[sourceIndex])
+                }
+            }
+        }
+
+        return poses
+    }
+
+    private func extractProbabilities(from output: MLFeatureProvider) -> [String: Float] {
+        guard let dictionary = output.featureValue(for: "labelProbabilities")?.dictionaryValue else {
+            return [:]
+        }
+
+        var probabilities: [String: Float] = [:]
+        for (key, value) in dictionary {
+            guard let label = key as? String else { continue }
+            probabilities[label] = value.floatValue
+        }
+        return probabilities
     }
 }
 
@@ -122,4 +217,6 @@ actor MockSignLanguageInferencer: SignLanguageInferencing {
             ]
         )
     }
+
+    func reset() {}
 }

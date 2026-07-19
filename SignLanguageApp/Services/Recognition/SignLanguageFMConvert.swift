@@ -127,8 +127,16 @@ Output: Saya di rumah teman.
 Input: ["saya", "berangkat", "pagi", "maaf", "terima kasih"]
 Output: Saya berangkat pagi. Maaf, terima kasih.
 
+Input: ["saya", "lagi"]
+Output: Saya sedang.
+
+Input: ["saya", "lagi", "belajar"]
+Output: Saya sedang belajar.
+
 Input: ["saya", "lagi", "belajar", "tuli"]
 Output: Saya sedang belajar bahasa Tuli.
+
+
 """
     
     let examples = [

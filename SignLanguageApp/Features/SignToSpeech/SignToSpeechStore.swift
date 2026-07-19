@@ -48,12 +48,20 @@ final class SignToSpeechStore {
                     await appStore.cameraService.currentPosition == .front
                 isCameraBusy = false
 
-                // Stub loop — replace `appStore.inferencer.predict()` with real model call.
                 predictionTask = Task { [appStore, weak self] in
-                    for await _ in stream {
-                        try? await Task.sleep(for: .milliseconds(500))
-                        self?.predictedText = "Sign detected..."
-                        appStore.signPredictionOutput = "Sign detected..."
+                    for await pixelBuffer in stream {
+                        guard !Task.isCancelled else { return }
+                        do {
+                            let prediction = try await appStore.inferencer.predict(pixelBuffer)
+                            guard prediction.confidence >= 0.4, !prediction.gestureLabel.isEmpty else {
+                                continue
+                            }
+                            self?.predictedText = prediction.gestureLabel
+                            appStore.signPredictionOutput = prediction.gestureLabel
+                        } catch {
+                            appStore.error = .unknown(error.localizedDescription)
+                            appStore.showingError = true
+                        }
                     }
                 }
             } catch {
@@ -90,6 +98,7 @@ final class SignToSpeechStore {
         predictionTask = nil
         isCameraBusy = true
         Task {
+            await appStore.inferencer.reset()
             await appStore.cameraService.stop()
             try? await Task.sleep(for: Self.cooldown)
             isCameraBusy = false

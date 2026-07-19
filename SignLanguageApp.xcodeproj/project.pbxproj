@@ -7,11 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		65D1A314300944C90034B3B7 /* MyHandActionBisindoClassifier 1.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 65D1A313300944C90034B3B7 /* MyHandActionBisindoClassifier 1.mlmodel */; };
+		7D5837E4300CBDE6004AAC0A /* MyHandActionBisindoClassifier 1.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 7D5837E3300CBDE6004AAC0A /* MyHandActionBisindoClassifier 1.mlpackage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		65D1A313300944C90034B3B7 /* MyHandActionBisindoClassifier 1.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = "MyHandActionBisindoClassifier 1.mlmodel"; sourceTree = "<group>"; };
+		7D5837BD300CBD41004AAC0A /* SignLanguageApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SignLanguageApp.xcodeproj; sourceTree = "<group>"; };
+		7D5837E3300CBDE6004AAC0A /* MyHandActionBisindoClassifier 1.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = "MyHandActionBisindoClassifier 1.mlpackage"; sourceTree = "<group>"; };
 		E6CDA8A530090D84006D829E /* SignLanguageApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SignLanguageApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -34,12 +35,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7D5837BE300CBD41004AAC0A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		E6CDA89C30090D84006D829E = {
 			isa = PBXGroup;
 			children = (
 				E6CDA8A730090D84006D829E /* SignLanguageApp */,
 				E6CDA8A630090D84006D829E /* Products */,
-				65D1A313300944C90034B3B7 /* MyHandActionBisindoClassifier 1.mlmodel */,
+				7D5837E3300CBDE6004AAC0A /* MyHandActionBisindoClassifier 1.mlpackage */,
 			);
 			sourceTree = "<group>";
 		};
@@ -103,6 +111,12 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E6CDA8A630090D84006D829E /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 7D5837BE300CBD41004AAC0A /* Products */;
+					ProjectRef = 7D5837BD300CBD41004AAC0A /* SignLanguageApp.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				E6CDA8A430090D84006D829E /* SignLanguageApp */,
@@ -125,7 +139,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				65D1A314300944C90034B3B7 /* MyHandActionBisindoClassifier 1.mlmodel in Sources */,
+				7D5837E4300CBDE6004AAC0A /* MyHandActionBisindoClassifier 1.mlpackage in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -190,6 +204,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
+				NEW_SETTING = "";
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -249,6 +264,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				NEW_SETTING = "";
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
