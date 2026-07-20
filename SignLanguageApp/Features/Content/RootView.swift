@@ -49,11 +49,11 @@ struct RootView: View {
                     .transition(.opacity)
             } else {
                 TabView(selection: $selectedTab) {
-                    TwoWayConversationView()
-                        .tabItem {
-                            Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
-                        }
-                        .tag(AppTab.conversation)
+//                    TwoWayConversationView()
+//                        .tabItem {
+//                            Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
+//                        }
+//                        .tag(AppTab.conversation)
 
 //                    SpeechToTextView()
 //                        .tabItem {
@@ -72,7 +72,7 @@ struct RootView: View {
                             Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
                         }
                         .tag(AppTab.history)
-                    
+//                    
 //                    UnifiedView()
 //                        .tabItem {
 //                            Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)

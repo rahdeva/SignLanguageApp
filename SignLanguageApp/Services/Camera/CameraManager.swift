@@ -54,6 +54,7 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
     @Published var modelMode: ModelMode        = .handOnly
 
     // Face & Eye Tracking
+    @Published var isFaceDetectionEnabled: Bool = true
     @Published var isFaceDetected: Bool      = false
     @Published var isLeftEyeClosed: Bool     = false
     @Published var isRightEyeClosed: Bool    = false
@@ -290,10 +291,13 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
         let handRequest = VNDetectHumanHandPoseRequest()
         handRequest.maximumHandCount = 1
 
-        let faceRequest = VNDetectFaceLandmarksRequest()
+        let faceEnabled = isFaceDetectionEnabled
+        let faceRequest: VNDetectFaceLandmarksRequest? = faceEnabled ? VNDetectFaceLandmarksRequest() : nil
 
         do {
-            try handler.perform([handRequest, faceRequest])
+            var requests: [VNRequest] = [handRequest]
+            if let fr = faceRequest { requests.append(fr) }
+            try handler.perform(requests)
         } catch {
             handleEmptyFrame(faceDetected: false, leftClosed: false, rightClosed: false)
             return
@@ -302,7 +306,7 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
         var faceDetected = false
         var leftClosed = false
         var rightClosed = false
-        if let faceObs = faceRequest.results?.first, let landmarks = faceObs.landmarks {
+        if let faceObs = faceRequest?.results?.first, let landmarks = faceObs.landmarks {
             faceDetected = true
             if let leftEAR = Self.calculateEAR(region: landmarks.leftEye) {
                 leftClosed = leftEAR < 0.18

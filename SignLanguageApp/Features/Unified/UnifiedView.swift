@@ -114,6 +114,18 @@ struct UnifiedView: View {
 
             Spacer()
 
+            // Eye detection badges (shown only when face detection is enabled)
+            if cameraManager.isFaceDetectionEnabled && cameraManager.isFaceDetected {
+                HStack(spacing: 6) {
+                    eyeBadge(label: "L", isClosed: cameraManager.isLeftEyeClosed)
+                    eyeBadge(label: "R", isClosed: cameraManager.isRightEyeClosed)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(.ultraThinMaterial, in: .capsule)
+                .transition(.scale.combined(with: .opacity))
+            }
+
             if cameraManager.bufferCount < 60 {
                 ProgressView(value: Double(cameraManager.bufferCount), total: 60)
                     .progressViewStyle(.linear)
@@ -132,6 +144,19 @@ struct UnifiedView: View {
                     .background(.green, in: .capsule)
             }
         }
+    }
+
+    @ViewBuilder
+    private func eyeBadge(label: String, isClosed: Bool) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: isClosed ? "eye.slash.fill" : "eye.fill")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(isClosed ? .orange : .green)
+            Text(label)
+                .font(.caption2.weight(.heavy))
+                .foregroundStyle(.white)
+        }
+        .animation(.easeInOut(duration: 0.15), value: isClosed)
     }
 
     private var signRecognitionControls: some View {
@@ -191,6 +216,7 @@ struct UnifiedView: View {
             .buttonStyle(.glass)
 
             modelButton
+            faceDetectionButton
             micButton
 
             Button {
@@ -223,6 +249,25 @@ struct UnifiedView: View {
             cameraManager.modelMode == .handOnly
                 ? "Switch to multi modal model"
                 : "Switch to hand only model"
+        )
+    }
+
+    private var faceDetectionButton: some View {
+        Button {
+            withAnimation(.spring()) {
+                cameraManager.isFaceDetectionEnabled.toggle()
+            }
+        } label: {
+            Image(systemName: cameraManager.isFaceDetectionEnabled ? "face.smiling.inverse" : "face.smiling")
+                .font(.title2.weight(.semibold))
+                .frame(width: 52, height: 52)
+        }
+        .buttonStyle(.glassProminent)
+        .tint(cameraManager.isFaceDetectionEnabled ? .purple : .secondary)
+        .accessibilityLabel(
+            cameraManager.isFaceDetectionEnabled
+                ? "Turn off face detection"
+                : "Turn on face detection"
         )
     }
 
@@ -503,10 +548,21 @@ struct UnifiedView: View {
         }
     }
 
+    private func displaySign(for raw: String) -> String {
+        if raw == "Detecting..." || raw == "Uncertain" {
+            return raw == "Detecting..."
+                ? "sign.detecting".localized(for: appStore.languageSettings.appLanguage)
+                : "sign.uncertain".localized(for: appStore.languageSettings.appLanguage)
+        }
+        let cleaned = SignRecognitionEngine.cleanLabel(raw)
+        return SignLabelTranslator.translate(cleaned, to: appStore.languageSettings.ttsLanguage)
+    }
+
     private func handleNewSign(_ sign: String, confidence: Double) {
-        guard sign != "Detecting..." else { return }
+        guard sign != "Detecting...", sign != "Uncertain" else { return }
+        let translated = displaySign(for: sign)
         Task { @MainActor in
-            recognizer.feed(rawLabel: sign, confidence: confidence)
+            recognizer.feed(rawLabel: translated, confidence: confidence)
         }
     }
 
