@@ -12,7 +12,7 @@ struct UnifiedView: View {
     @StateObject private var cameraManager = CameraManager()
     @StateObject private var recognizer = SignRecognitionEngine(
         // Default to 2
-        stableThreshold: 2,
+        stableThreshold: 1,
         cooldownThreshold: 5,
         maxWords: 12
     )
@@ -64,19 +64,14 @@ struct UnifiedView: View {
     private var cameraPane: some View {
         ZStack(alignment: .bottomTrailing) {
             if cameraManager.permissionGranted {
-                GeometryReader { geo in
-                    ZStack {
-                        CameraPreviewView(
-                            session: cameraManager.session,
-                            isFrontCamera: cameraManager.isFrontCamera,
-                            cameraManager: cameraManager
-                        )
+                ZStack {
+                    CameraPreviewView(
+                        session: cameraManager.session,
+                        isFrontCamera: cameraManager.isFrontCamera,
+                        cameraManager: cameraManager
+                    )
 
-                        HandOverlayView(handPoints: cameraManager.handPoints)
-                    }
-                    .rotationEffect(.degrees(90))
-                    .frame(width: geo.size.height, height: geo.size.width)
-                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                    HandOverlayView(handPoints: cameraManager.handPoints)
                 }
                 .frame(height: 360)
                 .clipped()

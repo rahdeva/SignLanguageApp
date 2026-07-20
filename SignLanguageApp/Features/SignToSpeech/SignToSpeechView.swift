@@ -42,21 +42,14 @@ struct SignToSpeechView: View {
         ZStack {
             // MARK: - Camera & Skeleton Overlay
             if cameraManager.permissionGranted {
-                GeometryReader { geo in
-                    ZStack {
-                        CameraPreviewView(
-                            session: cameraManager.session,
-                            isFrontCamera: cameraManager.isFrontCamera,
-                            cameraManager: cameraManager
-                        )
+                ZStack {
+                    CameraPreviewView(
+                        session: cameraManager.session,
+                        isFrontCamera: cameraManager.isFrontCamera,
+                        cameraManager: cameraManager
+                    )
 
-                        HandOverlayView(handPoints: cameraManager.handPoints)
-                    }
-                    // The raw sensor frame is landscape; rotate the whole ZStack -90°
-                    // so it fills the screen in portrait without touching AVFoundation.
-                    .rotationEffect(.degrees(-90))
-                    .frame(width: geo.size.height, height: geo.size.width)
-                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                    HandOverlayView(handPoints: cameraManager.handPoints)
                 }
                 .ignoresSafeArea()
             } else {

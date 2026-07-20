@@ -29,6 +29,11 @@ struct CameraPreviewView: UIViewRepresentable {
         view.backgroundColor = .black
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
+
+        // Apply orientation and mirroring immediately so the very first
+        // rendered frame is already portrait — avoids landscape flash.
+        configureConnection(on: view.videoPreviewLayer)
+
         // Register the live layer into CameraManager so captureOutput can use layerPointConverted
         cameraManager?.previewLayer = view.videoPreviewLayer
         return view
@@ -41,24 +46,18 @@ struct CameraPreviewView: UIViewRepresentable {
         // Keep the layer reference fresh after camera flips
         cameraManager?.previewLayer = uiView.videoPreviewLayer
 
-        // Mirror the preview for the front camera so it looks like a selfie mirror,
-        // but leave videoDataOutput unmirrored so Vision/CoreML get raw coordinates.
-        if let connection = uiView.videoPreviewLayer.connection {
-            if #available(iOS 17.0, *) {
-                if connection.isVideoRotationAngleSupported(90.0) {
-                    connection.videoRotationAngle = 90.0
-                }
-            } else {
-                if connection.isVideoOrientationSupported {
-                    connection.videoOrientation = .portrait
-                }
-            }
-            if connection.isVideoMirroringSupported {
-                // Must disable automatic mirroring before setting it manually,
-                // otherwise AVFoundation throws NSInvalidArgumentException.
-                connection.automaticallyAdjustsVideoMirroring = false
-                connection.isVideoMirrored = isFrontCamera
-            }
+        // Re-apply after session/camera changes (e.g. front↔back flip)
+        configureConnection(on: uiView.videoPreviewLayer)
+    }
+
+    /// Apply front-camera mirroring on the preview layer connection.
+    /// Orientation is handled automatically by AVCaptureVideoPreviewLayer.
+    private func configureConnection(on layer: AVCaptureVideoPreviewLayer) {
+        guard let connection = layer.connection else { return }
+
+        if connection.isVideoMirroringSupported {
+            connection.automaticallyAdjustsVideoMirroring = false
+            connection.isVideoMirrored = isFrontCamera
         }
     }
 }
