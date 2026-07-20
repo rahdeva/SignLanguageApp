@@ -280,7 +280,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COREML_CODEGEN_LANGUAGE = Swift;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 828B5GGY6S;
+				DEVELOPMENT_TEAM = 7GQ2982L53;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to detect hand signs and recognize Bisindo sign language.";
@@ -317,7 +317,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COREML_CODEGEN_LANGUAGE = Swift;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 828B5GGY6S;
+				DEVELOPMENT_TEAM = 7GQ2982L53;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to detect hand signs and recognize Bisindo sign language.";

@@ -15,6 +15,13 @@
 "settings.onboarding.toggle"         = "Tampilkan Pengantar saat Buka";
 "settings.onboarding.description"    = "Putar ulang layar pengantar saat berikutnya membuka aplikasi";
 
+/* Settings — Features */
+"settings.section.features"                  = "Fitur";
+"settings.features.foundation_models"        = "Model Fondasi";
+"settings.features.foundation_models.desc"   = "Aktifkan Apple Intelligence untuk menerjemahkan kata isyarat menjadi kalimat dengan tata bahasa yang benar";
+"settings.features.eye_close_mode"           = "Mode Pejamkan Mata";
+"settings.features.eye_close_mode.desc"      = "Pejamkan atau kedipkan satu mata selama 1 detik untuk beralih antara mode isyarat dan bicara";
+
 /* Settings — Language */
 "settings.section.language"          = "Bahasa";
 "settings.language.app"              = "Bahasa Aplikasi";
