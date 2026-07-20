@@ -12,7 +12,7 @@ struct UnifiedView: View {
     @StateObject private var cameraManager = CameraManager()
     @StateObject private var recognizer = SignRecognitionEngine(
         // Default to 2
-        stableThreshold: 2,
+        stableThreshold: 1,
         cooldownThreshold: 5,
         maxWords: 12
     )
@@ -41,8 +41,6 @@ struct UnifiedView: View {
                     conversationSection
                 }
             }
-
-            bottomControlBar
         }
         .onAppear {
             if speechStore == nil {
@@ -66,24 +64,23 @@ struct UnifiedView: View {
     private var cameraPane: some View {
         ZStack(alignment: .bottomTrailing) {
             if cameraManager.permissionGranted {
-                GeometryReader { geo in
-                    ZStack {
-                        CameraPreviewView(
-                            session: cameraManager.session,
-                            isFrontCamera: cameraManager.isFrontCamera,
-                            cameraManager: cameraManager
-                        )
+                ZStack {
+                    CameraPreviewView(
+                        session: cameraManager.session,
+                        isFrontCamera: cameraManager.isFrontCamera,
+                        cameraManager: cameraManager
+                    )
 
-                        HandOverlayView(handPoints: cameraManager.handPoints)
-                    }
-                    .rotationEffect(.degrees(90))
-                    .frame(width: geo.size.height, height: geo.size.width)
-                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                    HandOverlayView(handPoints: cameraManager.handPoints)
                 }
                 .frame(height: 360)
                 .clipped()
                 .overlay(alignment: .top) {
                     cameraStatusBar
+                        .padding(12)
+                }
+                .overlay(alignment: .bottomLeading) {
+                    cameraResetButton
                         .padding(12)
                 }
             } else {
@@ -101,11 +98,11 @@ struct UnifiedView: View {
         HStack(spacing: 8) {
             HStack(spacing: 6) {
                 Circle()
-                    .fill(cameraManager.bufferCount == 60 ? .green : .orange)
+                    .fill(cameraManager.bufferCount == 60 ? .green : .yellow)
                     .frame(width: 10, height: 10)
 
-                Text("BISINDO AI")
-                    .font(.caption.weight(.black))
+                Text("BISINDO")
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.white)
             }
             .padding(.horizontal, 12)
@@ -122,10 +119,10 @@ struct UnifiedView: View {
 
                 Text("\(cameraManager.bufferCount)/60")
                     .font(.caption2.monospacedDigit().weight(.bold))
-                    .foregroundStyle(.cyan)
+                    .foregroundStyle(.blue)
             } else {
                 Text("LIVE")
-                    .font(.caption2.weight(.heavy))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(.black)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -147,11 +144,11 @@ struct UnifiedView: View {
 //            topPredictionSummary
             wordSequenceRow
         }
-        .padding(.horizontal)
+        .padding(.horizontal,20)
     }
 
     private var conversationSection: some View {
-        VStack {
+        VStack(spacing: 24) {
             ConversationComponentView(
                 title: "Sign to Text",
                 subtitle: "Camera input translating in real-time",
@@ -172,36 +169,12 @@ struct UnifiedView: View {
                 senderLabel: "Care Giver Transcribe:",
                 messageText: caregiverTranscribedText,
                 isActive: speechStore?.isRecording ?? false,
-                accentColor: .blue
-            )
-        }
-    }
-
-    private var bottomControlBar: some View {
-        HStack(spacing: 16) {
-            Button {
-                cameraManager.resetBuffer()
-                recognizer.clearAll()
-                appStore.signPredictionOutput = ""
-            } label: {
-                Label("Reset Sign", systemImage: "arrow.counterclockwise")
-                    .frame(maxWidth: .infinity)
-                    .padding()
-            }
-            .buttonStyle(.glass)
-
-            modelButton
-            micButton
-
-            Button {
-                speakTemanTuliTranscription()
-            } label: {
-                Image(systemName: "speaker.wave.2.fill")
-                    .font(.title2)
-                    .frame(width: 52, height: 52)
-            }
-            .buttonStyle(.glassProminent)
-            .disabled(temanTuliText.isEmpty)
+                accentColor: .blue,
+                labelActionIconName: speechStore?.isRecording == true ? "mic.circle.fill" : "mic.fill",
+                labelActionAccessibilityLabel: speechStore?.isRecording == true ? "Turn off microphone" : "Turn on microphone",
+                labelActionTint: speechStore?.isRecording == true ? .red : .blue,
+                onLabelAction: toggleSpeechRecording
+            ).padding(.bottom, 80)
         }
     }
 
@@ -224,6 +197,21 @@ struct UnifiedView: View {
                 ? "Switch to multi modal model"
                 : "Switch to hand only model"
         )
+    }
+
+    private var cameraResetButton: some View {
+        Button {
+            resetSignRecognition()
+        } label: {
+            Label("Reset Sign", systemImage: "arrow.counterclockwise")
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(.ultraThinMaterial, in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .accessibilityLabel("Reset sign recognition")
     }
 
     private var wordSequenceRow: some View {
@@ -284,9 +272,9 @@ struct UnifiedView: View {
                 .padding(.vertical, 2)
             }
         }
-        .padding(16)
+        .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: 24)
                 .fill(.background)
                 .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 3)
         )
@@ -514,6 +502,23 @@ struct UnifiedView: View {
         withAnimation {
             recognizer.clearAll()
             appStore.signPredictionOutput = ""
+        }
+    }
+
+    private func resetSignRecognition() {
+        withAnimation {
+            cameraManager.resetBuffer()
+            recognizer.clearAll()
+            appStore.signPredictionOutput = ""
+        }
+    }
+
+    private func toggleSpeechRecording() {
+        guard let speechStore else { return }
+        if speechStore.isRecording {
+            speechStore.stopRecording()
+        } else {
+            speechStore.startRecording()
         }
     }
 

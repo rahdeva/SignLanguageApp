@@ -15,6 +15,13 @@
 "settings.onboarding.toggle"         = "Show Onboarding on Launch";
 "settings.onboarding.description"    = "Replay the introduction screens next time you open the app";
 
+/* Settings — Features */
+"settings.section.features"                  = "Features";
+"settings.features.foundation_models"        = "Foundation Models";
+"settings.features.foundation_models.desc"   = "Enable Apple Intelligence to translate sign words into grammatically correct sentences";
+"settings.features.eye_close_mode"           = "Eye Close Switch Mode";
+"settings.features.eye_close_mode.desc"      = "Close or wink one eye for 1 second to toggle between signing and speaking modes";
+
 /* Settings — Language */
 "settings.section.language"          = "Language";
 "settings.language.app"              = "App Language";
