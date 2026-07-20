@@ -60,7 +60,7 @@ struct RootView: View {
 //                            Label(AppTab.speechToText.titleKey, systemImage: AppTab.speechToText.icon)
 //                        }
 //                        .tag(AppTab.speechToText)
-
+//
 //                    SignToSpeechView()
 //                        .tabItem {
 //                            Label(AppTab.signToSpeech.titleKey, systemImage: AppTab.signToSpeech.icon)
@@ -72,12 +72,12 @@ struct RootView: View {
                             Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
                         }
                         .tag(AppTab.history)
-//                    
-//                    UnifiedView()
-//                        .tabItem {
-//                            Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
-//                        }
-//                        .tag(AppTab.history)
+                    
+                    UnifiedView()
+                        .tabItem {
+                            Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
+                        }
+                        .tag(AppTab.conversation)
 
                     SettingsView()
                         .tabItem {

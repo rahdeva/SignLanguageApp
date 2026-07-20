@@ -12,7 +12,7 @@ struct TwoWayConversationView: View {
     @Environment(AppStore.self) private var appStore
     @StateObject private var cameraManager = CameraManager()
     @StateObject private var recognizer = SignRecognitionEngine(
-        stableThreshold: 2,
+        stableThreshold: 1,
         cooldownThreshold: 5,
         maxWords: 12
     )

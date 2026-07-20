@@ -14,6 +14,8 @@ struct SettingsView: View {
     @State private var hasSeenOnboarding = UserDefaults.standard.bool(
         forKey: "hasSeenOnboarding"
     )
+    @State private var isFoundationModelEnabled = UserDefaults.standard.object(forKey: "isFoundationModelEnabled") as? Bool ?? true
+    @State private var isEyeCloseControlEnabled = UserDefaults.standard.object(forKey: "isEyeCloseControlEnabled") as? Bool ?? false
 
     var body: some View {
         NavigationStack {
@@ -37,6 +39,37 @@ struct SettingsView: View {
                     }
                 } header: {
                     Text("settings.section.general", tableName: "Localizable")
+                }
+
+                // MARK: - Features
+                Section {
+                    Toggle(isOn: $isFoundationModelEnabled) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("settings.features.foundation_models", tableName: "Localizable")
+                                .font(.body)
+                            Text("settings.features.foundation_models.desc", tableName: "Localizable")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isFoundationModelEnabled) { _, newValue in
+                        UserDefaults.standard.set(newValue, forKey: "isFoundationModelEnabled")
+                    }
+
+                    Toggle(isOn: $isEyeCloseControlEnabled) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("settings.features.eye_close_mode", tableName: "Localizable")
+                                .font(.body)
+                            Text("settings.features.eye_close_mode.desc", tableName: "Localizable")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isEyeCloseControlEnabled) { _, newValue in
+                        UserDefaults.standard.set(newValue, forKey: "isEyeCloseControlEnabled")
+                    }
+                } header: {
+                    Text("settings.section.features", tableName: "Localizable")
                 }
 
                 // MARK: - Language
