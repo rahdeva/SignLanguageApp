@@ -43,12 +43,12 @@ private struct SessionRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(session.title ?? "history.session_untitled")
+                Text(session.title ?? String(localized: "history.session_untitled"))
                     .font(.headline)
                     .lineLimit(1)
                 Spacer()
                 if session.isActive {
-                    Text("history.session_active")
+                    Text("session.active")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.green)
                 }
@@ -60,7 +60,7 @@ private struct SessionRowView: View {
                     .foregroundStyle(.secondary)
                 Text("•")
                     .foregroundStyle(.secondary)
-                Text("\(session.messageCount) pesan")
+                Text(String.localizedStringWithFormat(NSLocalizedString("history.session_messages", comment: ""), session.messageCount))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

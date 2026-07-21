@@ -15,14 +15,24 @@ struct SessionDetailView: View {
         VStack(spacing: 0) {
             // Header
             VStack(spacing: 4) {
-                Text(session.title ?? "history.session_untitled")
+                Text(session.title ?? String(localized: "history.session_untitled"))
                     .font(.title2.weight(.semibold))
                 Text(session.createdAt, style: .date)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 if let endedAt = session.endedAt {
                     let minutes = Int(endedAt.timeIntervalSince(session.createdAt) / 60)
-                    Text("\(session.messageCount) " + String(localized: "history.session_messages") + (minutes > 0 ? " • \(minutes) " + String(localized: "history.session_duration") : ""))
+                    let messagesPart = String.localizedStringWithFormat(
+                        NSLocalizedString("history.session_messages", comment: ""),
+                        session.messageCount
+                    )
+                    let durationPart = minutes > 0
+                        ? " • " + String.localizedStringWithFormat(
+                            NSLocalizedString("history.session_duration", comment: ""),
+                            minutes
+                        )
+                        : ""
+                    Text(messagesPart + durationPart)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
