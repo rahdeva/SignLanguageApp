@@ -5,17 +5,16 @@
 //  Created by Muhammad Hisyam Kamil on 17/07/26.
 //
 
+import SwiftData
 import SwiftUI
 
 /// Navigation tabs for the two main pipelines plus history log.
 enum AppTab: String, CaseIterable {
-    case conversation, speechToText, signToSpeech, history, settings
+    case conversation, history, settings
 
     var titleKey: LocalizedStringKey {
         switch self {
         case .conversation: "tab.conversation"
-        case .speechToText: "tab.speech"
-        case .signToSpeech: "tab.sign"
         case .history:      "tab.history"
         case .settings:     "tab.settings"
         }
@@ -24,8 +23,6 @@ enum AppTab: String, CaseIterable {
     var icon: String {
         switch self {
         case .conversation: "person.2.wave.2"
-        case .speechToText: "mic"
-        case .signToSpeech: "camera"
         case .history:      "clock"
         case .settings:     "gearshape"
         }
@@ -36,11 +33,15 @@ enum AppTab: String, CaseIterable {
 /// Injects both `AppStore` and the chosen `Locale` into the environment so all
 /// child views automatically render in the correct language.
 struct RootView: View {
-    @State private var appStore = AppStore()
+    @State private var appStore: AppStore
     @State private var selectedTab: AppTab = .conversation
     @State private var showOnboarding = !UserDefaults.standard.bool(
         forKey: "hasSeenOnboarding"
     )
+
+    init(container: ModelContainer) {
+        _appStore = State(wrappedValue: AppStore(container: container))
+    }
 
     var body: some View {
         Group {
@@ -49,35 +50,17 @@ struct RootView: View {
                     .transition(.opacity)
             } else {
                 TabView(selection: $selectedTab) {
-//                    TwoWayConversationView()
-//                        .tabItem {
-//                            Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
-//                        }
-//                        .tag(AppTab.conversation)
-
-//                    SpeechToTextView()
-//                        .tabItem {
-//                            Label(AppTab.speechToText.titleKey, systemImage: AppTab.speechToText.icon)
-//                        }
-//                        .tag(AppTab.speechToText)
-//
-//                    SignToSpeechView()
-//                        .tabItem {
-//                            Label(AppTab.signToSpeech.titleKey, systemImage: AppTab.signToSpeech.icon)
-//                        }
-//                        .tag(AppTab.signToSpeech)
-
-                    HistoryView()
-                        .tabItem {
-                            Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
-                        }
-                        .tag(AppTab.history)
-                    
                     UnifiedView()
                         .tabItem {
                             Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
                         }
                         .tag(AppTab.conversation)
+
+                    SessionListView()
+                        .tabItem {
+                            Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
+                        }
+                        .tag(AppTab.history)
 
                     SettingsView()
                         .tabItem {
@@ -89,7 +72,6 @@ struct RootView: View {
                 .task { await appStore.checkPermissions() }
             }
         }
-        // Re-render entire subtree when app language changes
         .id(appStore.languageSettings.appLanguage)
         .environment(\.locale, appStore.languageSettings.appLanguage.locale)
         .animation(.default, value: showOnboarding)
