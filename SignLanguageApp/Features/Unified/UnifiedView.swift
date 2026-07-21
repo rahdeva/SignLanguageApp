@@ -11,7 +11,6 @@ struct UnifiedView: View {
     @Environment(AppStore.self) private var appStore
     @StateObject private var cameraManager = CameraManager()
     @StateObject private var recognizer = SignRecognitionEngine(
-        // Default to 2
         stableThreshold: 1,
         cooldownThreshold: 5,
         maxWords: 12
@@ -19,6 +18,7 @@ struct UnifiedView: View {
     @State private var speechStore: SpeechToTextStore?
     @State private var lastAutoPlayedTemanTuliText: String?
     @State private var showConfidenceDetails = true
+    @State private var showNewSessionAlert = false
 
     private var temanTuliText: String {
         recognizer.builtSentence
@@ -32,15 +32,26 @@ struct UnifiedView: View {
         cameraManager.permissionGranted && cameraManager.isRunning
     }
 
+    /// Messages from the active session, sorted chronologically.
+    private var sessionMessages: [ChatMessage] {
+        guard let session = appStore.activeSession else { return [] }
+        return session.messages.sorted { $0.createdAt < $1.createdAt }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 16) {
                     cameraPane
                     signRecognitionControls
+                    sessionToolbar
                     conversationSection
                 }
             }
+
+            bottomControlsBar
+                .padding(.horizontal)
+                .padding(.bottom, 8)
         }
         .onAppear {
             if speechStore == nil {
@@ -60,6 +71,146 @@ struct UnifiedView: View {
             await speakTemanTuliTranscription()
         }
     }
+
+    // MARK: - Session Toolbar
+
+    private var sessionToolbar: some View {
+        HStack {
+            if let session = appStore.activeSession {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(.green)
+                        .frame(width: 8, height: 8)
+                    Text("session.active")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.green)
+                    Text("\(session.messageCount)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.ultraThinMaterial, in: .capsule)
+
+                Button(role: .destructive) {
+                    appStore.endSession()
+                } label: {
+                    Text("session.end")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .tint(.red)
+            } else {
+                Button {
+                    if !appStore.signPredictionOutput.isEmpty || !(speechStore?.transcribedText.isEmpty ?? true) {
+                        showNewSessionAlert = true
+                    } else {
+                        appStore.startSession()
+                    }
+                } label: {
+                    Label("session.start", systemImage: "plus.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(.horizontal, 20)
+        .alert("session.start_new_title", isPresented: $showNewSessionAlert) {
+            Button("session.start_new_confirm") {
+                appStore.startSession()
+            }
+            Button("cancel", role: .cancel) {}
+        } message: {
+            Text("session.start_new_desc")
+        }
+    }
+
+    // MARK: - Conversation Section (Bubble Layout)
+
+    private var conversationSection: some View {
+        VStack(spacing: 8) {
+            if !sessionMessages.isEmpty {
+                ForEach(sessionMessages) { message in
+                    MessageBubbleView(
+                        content: message.content,
+                        role: message.role,
+                        timestamp: message.createdAt
+                    )
+                }
+            }
+
+            MessageBubbleView(
+                content: temanTuliText,
+                role: .sign,
+                timestamp: .now,
+                isPending: isSignActive && !temanTuliText.isEmpty
+            )
+
+            if let transcribed = speechStore?.transcribedText, !transcribed.isEmpty {
+                let isNewTranscription = !sessionMessages.contains { $0.content == transcribed }
+                if isNewTranscription {
+                    MessageBubbleView(
+                        content: transcribed,
+                        role: .speech,
+                        timestamp: .now,
+                        isPending: speechStore?.isRecording == true
+                    )
+                }
+            }
+        }
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - Bottom Controls
+
+    private var bottomControlsBar: some View {
+        HStack(spacing: 10) {
+            if cameraManager.permissionGranted {
+                Button(action: { cameraManager.toggleCamera() }) {
+                    Image(systemName: "camera.rotate.fill")
+                        .font(.title2)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.primary)
+            }
+
+            Spacer()
+
+            if let speechStore {
+                Button {
+                    if speechStore.isRecording {
+                        speechStore.stopRecording()
+                    } else {
+                        speechStore.startRecording()
+                    }
+                } label: {
+                    Image(systemName: speechStore.isRecording ? "mic.circle.fill" : "mic.fill")
+                        .font(.title2.weight(.semibold))
+                        .frame(width: 52, height: 52)
+                }
+                .buttonStyle(.glassProminent)
+                .tint(speechStore.isRecording ? .red : .blue)
+                .accessibilityLabel(speechStore.isRecording ? "Turn off microphone" : "Turn on microphone")
+            }
+
+            Button {
+                resetSignRecognition()
+            } label: {
+                Label("Reset", systemImage: "arrow.counterclockwise")
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 9)
+                    .background(.ultraThinMaterial, in: .capsule)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - Camera Pane (unchanged)
 
     private var cameraPane: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -133,85 +284,9 @@ struct UnifiedView: View {
 
     private var signRecognitionControls: some View {
         VStack(spacing: 12) {
-//            if !recognizer.wordSequence.isEmpty {
-//                wordSequenceRow
-//            }
-//
-//            if !recognizer.builtSentence.isEmpty || recognizer.isBuildingSentence || recognizer.sentenceError != nil {
-//                sentencePanel
-//            }
-//
-//            topPredictionSummary
             wordSequenceRow
         }
-        .padding(.horizontal,20)
-    }
-
-    private var conversationSection: some View {
-        VStack(spacing: 24) {
-            ConversationComponentView(
-                title: "Sign to Text",
-                subtitle: "Camera input translating in real-time",
-                iconName: "hand.raised.fill",
-                senderLabel: "Teman Tuli Transcribe:",
-                messageText: temanTuliText,
-                isActive: isSignActive,
-                accentColor: .blue,
-                onReadAloud: speakTemanTuliTranscription
-            )
-
-            SeparatorLine()
-
-            ConversationComponentView(
-                title: "Speech to Text",
-                subtitle: "Voice input transcribing in real-time",
-                iconName: "mic.fill",
-                senderLabel: "Care Giver Transcribe:",
-                messageText: caregiverTranscribedText,
-                isActive: speechStore?.isRecording ?? false,
-                accentColor: .blue,
-                labelActionIconName: speechStore?.isRecording == true ? "mic.circle.fill" : "mic.fill",
-                labelActionAccessibilityLabel: speechStore?.isRecording == true ? "Turn off microphone" : "Turn on microphone",
-                labelActionTint: speechStore?.isRecording == true ? .red : .blue,
-                onLabelAction: toggleSpeechRecording
-            ).padding(.bottom, 80)
-        }
-    }
-
-    private var modelButton: some View {
-        Button {
-            withAnimation(.spring()) {
-                cameraManager.switchModel(
-                    cameraManager.modelMode == .handOnly ? .multiModal : .handOnly
-                )
-            }
-        } label: {
-            Image(systemName: cameraManager.modelMode.sfSymbol)
-                .font(.title2.weight(.semibold))
-                .frame(width: 52, height: 52)
-        }
-        .buttonStyle(.glassProminent)
-        .tint(cameraManager.modelMode == .multiModal ? .cyan : .blue)
-        .accessibilityLabel(
-            cameraManager.modelMode == .handOnly
-                ? "Switch to multi modal model"
-                : "Switch to hand only model"
-        )
-    }
-
-    private var cameraResetButton: some View {
-        Button {
-            resetSignRecognition()
-        } label: {
-            Label("Reset Sign", systemImage: "arrow.counterclockwise")
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .background(.ultraThinMaterial, in: .capsule)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.primary)
-        .accessibilityLabel("Reset sign recognition")
+        .padding(.horizontal, 20)
     }
 
     private var wordSequenceRow: some View {
@@ -280,174 +355,52 @@ struct UnifiedView: View {
         )
     }
 
-    private var sentencePanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label("KALIMAT", systemImage: "text.bubble.fill")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                Button {
-                    withAnimation { recognizer.clearAll() }
-                } label: {
-                    Image(systemName: "xmark")
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("Clear sentence")
-            }
-
-            if recognizer.isBuildingSentence {
-                HStack(spacing: 10) {
-                    ProgressView()
-                        .tint(.cyan)
-                    Text("Menyusun kalimat...")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            } else if !recognizer.builtSentence.isEmpty {
-                Text(recognizer.builtSentence)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button {
-                    recognizer.buildSentence()
-                } label: {
-                    Label("Ulangi", systemImage: "arrow.clockwise")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.cyan)
-            } else if let error = recognizer.sentenceError {
-                Text(error)
-                    .font(.subheadline)
-                    .foregroundStyle(.orange)
-
-                if !recognizer.builtSentence.isEmpty {
-                    Text(recognizer.builtSentence)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
+    private var cameraResetButton: some View {
+        Button {
+            resetSignRecognition()
+        } label: {
+            Label("Reset Sign", systemImage: "arrow.counterclockwise")
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(.ultraThinMaterial, in: .capsule)
         }
-        .padding(16)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 18))
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .accessibilityLabel("Reset sign recognition")
     }
 
-    private var topPredictionSummary: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("DETECTED BISINDO SIGN")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.secondary)
-
-                    Text(cameraManager.currentSign.uppercased())
-                        .font(.title2.weight(.heavy))
-                        .foregroundStyle(
-                            cameraManager.currentSign == "Uncertain" ||
-                                cameraManager.currentSign == "Detecting..." ? .yellow : .cyan
-                        )
-                        .minimumScaleFactor(0.7)
-                        .lineLimit(1)
+    private var permissionDeniedView: some View {
+        ContentUnavailableView {
+            Label("Camera Access Required", systemImage: "camera.fill.badge.ellipsis")
+        } description: {
+            Text("Allow camera access to detect Bisindo hand signs in real time.")
+        } actions: {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
                 }
-
-                Spacer()
-
-                confidenceRing
-            }
-
-            if !cameraManager.topPredictions.isEmpty {
-                Divider()
-
-                HStack {
-                    Text("TOP CANDIDATES")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Button {
-                        withAnimation(.easeInOut) {
-                            showConfidenceDetails.toggle()
-                        }
-                    } label: {
-                        Image(systemName: showConfidenceDetails ? "chevron.up" : "chevron.down")
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel(showConfidenceDetails ? "Hide top candidates" : "Show top candidates")
-                }
-
-                if showConfidenceDetails {
-                    VStack(spacing: 8) {
-                        ForEach(cameraManager.topPredictions, id: \.label) { item in
-                            predictionRow(item)
-                        }
-                    }
-                }
-            }
-        }
-        .padding(16)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 18))
-    }
-
-    private var confidenceRing: some View {
-        ZStack {
-            Circle()
-                .stroke(.secondary.opacity(0.2), lineWidth: 5)
-                .frame(width: 58, height: 58)
-
-            Circle()
-                .trim(from: 0, to: CGFloat(cameraManager.currentConfidence))
-                .stroke(
-                    .cyan,
-                    style: StrokeStyle(lineWidth: 5, lineCap: .round)
-                )
-                .frame(width: 58, height: 58)
-                .rotationEffect(.degrees(-90))
-                .animation(.easeInOut(duration: 0.25), value: cameraManager.currentConfidence)
-
-            VStack(spacing: 0) {
-                Text("\(Int(cameraManager.currentConfidence * 100))%")
-                    .font(.caption.weight(.black))
-                Text("CONF")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
             }
         }
     }
 
-    private func predictionRow(_ item: (label: String, confidence: Double)) -> some View {
-        HStack {
-            Text(SignRecognitionEngine.cleanLabel(item.label))
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(item.label == cameraManager.currentSign ? .primary : .secondary)
-
-            Spacer()
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(.secondary.opacity(0.15))
-                        .frame(height: 6)
-                    Capsule()
-                        .fill(item.label == cameraManager.currentSign ? .cyan : .secondary.opacity(0.5))
-                        .frame(width: geo.size.width * CGFloat(item.confidence), height: 6)
-                }
+    private var flipButton: some View {
+        Button {
+            withAnimation(.spring()) {
+                cameraManager.toggleCamera()
             }
-            .frame(width: 100, height: 6)
-
-            Text(String(format: "%.0f%%", item.confidence * 100))
-                .font(.caption.monospacedDigit().weight(.bold))
-                .foregroundStyle(item.label == cameraManager.currentSign ? .cyan : .secondary)
-                .frame(width: 42, alignment: .trailing)
+        } label: {
+            Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
+                .font(.title2.weight(.semibold))
+                .padding(10)
+                .background(.ultraThinMaterial, in: .circle)
         }
+        .buttonStyle(.plain)
+        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+        .help(cameraManager.isFrontCamera ? "Switch to rear camera" : "Switch to front camera")
     }
+
+    // MARK: - Word chip views
 
     private func wordChip(_ word: DetectedWord, index: Int) -> some View {
         Button {
@@ -477,19 +430,7 @@ struct UnifiedView: View {
         .accessibilityLabel("Remove \(word.text)")
     }
 
-    private var permissionDeniedView: some View {
-        ContentUnavailableView {
-            Label("Camera Access Required", systemImage: "camera.fill.badge.ellipsis")
-        } description: {
-            Text("Allow camera access to detect Bisindo hand signs in real time.")
-        } actions: {
-            Button("Open Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
-                }
-            }
-        }
-    }
+    // MARK: - Actions
 
     private func handleNewSign(_ sign: String, confidence: Double) {
         guard sign != "Detecting..." else { return }
@@ -522,51 +463,9 @@ struct UnifiedView: View {
         }
     }
 
-    private func speakTemanTuliTranscription() {
-        Task {
-            await speakTemanTuliTranscription()
-        }
-    }
-
     private func speakTemanTuliTranscription() async {
         await appStore.synthesizerService.speak(temanTuliText)
-        appStore.addToHistory(message: temanTuliText, role: .assistantSpoke)
-    }
-
-    @ViewBuilder
-    private var micButton: some View {
-        if let speechStore {
-            Button {
-                if speechStore.isRecording {
-                    speechStore.stopRecording()
-                } else {
-                    speechStore.startRecording()
-                }
-            } label: {
-                Image(systemName: speechStore.isRecording ? "mic.circle.fill" : "mic.fill")
-                    .font(.title2.weight(.semibold))
-                    .frame(width: 52, height: 52)
-            }
-            .buttonStyle(.glassProminent)
-            .tint(speechStore.isRecording ? .red : .blue)
-            .accessibilityLabel(speechStore.isRecording ? "Turn off microphone" : "Turn on microphone")
-        }
-    }
-
-    private var flipButton: some View {
-        Button {
-            withAnimation(.spring()) {
-                cameraManager.toggleCamera()
-            }
-        } label: {
-            Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
-                .font(.title2.weight(.semibold))
-                .padding(10)
-                .background(.ultraThinMaterial, in: .circle)
-        }
-        .buttonStyle(.plain)
-        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
-        .help(cameraManager.isFrontCamera ? "Switch to rear camera" : "Switch to front camera")
+        appStore.addToHistory(message: temanTuliText, role: .sign)
     }
 }
 
