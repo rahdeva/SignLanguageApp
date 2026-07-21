@@ -38,6 +38,10 @@ struct CameraPreviewView: UIViewRepresentable {
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
         view.cameraManager = cameraManager
+
+        // Apply orientation and mirroring immediately so the very first
+        // rendered frame is already portrait — avoids landscape flash.
+        configureConnection(on: view.videoPreviewLayer)
         // Register the live layer into CameraManager so captureOutput can use layerPointConverted
         cameraManager?.previewLayer = view.videoPreviewLayer
         cameraManager?.updateROI()
@@ -52,7 +56,21 @@ struct CameraPreviewView: UIViewRepresentable {
         uiView.cameraManager = cameraManager
         // Keep the layer reference fresh after camera flips
         cameraManager?.previewLayer = uiView.videoPreviewLayer
+
+        // Re-apply after session/camera changes (e.g. front↔back flip)
+        configureConnection(on: uiView.videoPreviewLayer)
         cameraManager?.updateROI()
         cameraManager?.configurePreviewLayerOrientation()
+    }
+
+    /// Apply front-camera mirroring on the preview layer connection.
+    /// Orientation is handled automatically by AVCaptureVideoPreviewLayer.
+    private func configureConnection(on layer: AVCaptureVideoPreviewLayer) {
+        guard let connection = layer.connection else { return }
+
+        if connection.isVideoMirroringSupported {
+            connection.automaticallyAdjustsVideoMirroring = false
+            connection.isVideoMirrored = isFrontCamera
+        }
     }
 }
