@@ -93,6 +93,12 @@
 "history.session_untitled"           = "Untitled";
 "history.session_messages"          = "%d messages";
 "history.session_duration"          = "%d min";
+"session.start"                      = "Start Session";
+"session.end"                        = "End Session";
+"session.active"                     = "Active Session";
+"session.start_new_title"            = "Start New Session?";
+"session.start_new_confirm"          = "Start";
+"session.start_new_desc"             = "Starting a new session will clear current transcription.";
 
 /* Onboarding */
 "onboarding.continue"                = "Continue";

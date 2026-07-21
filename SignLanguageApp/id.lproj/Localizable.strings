@@ -93,6 +93,12 @@
 "history.session_untitled"           = "Tanpa Judul";
 "history.session_messages"          = "%d pesan";
 "history.session_duration"          = "%d menit";
+"session.start"                      = "Mulai Sesi";
+"session.end"                        = "Akhiri Sesi";
+"session.active"                     = "Sesi Aktif";
+"session.start_new_title"            = "Mulai Sesi Baru?";
+"session.start_new_confirm"          = "Mulai";
+"session.start_new_desc"             = "Memulai sesi baru akan menghapus transkripsi saat ini.";
 
 /* Onboarding */
 "onboarding.continue"                = "Lanjutkan";
