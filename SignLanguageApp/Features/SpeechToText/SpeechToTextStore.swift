@@ -62,6 +62,6 @@ final class SpeechToTextStore {
         let finalText = transcribedText
         transcribedText = ""
         guard !finalText.isEmpty else { return }
-        appStore.addToHistory(message: finalText, role: .userSpoke)
+        appStore.addToHistory(message: finalText, role: .speech)
     }
 }
