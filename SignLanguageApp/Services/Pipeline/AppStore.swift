@@ -6,6 +6,7 @@
 //
 
 import Observation
+import SwiftData
 
 /// Central state coordinator. Owns all services and exposes reactive state to the view layer.
 @MainActor
@@ -16,6 +17,7 @@ final class AppStore {
     private(set) var speechService: SpeechRecognizerService
     private(set) var synthesizerService: SpeechSynthesizerService
     private(set) var inferencer: SignLanguageInferencing
+    private(set) var sessionService: SessionService
 
     // MARK: - Language
     var languageSettings: LanguageSettings = LanguageSettings()
@@ -30,16 +32,30 @@ final class AppStore {
     var isPredicting = false
     var isCameraAuthorized = false
 
-    // MARK: - Conversation
-    var conversationHistory: [Conversation] = []
+    // MARK: - Session
+    /// Active session ID — nil when no session is active.
+    var activeSessionId: UUID?
+
+    /// The currently active session, if any.
+    var activeSession: ChatSession? {
+        guard let id = activeSessionId else { return nil }
+        return sessionService.allSessions().first { $0.id == id && $0.isActive }
+    }
+
+    /// All sessions from persistent storage.
+    var allSessions: [ChatSession] { sessionService.allSessions() }
 
     // MARK: - Error
     var error: AppError?
     var showingError = false
 
     // MARK: - Init
-    init(inferencer: SignLanguageInferencing = SignLanguageInferencer()) {
+    init(
+        container: ModelContainer = try! ModelContainer(for: ChatSession.self, ChatMessage.self),
+        inferencer: SignLanguageInferencing = SignLanguageInferencer()
+    ) {
         self.inferencer = inferencer
+        self.sessionService = SessionService(container: container)
         cameraService = CameraService()
         speechService = SpeechRecognizerService()
         synthesizerService = SpeechSynthesizerService()
@@ -61,8 +77,36 @@ final class AppStore {
         showingError = false
     }
 
-    func addToHistory(message: String, role: ConversationRole) {
-        conversationHistory.append(Conversation(message: message, role: role))
+    /// Start a new session.
+    func startSession(title: String? = nil) {
+        let session = sessionService.createSession(title: title)
+        activeSessionId = session.id
+    }
+
+    /// End the current active session.
+    func endSession() {
+        guard let session = activeSession else { return }
+        sessionService.endSession(session)
+        activeSessionId = nil
+    }
+
+    /// Add a message to the active session. If no active session exists, creates one.
+    func addToHistory(message: String, role: MessageRole) {
+        let session: ChatSession
+        if let existing = activeSession {
+            session = existing
+        } else {
+            session = sessionService.createSession()
+            activeSessionId = session.id
+        }
+        sessionService.appendMessage(to: session, content: message, role: role)
+    }
+
+    /// Resume a past session — sets it as the active session.
+    func resumeSession(_ session: ChatSession) {
+        session.endedAt = nil
+        activeSessionId = session.id
+        try? sessionService.container.mainContext.save()
     }
 
     /// Speak text aloud using the current TTS language setting.

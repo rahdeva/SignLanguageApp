@@ -22,7 +22,7 @@ struct SessionDetailView: View {
                     .foregroundStyle(.secondary)
                 if let endedAt = session.endedAt {
                     let minutes = Int(endedAt.timeIntervalSince(session.createdAt) / 60)
-                    Text("\(session.messageCount) pesan \(minutes > 0 ? "• \(minutes) menit" : "")")
+                    Text("\(session.messageCount) " + String(localized: "history.session_messages") + (minutes > 0 ? " • \(minutes) " + String(localized: "history.session_duration") : ""))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -45,10 +45,9 @@ struct SessionDetailView: View {
                 .padding(.vertical, 12)
             }
 
-            Divider()
-
             // Resume button
             if session.endedAt != nil, let onResume {
+                Divider()
                 Button {
                     onResume(session)
                 } label: {

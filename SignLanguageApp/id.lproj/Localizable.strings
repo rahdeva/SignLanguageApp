@@ -91,6 +91,8 @@
 "history.detail_title"               = "Sesi";
 "history.resume"                     = "Lanjutkan Percakapan";
 "history.session_untitled"           = "Tanpa Judul";
+"history.session_messages"          = "%d pesan";
+"history.session_duration"          = "%d menit";
 
 /* Onboarding */
 "onboarding.continue"                = "Lanjutkan";
