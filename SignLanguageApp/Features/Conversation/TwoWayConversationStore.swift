@@ -272,7 +272,7 @@ final class TwoWayConversationStore: ObservableObject {
 
             // Speak text aloud and suspend until speech finished (`didFinish`)
             if let appStore = self.appStore {
-                appStore.addToHistory(message: textToSpeak, role: .userSigned)
+                appStore.addToHistory(message: textToSpeak, role: .sign)
                 await appStore.speak(textToSpeak)
             }
 

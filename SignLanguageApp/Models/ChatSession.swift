@@ -15,7 +15,7 @@ final class ChatSession {
     var createdAt: Date
     var endedAt: Date?
     @Relationship(deleteRule: .cascade, inverse: \ChatMessage.session)
-    var messages: [ChatMessage]
+    var messages: [ChatMessage] = []
 
     var isActive: Bool { endedAt == nil }
     var messageCount: Int { messages.count }

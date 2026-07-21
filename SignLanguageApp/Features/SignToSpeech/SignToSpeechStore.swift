@@ -86,7 +86,7 @@ final class SignToSpeechStore {
         guard !text.isEmpty else { return }
         Task {
             await appStore.speak(text)
-            appStore.addToHistory(message: text, role: .userSigned)
+            appStore.addToHistory(message: text, role: .sign)
         }
     }
 
