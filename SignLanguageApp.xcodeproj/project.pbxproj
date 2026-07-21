@@ -11,6 +11,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5ACFFBDF300F04F8007C4FDE /* SignLanguageApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SignLanguageApp.xcodeproj; sourceTree = "<group>"; };
 		7D5837BD300CBD41004AAC0A /* SignLanguageApp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SignLanguageApp.xcodeproj; sourceTree = "<group>"; };
 		7D5837E3300CBDE6004AAC0A /* MyHandActionBisindoClassifier 1.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = "MyHandActionBisindoClassifier 1.mlpackage"; sourceTree = "<group>"; };
 		E6CDA8A530090D84006D829E /* SignLanguageApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SignLanguageApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -35,6 +36,11 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5ACFFBE0300F04F8007C4FDE /* Products */ = {
+			isa = PBXGroup;
+			name = Products;
+			sourceTree = "<group>";
+		};
 		7D5837BE300CBD41004AAC0A /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -113,6 +119,10 @@
 			productRefGroup = E6CDA8A630090D84006D829E /* Products */;
 			projectDirPath = "";
 			projectReferences = (
+				{
+					ProductGroup = 5ACFFBE0300F04F8007C4FDE /* Products */;
+					ProjectRef = 5ACFFBDF300F04F8007C4FDE /* SignLanguageApp.xcodeproj */;
+				},
 				{
 					ProductGroup = 7D5837BE300CBD41004AAC0A /* Products */;
 					ProjectRef = 7D5837BD300CBD41004AAC0A /* SignLanguageApp.xcodeproj */;
