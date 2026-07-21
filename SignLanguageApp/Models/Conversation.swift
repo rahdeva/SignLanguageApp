@@ -32,7 +32,7 @@ enum ConversationRole: String, Sendable, Codable {
 }
 
 /// A single entry in the bidirectional conversation timeline.
-struct Conversation: Identifiable, Sendable {
+struct Conversation: Identifiable, Sendable, Equatable {
     let id: UUID
     let message: String
     let role: ConversationRole
@@ -48,5 +48,12 @@ struct Conversation: Identifiable, Sendable {
         self.message = message
         self.role = role
         self.timestamp = timestamp
+    }
+    
+    static func == (lhs: Conversation, rhs: Conversation) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.message == rhs.message &&
+               lhs.role == rhs.role &&
+               lhs.timestamp == rhs.timestamp
     }
 }

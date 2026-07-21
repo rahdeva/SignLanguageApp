@@ -34,6 +34,7 @@ struct SignToSpeechView: View {
         guard sign != "Detecting...", sign != "Uncertain" else { return }
         let translated = displaySign(for: sign)
         Task { @MainActor in
+            recognizer.targetLanguage = appStore.languageSettings.ttsLanguage
             recognizer.conversationContext = ConversationContextService.buildContextString(
                 from: appStore.conversationHistory,
                 currentSpeaker: .userSigned
@@ -91,6 +92,12 @@ struct SignToSpeechView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onChange(of: appStore.conversationHistory) { _, history in
+            recognizer.conversationContext = ConversationContextService.buildContextString(
+                from: history,
+                currentSpeaker: .userSigned
+            )
+        }
         .onChange(of: cameraManager.currentSign) { _, newSign in
             handleNewSign(newSign, confidence: cameraManager.currentConfidence)
         }

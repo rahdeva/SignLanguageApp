@@ -24,23 +24,21 @@ struct ConversationContextService {
         from history: [Conversation],
         currentSpeaker: ConversationRole
     ) -> String {
-        let recent = history.suffix(maxContextMessages)
-        guard !recent.isEmpty else { return "" }
+        guard !history.isEmpty else { return "" }
         
-        var lines: [String] = []
-        lines.append("# Conversation History (most recent messages)")
-        
-        for entry in recent {
-            let speaker: String
-            switch entry.role {
-            case .userSigned, .assistantSpoke:
-                speaker = "Teman Tuli"
-            case .userSpoke:
-                speaker = "Caregiver"
+        switch currentSpeaker {
+        case .userSigned:
+            // Deaf Friend is signing: find the last question/message from the Caregiver
+            if let lastCaregiverMessage = history.last(where: { $0.role == .userSpoke }) {
+                return "Context: [Caregiver]: \(lastCaregiverMessage.message)"
             }
-            lines.append("Context: [\(speaker)]: \(entry.message)")
+        case .userSpoke, .assistantSpoke:
+            // Caregiver is speaking: find the last message from the Deaf Friend
+            if let lastDeafMessage = history.last(where: { $0.role == .userSigned || $0.role == .assistantSpoke }) {
+                return "Context: [Teman Tuli]: \(lastDeafMessage.message)"
+            }
         }
         
-        return lines.joined(separator: "\n")
+        return ""
     }
 }

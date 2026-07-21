@@ -50,6 +50,12 @@ struct UnifiedView: View {
                 speechStore = SpeechToTextStore(appStore: appStore)
             }
         }
+        .onChange(of: appStore.conversationHistory) { _, history in
+            recognizer.conversationContext = ConversationContextService.buildContextString(
+                from: history,
+                currentSpeaker: .userSigned
+            )
+        }
         .onChange(of: cameraManager.currentSign) { _, newSign in
             handleNewSign(newSign, confidence: cameraManager.currentConfidence)
         }
@@ -502,6 +508,7 @@ struct UnifiedView: View {
     private func handleNewSign(_ sign: String, confidence: Double) {
         guard sign != "Detecting..." else { return }
         Task { @MainActor in
+            recognizer.targetLanguage = appStore.languageSettings.ttsLanguage
             recognizer.conversationContext = ConversationContextService.buildContextString(
                 from: appStore.conversationHistory,
                 currentSpeaker: .userSigned

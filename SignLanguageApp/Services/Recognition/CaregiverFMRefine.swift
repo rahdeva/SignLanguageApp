@@ -17,77 +17,92 @@ import FoundationModels
 struct CaregiverSpeechRefiner {
     
     let systemPrompt = """
-    # Role & Task (System Language: English)
-    You are an English-guided communication assistant in a two-way conversation between a 
-    Caregiver (hearing person) and a Teman Tuli (Deaf Friend who uses BISINDO 
-    sign language). Your job is to take the Caregiver's raw speech transcription 
-    and refine it into clear, concise Indonesian text that is easy for the Deaf 
-    Friend to read on screen.
+# Role & Task (System Language: English)
+You are an English-guided communication assistant in a two-way conversation between a 
+Caregiver (hearing person) and a Teman Tuli (Deaf Friend who uses BISINDO 
+sign language). Your job is to take the Caregiver's raw speech transcription 
+and refine it into clear, concise Indonesian text that is easy for the Deaf 
+Friend to read on screen.
 
-    # Rules
-    1. Output language: Indonesian (Bahasa Indonesia) only.
-    2. Preserve the original meaning — do not add information the caregiver 
-       did not say.
-    3. Fix speech recognition errors and incomplete sentences where the 
-       intent is clear from context.
-    4. Simplify overly complex or rambling speech into clear, direct sentences.
-    5. If the caregiver's speech is a question, keep it as a question.
-    6. If the caregiver's speech is a response to something the Deaf Friend 
-       said, make sure the refined text reads as a natural continuation of 
-       the conversation.
-    7. Remove filler words (um, uh, eh, hmm, ya kan, gitu, etc.) and 
-       false starts.
-    8. Keep sentences short and easy to read — the Deaf Friend needs to 
-       read this quickly on a small screen.
-    9. Use proper punctuation (question marks for questions, periods for 
-       statements).
-    10. Output ONLY the refined Indonesian sentence(s). No explanations, 
-        notes, or formatting.
+# Rules
+1. Output language: Indonesian (Bahasa Indonesia) only.
+2. Preserve the original meaning — do not add information the caregiver did not say.
+3. Fix speech recognition errors and incomplete sentences where the intent is clear from context.
+4. Simplify overly complex or rambling speech into clear, direct sentences.
+5. If the caregiver's speech is a question, keep it as a question.
+6. Remove filler words (um, uh, eh, hmm, ya kan, gitu, etc.) and false starts.
+7. Output format: Caregiver says: "<Indonesian sentence>"
 
-    # Output Format
-    Output ONLY the refined sentence(s). No labels, no quotes, no bullet 
-    points.
+# Examples
 
-    # Examples
+Raw speech: "Eh... jadi begini ya, mm... tadi saya cuma mau nanya, kamu eh... sudah makan siang belum ya?"
+Output: Caregiver says: "Apakah kamu sudah makan siang?"
 
-    Raw speech: "Eh... jadi begini ya, mm... tadi saya cuma mau nanya, kamu eh... sudah makan siang belum ya?"
-    Output: Apakah kamu sudah makan siang?
+Raw speech: "Nanti sore itu kamu mau pergi ke mana ya kira-kira?"
+Output: Caregiver says: "Nanti sore kamu mau pergi ke mana?"
+"""
+    
+    var systemPromptIndonesian: String { systemPrompt }
 
-    Raw speech: "Nanti sore itu kamu mau pergi ke mana ya kira-kira?"
-    Output: Nanti sore kamu mau pergi ke mana?
+    var systemPromptEnglish: String {
+        """
+# Role & Task (System Language: English)
+You are an English-guided communication assistant in a two-way conversation between a 
+Caregiver (hearing person) and a Teman Tuli (Deaf Friend who uses BISINDO sign language). 
+Your job is to take the Caregiver's raw speech transcription and refine it into clear, 
+concise English text for the Deaf Friend to read on screen.
 
-    Context: [Teman Tuli]: Saya di rumah teman.
-    Raw speech: "Oh kamu lagi di rumah teman ya, terus nanti pulang jam berapa?"
-    Output: Kamu sedang di rumah teman. Nanti pulang jam berapa?
+# Rules
+1. Output language MUST be English.
+2. Preserve original meaning — do not add unstated facts.
+3. Remove filler words (um, uh, eh, etc.) and false starts.
+4. Output format: Caregiver says: "<English sentence>"
 
-    Raw speech: "Oh begitu ya, ya sudah tidak apa-apa, makasih ya"
-    Output: Oh begitu, tidak apa-apa. Terima kasih.
-    """
+# Examples
+
+Raw speech: "Um, so yeah... I just wanted to ask, what are you doing right now?"
+Output: Caregiver says: "What are you doing right now?"
+
+Raw speech: "Eh... jadi begini ya, mm... tadi saya cuma mau nanya, kamu eh... sudah makan siang belum ya?"
+Output: Caregiver says: "Have you eaten lunch yet?"
+"""
+    }
+
+    func promptInstructions(for targetLanguage: AppLanguage) -> String {
+        switch targetLanguage {
+        case .english:
+            return systemPromptEnglish
+        case .indonesian:
+            return systemPromptIndonesian
+        }
+    }
     
     /// Builds the prompt with conversation context and raw speech
     func buildPrompt(
         rawSpeech: String,
-        conversationContext: String = ""
+        conversationContext: String = "",
+        targetLanguage: AppLanguage = .indonesian
     ) -> String {
-        var prompt = ""
+        let instructions = promptInstructions(for: targetLanguage)
+        var prompt = "\(instructions)\n\n"
         
         if !conversationContext.isEmpty {
             prompt += """
-            \(conversationContext)
-            
-            The conversation above is the recent exchange between the Caregiver 
-            and Deaf Friend. Use it to understand the flow of conversation.
-            
-            """
+\(conversationContext)
+
+The conversation above is the recent exchange between the Caregiver 
+and Deaf Friend. Use it to understand the flow of conversation.
+
+"""
         }
         
         prompt += """
-        Now refine the following raw speech transcription from the Caregiver:
-        
-        Raw speech: "\(rawSpeech)"
-        
-        Refined output:
-        """
+Now refine the following raw speech transcription from the Caregiver:
+
+Raw speech: "\(rawSpeech)"
+
+Refined output:
+"""
         
         return prompt
     }
@@ -95,15 +110,17 @@ struct CaregiverSpeechRefiner {
     /// Refines caregiver speech using Apple Intelligence on-device model
     func refineOnDevice(
         rawSpeech: String,
-        conversationContext: String = ""
+        conversationContext: String = "",
+        targetLanguage: AppLanguage = .indonesian
     ) async throws -> String {
         let prompt = buildPrompt(
             rawSpeech: rawSpeech,
-            conversationContext: conversationContext
+            conversationContext: conversationContext,
+            targetLanguage: targetLanguage
         )
         
         #if canImport(FoundationModels)
-        let model = SystemLanguageModel.default
+        let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
         guard model.isAvailable else {
             throw NSError(
                 domain: "CaregiverSpeechRefiner",
@@ -113,7 +130,9 @@ struct CaregiverSpeechRefiner {
             )
         }
         
-        let session = LanguageModelSession(instructions: systemPrompt)
+        // Pass a simple English system instruction to bypass language-support pre-flight checks on iOS
+        let simpleInstructions = "You are a helpful communication assistant."
+        let session = LanguageModelSession(model: model, instructions: simpleInstructions)
         let response = try await session.respond(to: prompt)
         let rawContent = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         return Self.extractSentence(from: rawContent)
@@ -127,7 +146,7 @@ struct CaregiverSpeechRefiner {
         #endif
     }
     
-    /// Extracts the inner Indonesian sentence from the model output.
+    /// Extracts the inner sentence from the model output.
     static func extractSentence(from rawOutput: String) -> String {
         let trimmed = rawOutput.trimmingCharacters(in: .whitespacesAndNewlines)
         
@@ -143,11 +162,13 @@ struct CaregiverSpeechRefiner {
 /// Global utility function to refine caregiver speech
 func refineCaregiverSpeech(
     rawSpeech: String, 
-    conversationContext: String = ""
+    conversationContext: String = "",
+    targetLanguage: AppLanguage = .indonesian
 ) async throws -> String {
     let refiner = CaregiverSpeechRefiner()
     return try await refiner.refineOnDevice(
         rawSpeech: rawSpeech, 
-        conversationContext: conversationContext
+        conversationContext: conversationContext,
+        targetLanguage: targetLanguage
     )
 }

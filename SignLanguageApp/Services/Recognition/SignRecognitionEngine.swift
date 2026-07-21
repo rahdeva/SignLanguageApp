@@ -36,6 +36,8 @@ final class SignRecognitionEngine: ObservableObject {
     @Published var isAIRefinementEnabled: Bool = true
     /// Recent conversation context for contextual AI refinement
     var conversationContext: String = ""
+    /// Target output language for AI sentence generation
+    var targetLanguage: AppLanguage = .indonesian
 
     // MARK: - Configuration
     /// Consecutive inference windows that must agree before accepting a word.
@@ -250,7 +252,11 @@ final class SignRecognitionEngine: ObservableObject {
     @available(iOS 18.0, macOS 15.0, *)
     private func buildWithAI(words: [String]) async -> String {
         do {
-            let sentence = try await checkFM(input: words, conversationContext: conversationContext)
+            let sentence = try await checkFM(
+                input: words, 
+                conversationContext: conversationContext,
+                targetLanguage: targetLanguage
+            )
             if !sentence.isEmpty {
                 return sentence
             }

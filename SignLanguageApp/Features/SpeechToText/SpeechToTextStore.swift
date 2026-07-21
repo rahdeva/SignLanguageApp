@@ -77,10 +77,15 @@ final class SpeechToTextStore {
             do {
                 let refined = try await refineCaregiverSpeech(
                     rawSpeech: finalText,
-                    conversationContext: context
+                    conversationContext: context,
+                    targetLanguage: appStore.languageSettings.ttsLanguage
                 )
                 if !refined.isEmpty {
                     refinedText = refined
+                    // Write the refined text back to history replacing the raw one
+                    if let lastIndex = appStore.conversationHistory.lastIndex(where: { $0.role == .userSpoke }) {
+                        appStore.conversationHistory[lastIndex] = Conversation(message: refined, role: .userSpoke)
+                    }
                 } else {
                     refinedText = finalText
                 }
