@@ -5,6 +5,7 @@
 //  Created by Muhammad Hisyam Kamil on 17/07/26.
 //
 
+import Foundation
 import Observation
 import SwiftData
 
@@ -106,7 +107,7 @@ final class AppStore {
     func resumeSession(_ session: ChatSession) {
         session.endedAt = nil
         activeSessionId = session.id
-        try? sessionService.container.mainContext.save()
+        sessionService.save()
     }
 
     /// Speak text aloud using the current TTS language setting.

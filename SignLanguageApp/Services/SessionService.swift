@@ -12,6 +12,11 @@ import SwiftData
 final class SessionService {
     private let container: ModelContainer
 
+    /// Persist pending changes.
+    func save() {
+        try? container.mainContext.save()
+    }
+
     init(container: ModelContainer) {
         self.container = container
     }
