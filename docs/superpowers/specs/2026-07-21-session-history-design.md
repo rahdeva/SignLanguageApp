@@ -171,7 +171,7 @@ User taps session di SessionListView
 1. `SignLanguageApp/Services/Pipeline/AppStore.swift` — add `sessionService`, `activeSessionId`, update `addToHistory`
 2. `SignLanguageApp/Features/Unified/UnifiedView.swift` — replace conversation section with bubble layout + session controls
 3. `SignLanguageApp/Features/History/HistoryView.swift` — this file is **replaced** by `SessionListView`
-4. `SignLanguageApp/App/SignLanguageAppApp.swift` — inject `ModelContainer` at app level
+4. `SignLanguageApp/App/SignLanguageApp.swift` — inject `ModelContainer` at app level
 
 ## Deleted
 
