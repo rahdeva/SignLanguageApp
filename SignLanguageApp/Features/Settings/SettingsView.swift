@@ -16,6 +16,7 @@ struct SettingsView: View {
     )
     @State private var isFoundationModelEnabled = UserDefaults.standard.object(forKey: "isFoundationModelEnabled") as? Bool ?? true
     @State private var isEyeCloseControlEnabled = UserDefaults.standard.object(forKey: "isEyeCloseControlEnabled") as? Bool ?? false
+    @State private var showEyeVisionOverlay = UserDefaults.standard.object(forKey: "showEyeVisionOverlay") as? Bool ?? false
 
     var body: some View {
         NavigationStack {
@@ -67,6 +68,21 @@ struct SettingsView: View {
                     }
                     .onChange(of: isEyeCloseControlEnabled) { _, newValue in
                         UserDefaults.standard.set(newValue, forKey: "isEyeCloseControlEnabled")
+                    }
+
+                    if isEyeCloseControlEnabled {
+                        Toggle(isOn: $showEyeVisionOverlay) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Tampilkan Visualisasi Mata (Vision)")
+                                    .font(.body)
+                                Text("Tampilkan garis kontur deteksi mata Vision pada layar kamera")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .onChange(of: showEyeVisionOverlay) { _, newValue in
+                            UserDefaults.standard.set(newValue, forKey: "showEyeVisionOverlay")
+                        }
                     }
                 } header: {
                     Text("settings.section.features", tableName: "Localizable")

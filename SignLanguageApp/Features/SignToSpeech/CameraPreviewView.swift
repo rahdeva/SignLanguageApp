@@ -15,12 +15,20 @@ struct CameraPreviewView: UIViewRepresentable {
     weak var cameraManager: CameraManager?
 
     class VideoPreviewView: UIView {
+        weak var cameraManager: CameraManager?
+
         override class var layerClass: AnyClass {
             AVCaptureVideoPreviewLayer.self
         }
 
         var videoPreviewLayer: AVCaptureVideoPreviewLayer {
             return layer as! AVCaptureVideoPreviewLayer
+        }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            cameraManager?.updateROI()
+            cameraManager?.configurePreviewLayerOrientation()
         }
     }
 
@@ -29,8 +37,11 @@ struct CameraPreviewView: UIViewRepresentable {
         view.backgroundColor = .black
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
+        view.cameraManager = cameraManager
         // Register the live layer into CameraManager so captureOutput can use layerPointConverted
         cameraManager?.previewLayer = view.videoPreviewLayer
+        cameraManager?.updateROI()
+        cameraManager?.configurePreviewLayerOrientation()
         return view
     }
 
@@ -38,27 +49,10 @@ struct CameraPreviewView: UIViewRepresentable {
         if uiView.videoPreviewLayer.session != session {
             uiView.videoPreviewLayer.session = session
         }
+        uiView.cameraManager = cameraManager
         // Keep the layer reference fresh after camera flips
         cameraManager?.previewLayer = uiView.videoPreviewLayer
-
-        // Mirror the preview for the front camera so it looks like a selfie mirror,
-        // but leave videoDataOutput unmirrored so Vision/CoreML get raw coordinates.
-        if let connection = uiView.videoPreviewLayer.connection {
-            if #available(iOS 17.0, *) {
-                if connection.isVideoRotationAngleSupported(90.0) {
-                    connection.videoRotationAngle = 90.0
-                }
-            } else {
-                if connection.isVideoOrientationSupported {
-                    connection.videoOrientation = .portrait
-                }
-            }
-            if connection.isVideoMirroringSupported {
-                // Must disable automatic mirroring before setting it manually,
-                // otherwise AVFoundation throws NSInvalidArgumentException.
-                connection.automaticallyAdjustsVideoMirroring = false
-                connection.isVideoMirrored = isFrontCamera
-            }
-        }
+        cameraManager?.updateROI()
+        cameraManager?.configurePreviewLayerOrientation()
     }
 }

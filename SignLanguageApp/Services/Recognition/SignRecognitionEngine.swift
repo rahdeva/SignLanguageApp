@@ -60,7 +60,7 @@ final class SignRecognitionEngine: ObservableObject {
 
     init(
         stableThreshold:   Int          = 2,
-        cooldownThreshold: Int          = 5,
+        cooldownThreshold: Int          = 3,
         maxWords:          Int          = 12,
         silenceDelay:      TimeInterval = 2.5
     ) {
@@ -73,7 +73,7 @@ final class SignRecognitionEngine: ObservableObject {
     // MARK: - Feed Inference Result
     /// Call this on every inference result (4x/sec from CameraManager).
     func feed(rawLabel: String, confidence: Double) {
-        guard confidence >= 0.50 else {
+        guard confidence >= 0.35 else {
             cooldownCounter = max(0, cooldownCounter - 1)
             return
         }
@@ -236,7 +236,8 @@ final class SignRecognitionEngine: ObservableObject {
 
     // MARK: - Foundation Models
     private func buildWithFoundationModels(words: [String]) async -> String {
-        guard isAIRefinementEnabled else {
+        let isSettingEnabled = UserDefaults.standard.object(forKey: "isFoundationModelEnabled") as? Bool ?? true
+        guard isSettingEnabled && isAIRefinementEnabled else {
             return fallbackSentence(words: words)
         }
         if #available(iOS 18.0, macOS 15.0, *) {
