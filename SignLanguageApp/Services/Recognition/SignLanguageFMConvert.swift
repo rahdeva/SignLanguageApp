@@ -139,6 +139,93 @@ Output: Saya sedang belajar bahasa Tuli.
 
 """
     
+    /// Additional prompt block injected when the caregiver speaks first and the Teman Tuli responds via sign.
+//    let caregiverContextPrompt = """
+//    The following gesture tokens are a RESPONSE from a Teman Tuli (Deaf person)
+//    to a caregiver's spoken/written message shown below. Use the caregiver's
+//    message as context to produce the most natural reply, but still only use
+//    meaning conveyed by the gesture tokens. Do not invent words or actions
+//    not present in the tokens.
+//    """
+    
+    let caregiverContextPrompt = """
+        # Context-Aware Reply Mode
+
+        You will be given two inputs, clearly delimited below:
+
+        <CAREGIVER_MESSAGE>
+        (freeform Indonesian text — spoken or typed by the caregiver, NOT restricted
+        to the gesture vocabulary; may contain any words)
+        </CAREGIVER_MESSAGE>
+
+        <GESTURE_TOKENS>
+        (the Teman Tuli's gesture-recognition tokens — same closed 32-label
+        vocabulary and rules defined above)
+        </GESTURE_TOKENS>
+
+        The gesture tokens are the Teman Tuli's RESPONSE to the caregiver's message.
+        Your job is to produce the most natural Indonesian reply that the tokens
+        represent, using the caregiver's message only to resolve ambiguity — never
+        to add content.
+
+        # How to use the caregiver's message
+        Use CAREGIVER_MESSAGE only for these purposes:
+        1. Pronoun resolution: if the caregiver addresses the Teman Tuli as "kamu",
+           the reply's implied subject is "saya" (the only pronoun in the gesture
+           vocabulary) — do not add a second pronoun that isn't there.
+        2. Question-type matching: if the caregiver asked a yes/no question, phrase
+           the reply as a statement/confirmation rather than repeating question
+           structure. If they asked a wh-question, the reply should read as a
+           direct answer to that question type.
+        3. Disambiguating relations between bare nouns: when gesture tokens have no
+           verb (e.g. two nouns with no connector), use the caregiver's message to
+           pick the correct relation (location, possession, topic) INSTEAD OF the
+           generic default rule, when the message makes that relation clear.
+        4. Tense/time framing implied by the caregiver's message (e.g. if they
+           asked about "besok," a reply lacking a time token can be framed as
+           referring to that same time) — only when the tokens don't already
+           specify a conflicting time.
+
+        # Hard rule: no content leakage
+        NEVER copy nouns, names, objects, quantities, times, or other specific
+        details from CAREGIVER_MESSAGE into the output UNLESS an equivalent gesture
+        token for that specific content is present in GESTURE_TOKENS. The caregiver's
+        words may shape grammar and structure, but must never supply new facts.
+        This applies even if the borrowed detail would make the reply sound more
+        complete or helpful.
+
+        # If the tokens don't seem to answer the caregiver's message
+        Translate the tokens as naturally as the closed vocabulary allows. Do not
+        force-fit them into an answer that isn't actually there, and do not treat
+        a mismatch as an error — Deaf friends may reply with something unrelated,
+        a correction, or a new topic.
+
+        # Examples
+
+        CAREGIVER_MESSAGE: "Kamu mau makan apa?"
+        GESTURE_TOKENS: ["Makan", "Merah", "Air"]
+        → Correct: Saya mau makan dan minum air.
+        → WRONG (leakage): Saya mau makan nasi goreng dan minum air.
+        (Rule 3/color-outlier from base prompt still applies: "Merah" separated
+        from any noun by "Air" is a transition artifact and is dropped.)
+
+        CAREGIVER_MESSAGE: "Besok kamu ada acara apa?"
+        GESTURE_TOKENS: ["Belajar", "Motor"]
+        → Correct: Besok saya belajar motor.
+        (Time "besok" is borrowed from context since tokens specify no
+        conflicting time; "motor" stays because it's an actual token.)
+
+        CAREGIVER_MESSAGE: "Apakah kamu sudah makan siang dengan Budi?"
+        GESTURE_TOKENS: ["Rumah", "Teman"]
+        → Correct: Saya di rumah teman.
+        (Tokens don't answer the question at all — do not force a "sudah makan"
+        reply, and do not mention "Budi" or "siang," since neither is a token.)
+
+        CAREGIVER_MESSAGE: "Kamu kenapa sedih?"
+        GESTURE_TOKENS: ["Ingat", "Keluarga"]
+        → Correct: Saya ingat keluarga.
+        """
+    
     let examples = [
         (input: ["saya", "makan", "nasi"], output: "Saya sedang makan nasi."),
         (input: ["kamu", "pergi", "mana"], output: "Kamu mau pergi ke mana?"),
@@ -191,10 +278,19 @@ Output: Saya sedang belajar bahasa Tuli.
         return processed
     }
     
-    /// Construct the prompt with instructions and examples
-    func buildPrompt(for tokens: [String]) -> String {
+    /// Construct the prompt with instructions and examples.
+    /// When `caregiverMessage` is provided, injects conversation context so the FM
+    /// treats tokens as a reply to the caregiver.
+    func buildPrompt(for tokens: [String], caregiverMessage: String? = nil) -> String {
         let cleanTokens = preprocessTokens(tokens)
         var prompt = "\(systemPrompt)\n\n"
+        
+        // Inject caregiver context if present
+        if let message = caregiverMessage {
+            prompt += "\(caregiverContextPrompt)\n"
+            prompt += "Caregiver said: \"\(message)\"\n\n"
+        }
+        
         prompt += "Examples:\n"
         for example in examples {
             prompt += "Input: \(example.input.joined(separator: ", "))\n"
@@ -206,9 +302,10 @@ Output: Saya sedang belajar bahasa Tuli.
         return prompt
     }
     
-    /// Corrects BISINDO tokens using Apple Intelligence on-device model
-    func translateOnDevice(tokens: [String]) async throws -> String {
-        let prompt = buildPrompt(for: tokens)
+    /// Corrects BISINDO tokens using Apple Intelligence on-device model.
+    /// Pass `caregiverMessage` when the caregiver spoke first and the Teman Tuli is replying.
+    func translateOnDevice(tokens: [String], caregiverMessage: String? = nil) async throws -> String {
+        let prompt = buildPrompt(for: tokens, caregiverMessage: caregiverMessage)
         #if canImport(FoundationModels)
         let model = SystemLanguageModel.default
         guard model.isAvailable else {
@@ -233,9 +330,10 @@ Output: Saya sedang belajar bahasa Tuli.
 }
 
 /// Global utility function to translate and correct BISINDO tokens using Apple's Foundation Models on-device.
-func checkFM(input: [String]) async throws -> String {
+/// Pass `caregiverMessage` when the caregiver spoke first and the Teman Tuli is replying.
+func checkFM(input: [String], caregiverMessage: String? = nil) async throws -> String {
     let translator = BISINDOTranslator()
-    return try await translator.translateOnDevice(tokens: input)
+    return try await translator.translateOnDevice(tokens: input, caregiverMessage: caregiverMessage)
 }
 
 /// Manages streaming ML model predictions to build a clean token sequence.
