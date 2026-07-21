@@ -247,6 +247,15 @@ final class TwoWayConversationStore: ObservableObject {
         state = .speakingTTS
 
         Task {
+            // Inject conversation context into recognizer for contextual AI refinement
+            if let appStore {
+                recognizer.conversationContext = ConversationContextService
+                    .buildContextString(
+                        from: appStore.conversationHistory,
+                        currentSpeaker: .userSigned
+                    )
+            }
+
             // Prepare sentence to speak
             var textToSpeak = recognizer.builtSentence
             if isAIRefinementEnabled && !recognizer.wordSequence.isEmpty {

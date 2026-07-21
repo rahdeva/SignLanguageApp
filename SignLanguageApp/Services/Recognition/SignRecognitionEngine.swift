@@ -34,6 +34,8 @@ final class SignRecognitionEngine: ObservableObject {
     @Published var silenceProgress: Double = 0.0
     /// Toggle to enable or disable AI grammar refinement (`checkFM`) via FoundationModels
     @Published var isAIRefinementEnabled: Bool = true
+    /// Recent conversation context for contextual AI refinement
+    var conversationContext: String = ""
 
     // MARK: - Configuration
     /// Consecutive inference windows that must agree before accepting a word.
@@ -247,11 +249,16 @@ final class SignRecognitionEngine: ObservableObject {
 
     @available(iOS 18.0, macOS 15.0, *)
     private func buildWithAI(words: [String]) async -> String {
-        if let sentence = try? await checkFM(input: words), !sentence.isEmpty {
-            return sentence
+        do {
+            let sentence = try await checkFM(input: words, conversationContext: conversationContext)
+            if !sentence.isEmpty {
+                return sentence
+            }
+        } catch {
+            print("❌ FoundationModels Error: \(error)")
+            sentenceError = "AI Refinement Error: \(error.localizedDescription)"
         }
 
-        sentenceError = "Apple Intelligence is unavailable. Showing raw detected words."
         return fallbackSentence(words: words)
     }
 

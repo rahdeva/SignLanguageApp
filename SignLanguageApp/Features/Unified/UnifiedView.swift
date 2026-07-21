@@ -25,7 +25,10 @@ struct UnifiedView: View {
     }
 
     private var caregiverTranscribedText: String {
-        speechStore?.transcribedText ?? appStore.speechToTextOutput
+        if let store = speechStore, !store.refinedText.isEmpty {
+            return store.refinedText
+        }
+        return speechStore?.transcribedText ?? appStore.speechToTextOutput
     }
 
     private var isSignActive: Bool {
@@ -54,6 +57,11 @@ struct UnifiedView: View {
             guard !temanTuliText.isEmpty,
                   temanTuliText != lastAutoPlayedTemanTuliText
             else { return }
+
+            recognizer.conversationContext = ConversationContextService.buildContextString(
+                from: appStore.conversationHistory,
+                currentSpeaker: .userSigned
+            )
 
             appStore.signPredictionOutput = temanTuliText
             lastAutoPlayedTemanTuliText = temanTuliText
@@ -494,6 +502,10 @@ struct UnifiedView: View {
     private func handleNewSign(_ sign: String, confidence: Double) {
         guard sign != "Detecting..." else { return }
         Task { @MainActor in
+            recognizer.conversationContext = ConversationContextService.buildContextString(
+                from: appStore.conversationHistory,
+                currentSpeaker: .userSigned
+            )
             recognizer.feed(rawLabel: sign, confidence: confidence)
         }
     }

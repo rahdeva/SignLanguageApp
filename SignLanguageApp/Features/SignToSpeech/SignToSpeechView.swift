@@ -34,6 +34,10 @@ struct SignToSpeechView: View {
         guard sign != "Detecting...", sign != "Uncertain" else { return }
         let translated = displaySign(for: sign)
         Task { @MainActor in
+            recognizer.conversationContext = ConversationContextService.buildContextString(
+                from: appStore.conversationHistory,
+                currentSpeaker: .userSigned
+            )
             recognizer.feed(rawLabel: translated, confidence: confidence)
         }
     }

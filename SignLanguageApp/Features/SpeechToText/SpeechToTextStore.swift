@@ -15,7 +15,9 @@ final class SpeechToTextStore {
     private let appStore: AppStore
 
     var transcribedText: String = ""
+    var refinedText: String = ""
     var isRecording = false
+    var isRefining = false
     var isAuthorized = false
 
     init(appStore: AppStore) {
@@ -25,6 +27,7 @@ final class SpeechToTextStore {
     /// Request mic permission and start streaming transcription.
     func startRecording() {
         guard !isRecording else { return }
+        refinedText = ""
         Task { [appStore] in
             do {
                 isAuthorized = await PermissionService.requestMicrophone()
@@ -63,5 +66,29 @@ final class SpeechToTextStore {
         transcribedText = ""
         guard !finalText.isEmpty else { return }
         appStore.addToHistory(message: finalText, role: .userSpoke)
+
+        // AI-refine the caregiver's speech with conversation context
+        Task {
+            isRefining = true
+            let context = ConversationContextService.buildContextString(
+                from: appStore.conversationHistory,
+                currentSpeaker: .userSpoke
+            )
+            do {
+                let refined = try await refineCaregiverSpeech(
+                    rawSpeech: finalText,
+                    conversationContext: context
+                )
+                if !refined.isEmpty {
+                    refinedText = refined
+                } else {
+                    refinedText = finalText
+                }
+            } catch {
+                print("❌ CaregiverSpeechRefiner Error: \(error)")
+                refinedText = finalText
+            }
+            isRefining = false
+        }
     }
 }
