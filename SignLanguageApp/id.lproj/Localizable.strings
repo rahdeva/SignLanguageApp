@@ -88,6 +88,9 @@
 "history.empty"                      = "Belum ada riwayat percakapan.";
 "history.empty_title"                = "Belum Ada Riwayat";
 "history.empty_desc"                 = "Mulai rekam bicara atau isyarat untuk membangun riwayat percakapan.";
+"history.detail_title"               = "Sesi";
+"history.resume"                     = "Lanjutkan Percakapan";
+"history.session_untitled"           = "Tanpa Judul";
 
 /* Onboarding */
 "onboarding.continue"                = "Lanjutkan";

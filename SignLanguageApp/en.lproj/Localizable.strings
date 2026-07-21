@@ -88,6 +88,9 @@
 "history.empty"                      = "No conversation history yet.";
 "history.empty_title"                = "No History";
 "history.empty_desc"                 = "Start transcribing or signing to build your conversation history.";
+"history.detail_title"               = "Session";
+"history.resume"                     = "Lanjutkan Percakapan";
+"history.session_untitled"           = "Untitled";
 
 /* Onboarding */
 "onboarding.continue"                = "Continue";
