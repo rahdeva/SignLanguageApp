@@ -66,7 +66,7 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
     private let videoDataOutput = AVCaptureVideoDataOutput()
 
     private let captureQueue = DispatchQueue(
-        label: "com.dewaayam.SignLanguageApp.captureQueue",
+        label: "com.dewaayam.stella.captureQueue",
         qos: .userInteractive
     )
 
@@ -234,6 +234,17 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
 
             self.session.commitConfiguration()
             self.session.startRunning()
+
+            // After reconfiguration the preview layer gets a fresh connection.
+            // Re-apply mirroring immediately (orientation is auto-handled by
+            // AVCaptureVideoPreviewLayer).
+            if let previewConn = self.previewLayer?.connection {
+                if previewConn.isVideoMirroringSupported {
+                    previewConn.automaticallyAdjustsVideoMirroring = false
+                    previewConn.isVideoMirrored = isFront
+                }
+            }
+
             DispatchQueue.main.async { self.isRunning = self.session.isRunning }
         }
     }

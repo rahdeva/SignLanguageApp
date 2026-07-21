@@ -18,7 +18,7 @@ enum ConversationRole: String, Sendable, Codable {
         case .userSpoke:
             return language == .indonesian ? "Caregiver (Suara)" : "Caregiver (Speech)"
         case .assistantSpoke:
-            return language == .indonesian ? "Asisten" : "Assistant"
+            return language == .indonesian ? "Teman Tuli" : "Deaf's Friend"
         }
     }
 

@@ -17,6 +17,10 @@ struct ConversationComponentView: View {
     let messageText: String
     let isActive: Bool
     let onReadAloud: (() -> Void)?
+    let labelActionIconName: String?
+    let labelActionAccessibilityLabel: String?
+    let labelActionTint: Color
+    let onLabelAction: (() -> Void)?
     
     // Custom colors or accents if needed
     var accentColor: Color = .blue
@@ -29,7 +33,11 @@ struct ConversationComponentView: View {
         messageText: String,
         isActive: Bool,
         accentColor: Color = .blue,
-        onReadAloud: (() -> Void)? = nil
+        onReadAloud: (() -> Void)? = nil,
+        labelActionIconName: String? = nil,
+        labelActionAccessibilityLabel: String? = nil,
+        labelActionTint: Color = .blue,
+        onLabelAction: (() -> Void)? = nil
     ) {
         self.title = title
         self.subtitle = subtitle
@@ -39,6 +47,10 @@ struct ConversationComponentView: View {
         self.isActive = isActive
         self.accentColor = accentColor
         self.onReadAloud = onReadAloud
+        self.labelActionIconName = labelActionIconName
+        self.labelActionAccessibilityLabel = labelActionAccessibilityLabel
+        self.labelActionTint = labelActionTint
+        self.onLabelAction = onLabelAction
     }
     
     var body: some View {
@@ -89,6 +101,17 @@ struct ConversationComponentView: View {
                         .disabled(messageText.isEmpty)
                         .accessibilityLabel("Read \(senderLabel)")
                     }
+
+                    if let labelActionIconName, let onLabelAction {
+                        Button(action: onLabelAction) {
+                            Image(systemName: labelActionIconName)
+                                .font(.title3.weight(.semibold))
+                                .frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(labelActionTint)
+                        .accessibilityLabel(labelActionAccessibilityLabel ?? senderLabel)
+                    }
                 }
                 
                 Text(messageText.isEmpty ? "..." : "“\(messageText)”")
@@ -105,7 +128,7 @@ struct ConversationComponentView: View {
             }
             .padding(.top, 4)
         }
-        .padding(20)
+        .padding(.horizontal,20)
 //        .background(
 //            Group {
 //                if #available(iOS 26, *) {

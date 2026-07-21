@@ -12,7 +12,7 @@ struct TwoWayConversationView: View {
     @Environment(AppStore.self) private var appStore
     @StateObject private var cameraManager = CameraManager()
     @StateObject private var recognizer = SignRecognitionEngine(
-        stableThreshold: 2,
+        stableThreshold: 1,
         cooldownThreshold: 5,
         maxWords: 12
     )
@@ -36,21 +36,16 @@ struct TwoWayConversationView: View {
         ZStack {
             // MARK: - Camera Background / Preview
             if cameraManager.permissionGranted {
-                GeometryReader { geo in
-                    ZStack {
-                        CameraPreviewView(
-                            session: cameraManager.session,
-                            isFrontCamera: cameraManager.isFrontCamera,
-                            cameraManager: cameraManager
-                        )
+                ZStack {
+                    CameraPreviewView(
+                        session: cameraManager.session,
+                        isFrontCamera: cameraManager.isFrontCamera,
+                        cameraManager: cameraManager
+                    )
 
-                        if store.isSignDetectionActiveForOverlay {
-                            HandOverlayView(handPoints: cameraManager.handPoints)
-                        }
+                    if store.isSignDetectionActiveForOverlay {
+                        HandOverlayView(handPoints: cameraManager.handPoints)
                     }
-                    .rotationEffect(.degrees(90))
-                    .frame(width: geo.size.height, height: geo.size.width)
-                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
                 }
                 .ignoresSafeArea()
             } else {
