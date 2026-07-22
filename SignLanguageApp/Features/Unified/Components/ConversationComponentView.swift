@@ -16,6 +16,7 @@ struct ConversationComponentView: View {
     let senderLabel: String
     let messageText: String
     let isActive: Bool
+    let showHeaderCard: Bool
     let onReadAloud: (() -> Void)?
     let labelActionIconName: String?
     let labelActionAccessibilityLabel: String?
@@ -32,6 +33,7 @@ struct ConversationComponentView: View {
         senderLabel: String,
         messageText: String,
         isActive: Bool,
+        showHeaderCard: Bool = true,
         accentColor: Color = .blue,
         onReadAloud: (() -> Void)? = nil,
         labelActionIconName: String? = nil,
@@ -45,6 +47,7 @@ struct ConversationComponentView: View {
         self.senderLabel = senderLabel
         self.messageText = messageText
         self.isActive = isActive
+        self.showHeaderCard = showHeaderCard
         self.accentColor = accentColor
         self.onReadAloud = onReadAloud
         self.labelActionIconName = labelActionIconName
@@ -56,31 +59,33 @@ struct ConversationComponentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Status / Header Info
-            HStack(spacing: 8) {
-                // Circular icon badge
-                iconBadge
-                
-                // Title and description
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .fontWeight(.semibold)
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fontWeight(.medium)
+            if showHeaderCard {
+                HStack(spacing: 8) {
+                    // Circular icon badge
+                    iconBadge
+                    
+                    // Title and description
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(title)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                            .fontWeight(.semibold)
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fontWeight(.medium)
+                    }
+                    
+                    Spacer()
                 }
-                
-                Spacer()
+                .accessibilityElement(children: .combine)
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(.background)
+                        .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 4)
+                )
             }
-            .accessibilityElement(children: .combine)
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(.background)
-                    .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 4)
-            )
 
             
             // Transcription Text Container

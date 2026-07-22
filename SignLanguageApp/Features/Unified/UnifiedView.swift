@@ -3,83 +3,159 @@
 //  SignLanguageApp
 //
 //  Created by Dimas Prihady Setyawan on 19/07/26.
+//  Refactored by Antigravity to support BISINDO Practice Game Mode with Native Apple Aesthetic.
 //
 
 import SwiftUI
+
+enum GameResultLevel {
+    case good
+    case okay
+    case bad
+    
+    var title: String {
+        switch self {
+        case .good: return "LUAR BIASA! (GOOD)"
+        case .okay: return "CUKUP BAIK (OKAY)"
+        case .bad: return "COBA LAGI (BAD)"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .good: return "Hebat! Kamu berhasil memeragakan seluruh isyarat dengan tepat dan berurutan!"
+        case .okay: return "Bagus! Kamu berhasil memeragakan sebagian isyarat. Tingkatkan lagi kecepatanmu!"
+        case .bad: return "Jangan menyerah! Ayo coba lagi untuk melatih gerakan isyarat BISINDO-mu."
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .good: return .green
+        case .okay: return .orange
+        case .bad: return .red
+        }
+    }
+    
+    var sfSymbol: String {
+        switch self {
+        case .good: return "checkmark.seal.fill"
+        case .okay: return "exclamationmark.triangle.fill"
+        case .bad: return "xmark.circle.fill"
+        }
+    }
+}
 
 struct UnifiedView: View {
     @Environment(AppStore.self) private var appStore
     @StateObject private var cameraManager = CameraManager()
     @StateObject private var recognizer = SignRecognitionEngine(
-        // Default to 2
         stableThreshold: 1,
         cooldownThreshold: 5,
         maxWords: 12
     )
     @State private var speechStore: SpeechToTextStore?
-    @State private var lastAutoPlayedTemanTuliText: String?
-    @State private var showConfidenceDetails = true
-    private let availableWords = [
-        "Saya", "Lagi", "Makan", "Dengar", "Motor", "Belajar", "Cari", "Hari",
-        "Ingat", "Maaf", "Terima kasih", "Tuli", "Apa", "Siapa", "Kapan", "Di mana",
-        "Mengapa", "Bagaimana", "Merah", "Kuning", "Hijau", "Hitam", "Berangkat",
-        "Datang", "Teman", "Keluarga", "Rumah", "Pagi", "Siang", "Sore", "Malam", "Air"
-    ]
+    @State private var showConfidenceDetails = false
 
-    private var temanTuliText: String {
-        recognizer.builtSentence
-    }
+    // MARK: - Game State
+    @State private var currentChallenge: PracticeChallenge = PracticeChallenge(question: "Kamu sedang apa?", targetTokens: ["Saya", "Lagi", "Makan"])
+    @State private var nextTargetIndex = 0
+    @State private var timerSecondsRemaining = 30
+    @State private var isGameActive = false
+    @State private var isGeneratingChallenge = false
+    @State private var showResult = false
+    @State private var gameResultLevel: GameResultLevel = .bad
+    @State private var gameTimer: Timer? = nil
 
-    private var caregiverTranscribedText: String {
-        if let store = speechStore, !store.refinedText.isEmpty {
-            return store.refinedText
-        }
-        return speechStore?.transcribedText ?? appStore.speechToTextOutput
-    }
+    // MARK: - Eye Control Settings
+    @AppStorage("isEyeCloseControlEnabled") private var isEyeCloseControlEnabled = false
+    @AppStorage("showEyeVisionOverlay") private var showEyeVisionOverlay = false
+    @State private var winkProgress: Double = 0.0
+    @State private var winkStart: Date? = nil
+    @State private var winkTimer: Timer? = nil
 
     private var isSignActive: Bool {
         cameraManager.permissionGranted && cameraManager.isRunning
     }
 
+    private var practiceSequenceText: String {
+        var result = ""
+        for idx in 0..<currentChallenge.targetTokens.count {
+            let token = currentChallenge.targetTokens[idx]
+            if idx > 0 {
+                result += "  ➔  "
+            }
+            if idx < nextTargetIndex {
+                result += "✓ \(token)"
+            } else if idx == nextTargetIndex {
+                result += "▶ [\(token)]"
+            } else {
+                result += "• \(token)"
+            }
+        }
+        return result
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: 16) {
-                    cameraPane
-                    signRecognitionControls
-                    conversationSection
+        ZStack {
+            // Main Content Layout using Original ScrollView and Elements
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        cameraPane
+                        duolingoTaskCard
+                    }
+                    .padding(.vertical, 20)
                 }
+            }
+            .blur(radius: showResult ? 12 : 0)
+            .disabled(showResult)
+            
+            // Result Screen Overlay (Native Apple Aesthetic)
+            if showResult {
+                resultOverlayView
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .scale(scale: 0.9).combined(with: .opacity)
+                    ))
+                    .zIndex(10)
+            }
+            
+            // Challenge Generating Overlay
+            if isGeneratingChallenge {
+                generatingOverlayView
+                    .zIndex(11)
             }
         }
         .onAppear {
             if speechStore == nil {
                 speechStore = SpeechToTextStore(appStore: appStore)
             }
+            fetchNewChallengeAndStart()
+        }
+        .onDisappear {
+            cancelWink()
+            stopGameTimer()
+            speechStore?.stopRecording()
         }
         .onChange(of: appStore.conversationHistory) { _, history in
-            recognizer.conversationContext = ConversationContextService.buildContextString(
-                from: history,
-                currentSpeaker: .userSigned
-            )
+            // When caregiver speaks a custom question, intercept it to generate custom tokens
+            if let lastMessage = history.last, lastMessage.role == .userSpoke {
+                handleSpokenQuestion(lastMessage.message)
+            }
         }
         .onChange(of: cameraManager.currentSign) { _, newSign in
             handleNewSign(newSign, confidence: cameraManager.currentConfidence)
         }
-        .task(id: temanTuliText) {
-            guard !temanTuliText.isEmpty,
-                  temanTuliText != lastAutoPlayedTemanTuliText
-            else { return }
-
-            recognizer.conversationContext = ConversationContextService.buildContextString(
-                from: appStore.conversationHistory,
-                currentSpeaker: .userSigned
-            )
-
-            appStore.signPredictionOutput = temanTuliText
-            lastAutoPlayedTemanTuliText = temanTuliText
-            await speakTemanTuliTranscription()
+        .onChange(of: cameraManager.isLeftEyeClosed) { _, _ in
+            handleEyeTrackingUpdate()
+        }
+        .onChange(of: cameraManager.isRightEyeClosed) { _, _ in
+            handleEyeTrackingUpdate()
         }
     }
+
+    // MARK: - Original Layout Panes
 
     private var cameraPane: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -92,9 +168,22 @@ struct UnifiedView: View {
                     )
 
                     HandOverlayView(handPoints: cameraManager.handPoints)
+
+                    if isEyeCloseControlEnabled && showEyeVisionOverlay && cameraManager.isFaceDetected {
+                        EyeOverlayView(
+                            leftEyePoints: cameraManager.skeleton.leftEyePoints,
+                            rightEyePoints: cameraManager.skeleton.rightEyePoints,
+                            isLeftClosed: cameraManager.isLeftEyeClosed,
+                            isRightClosed: cameraManager.isRightEyeClosed
+                        )
+                    }
                 }
-                .frame(height: 360)
-                .clipped()
+                .frame(height: 300)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                )
                 .overlay(alignment: .top) {
                     cameraStatusBar
                         .padding(12)
@@ -105,13 +194,15 @@ struct UnifiedView: View {
                 }
             } else {
                 permissionDeniedView
-                    .frame(height: 360)
+                    .frame(height: 300)
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             }
 
             if cameraManager.permissionGranted {
                 flipButton.padding(12)
             }
         }
+        .padding(.horizontal, 20)
     }
 
     private var cameraStatusBar: some View {
@@ -131,107 +222,193 @@ struct UnifiedView: View {
 
             Spacer()
 
-            if cameraManager.bufferCount < 60 {
-                ProgressView(value: Double(cameraManager.bufferCount), total: 60)
-                    .progressViewStyle(.linear)
-                    .tint(.cyan)
-                    .frame(width: 56)
+            // Game countdown timer badge (Native Style)
+            if isGameActive {
+                HStack(spacing: 6) {
+                    Image(systemName: "timer")
+                        .foregroundColor(timerColor)
+                    Text("\(timerSecondsRemaining)s")
+                        .font(.caption.monospacedDigit().weight(.bold))
+                        .foregroundColor(timerColor)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.ultraThinMaterial, in: .capsule)
+            }
 
-                Text("\(cameraManager.bufferCount)/60")
-                    .font(.caption2.monospacedDigit().weight(.bold))
-                    .foregroundStyle(.blue)
-            } else {
-                Text("LIVE")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.green, in: .capsule)
+            // Eye Wink status badge
+            if winkProgress > 0 {
+                HStack(spacing: 6) {
+                    ZStack {
+                        Circle()
+                            .stroke(Color.white.opacity(0.2), lineWidth: 2)
+                        Circle()
+                            .trim(from: 0, to: CGFloat(winkProgress))
+                            .stroke(
+                                LinearGradient(colors: [.yellow, .orange], startPoint: .topLeading, endPoint: .bottomTrailing),
+                                style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
+                    }
+                    .frame(width: 16, height: 16)
+                    
+                    Text("Eye Close Control...")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.yellow)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(.ultraThinMaterial, in: .capsule)
             }
         }
     }
 
-    private var signRecognitionControls: some View {
-        VStack(spacing: 12) {
-//            if !recognizer.wordSequence.isEmpty {
-//                wordSequenceRow
-//            }
-//
-//            if !recognizer.builtSentence.isEmpty || recognizer.isBuildingSentence || recognizer.sentenceError != nil {
-//                sentencePanel
-//            }
-//
-//            topPredictionSummary
+    private var timerColor: Color {
+        if timerSecondsRemaining > 15 {
+            return .blue
+        } else if timerSecondsRemaining > 5 {
+            return .orange
+        } else {
+            return .red
+        }
+    }
+
+    private var duolingoTaskCard: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Part 1: Duolingo-style Speech Bubble for Caregiver Question
+            HStack(alignment: .top, spacing: 14) {
+                // Avatar icon representing caregiver
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(.blue)
+                
+                // Speech Bubble
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("PERTANYAAN CAREGIVER")
+                        .font(.caption2.weight(.black))
+                        .foregroundStyle(.secondary)
+                        .tracking(0.8)
+                    
+                    HStack(alignment: .center, spacing: 12) {
+                        Text(currentChallenge.question)
+                            .font(.body.weight(.bold))
+                            .foregroundColor(.primary)
+                        
+                        Spacer()
+                        
+                        // Speech Recording Toggle Button
+                        Button {
+                            toggleSpeechRecording()
+                        } label: {
+                            Image(systemName: speechStore?.isRecording == true ? "mic.circle.fill" : "mic.fill")
+                                .font(.title3.weight(.bold))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(speechStore?.isRecording == true ? .red : .blue)
+                        .accessibilityLabel(speechStore?.isRecording == true ? "Turn off microphone" : "Turn on microphone")
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        Color.primary.opacity(0.06),
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                    )
+                }
+            }
+            
+            Divider()
+            
+            // Part 2: Isyarat Untuk Menjawab (Separated Target Badges)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("ISYARAT UNTUK MENJAWAB (TARGET)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.blue)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(0..<currentChallenge.targetTokens.count, id: \.self) { idx in
+                            let token = currentChallenge.targetTokens[idx]
+                            let isCompleted = idx < nextTargetIndex
+                            let isActive = idx == nextTargetIndex
+                            
+                            HStack(spacing: 6) {
+                                if isCompleted {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                        .imageScale(.small)
+                                } else if isActive {
+                                    Image(systemName: "arrow.right.circle.fill")
+                                        .foregroundColor(.blue)
+                                        .imageScale(.small)
+                                }
+                                
+                                Text(token)
+                                    .font(.subheadline.weight(.bold))
+                                    .foregroundColor(isCompleted ? .green : (isActive ? .blue : .primary))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(isCompleted ? Color.green.opacity(0.1) : (isActive ? Color.blue.opacity(0.12) : Color.primary.opacity(0.06)))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(isCompleted ? Color.green.opacity(0.3) : (isActive ? Color.blue.opacity(0.4) : Color.clear), lineWidth: 1.5)
+                            )
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            
+            Divider()
+            
+            // Part 3: Word Sequence Card (Kata Terdeteksi & Debug Toolbar)
             wordSequenceRow
         }
-        .padding(.horizontal,20)
-    }
-
-    private var conversationSection: some View {
-        VStack(spacing: 24) {
-            ConversationComponentView(
-                title: "Sign to Text",
-                subtitle: "Camera input translating in real-time",
-                iconName: "hand.raised.fill",
-                senderLabel: "Teman Tuli Transcribe:",
-                messageText: temanTuliText,
-                isActive: isSignActive,
-                accentColor: .blue,
-                onReadAloud: speakTemanTuliTranscription
-            )
-
-            SeparatorLine()
-
-            ConversationComponentView(
-                title: "Speech to Text",
-                subtitle: "Voice input transcribing in real-time",
-                iconName: "mic.fill",
-                senderLabel: "Care Giver Transcribe:",
-                messageText: caregiverTranscribedText,
-                isActive: speechStore?.isRecording ?? false,
-                accentColor: .blue,
-                labelActionIconName: speechStore?.isRecording == true ? "mic.circle.fill" : "mic.fill",
-                labelActionAccessibilityLabel: speechStore?.isRecording == true ? "Turn off microphone" : "Turn on microphone",
-                labelActionTint: speechStore?.isRecording == true ? .red : .blue,
-                onLabelAction: toggleSpeechRecording
-            ).padding(.bottom, 80)
-        }
-    }
-
-    private var modelButton: some View {
-        Button {
-            withAnimation(.spring()) {
-                cameraManager.switchModel(
-                    cameraManager.modelMode == .handOnly ? .multiModal : .handOnly
-                )
-            }
-        } label: {
-            Image(systemName: cameraManager.modelMode.sfSymbol)
-                .font(.title2.weight(.semibold))
-                .frame(width: 52, height: 52)
-        }
-        .buttonStyle(.glassProminent)
-        .tint(cameraManager.modelMode == .multiModal ? .cyan : .blue)
-        .accessibilityLabel(
-            cameraManager.modelMode == .handOnly
-                ? "Switch to multi modal model"
-                : "Switch to hand only model"
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(.background)
+                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 3)
         )
+        .padding(.horizontal, 20)
     }
 
-    private var cameraResetButton: some View {
-        Button {
-            resetSignRecognition()
-        } label: {
-            Label("Reset Sign", systemImage: "arrow.counterclockwise")
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .background(.ultraThinMaterial, in: .capsule)
+    private var debugManualOverrideRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("DEBUG MANUAL OVERRIDE (TAP UNTUK MENAMBAH)")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(ChallengeGenerator.availableWords, id: \.self) { word in
+                        Button {
+                            handleNewSign(word, confidence: 1.0)
+                        } label: {
+                            Text(word)
+                                .font(.caption.weight(.bold))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(.blue.opacity(0.08), in: .capsule)
+                                .overlay(
+                                    Capsule()
+                                        .stroke(.blue.opacity(0.24), lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.blue)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(.primary)
-        .accessibilityLabel("Reset sign recognition")
     }
 
     private var wordSequenceRow: some View {
@@ -294,210 +471,8 @@ struct UnifiedView: View {
 
             Divider()
                 .padding(.vertical, 4)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("DEBUG MANUAL OVERRIDE (TAP UNTUK MENAMBAH)")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
-                
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(availableWords, id: \.self) { word in
-                            Button {
-                                recognizer.addWordManually(word)
-                            } label: {
-                                Text(word)
-                                    .font(.caption.weight(.bold))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(.blue.opacity(0.08), in: .capsule)
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(.blue.opacity(0.24), lineWidth: 1)
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(.blue)
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-            }
-        }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(.background)
-                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 3)
-        )
-    }
-
-    private var sentencePanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label("KALIMAT", systemImage: "text.bubble.fill")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                Button {
-                    withAnimation { recognizer.clearAll() }
-                } label: {
-                    Image(systemName: "xmark")
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("Clear sentence")
-            }
-
-            if recognizer.isBuildingSentence {
-                HStack(spacing: 10) {
-                    ProgressView()
-                        .tint(.cyan)
-                    Text("Menyusun kalimat...")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            } else if !recognizer.builtSentence.isEmpty {
-                Text(recognizer.builtSentence)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button {
-                    recognizer.buildSentence()
-                } label: {
-                    Label("Ulangi", systemImage: "arrow.clockwise")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.cyan)
-            } else if let error = recognizer.sentenceError {
-                Text(error)
-                    .font(.subheadline)
-                    .foregroundStyle(.orange)
-
-                if !recognizer.builtSentence.isEmpty {
-                    Text(recognizer.builtSentence)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
-        .padding(16)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 18))
-    }
-
-    private var topPredictionSummary: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("DETECTED BISINDO SIGN")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.secondary)
-
-                    Text(cameraManager.currentSign.uppercased())
-                        .font(.title2.weight(.heavy))
-                        .foregroundStyle(
-                            cameraManager.currentSign == "Uncertain" ||
-                                cameraManager.currentSign == "Detecting..." ? .yellow : .cyan
-                        )
-                        .minimumScaleFactor(0.7)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                confidenceRing
-            }
-
-            if !cameraManager.topPredictions.isEmpty {
-                Divider()
-
-                HStack {
-                    Text("TOP CANDIDATES")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Button {
-                        withAnimation(.easeInOut) {
-                            showConfidenceDetails.toggle()
-                        }
-                    } label: {
-                        Image(systemName: showConfidenceDetails ? "chevron.up" : "chevron.down")
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel(showConfidenceDetails ? "Hide top candidates" : "Show top candidates")
-                }
-
-                if showConfidenceDetails {
-                    VStack(spacing: 8) {
-                        ForEach(cameraManager.topPredictions, id: \.label) { item in
-                            predictionRow(item)
-                        }
-                    }
-                }
-            }
-        }
-        .padding(16)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 18))
-    }
-
-    private var confidenceRing: some View {
-        ZStack {
-            Circle()
-                .stroke(.secondary.opacity(0.2), lineWidth: 5)
-                .frame(width: 58, height: 58)
-
-            Circle()
-                .trim(from: 0, to: CGFloat(cameraManager.currentConfidence))
-                .stroke(
-                    .cyan,
-                    style: StrokeStyle(lineWidth: 5, lineCap: .round)
-                )
-                .frame(width: 58, height: 58)
-                .rotationEffect(.degrees(-90))
-                .animation(.easeInOut(duration: 0.25), value: cameraManager.currentConfidence)
-
-            VStack(spacing: 0) {
-                Text("\(Int(cameraManager.currentConfidence * 100))%")
-                    .font(.caption.weight(.black))
-                Text("CONF")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private func predictionRow(_ item: (label: String, confidence: Double)) -> some View {
-        HStack {
-            Text(SignRecognitionEngine.cleanLabel(item.label))
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(item.label == cameraManager.currentSign ? .primary : .secondary)
-
-            Spacer()
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(.secondary.opacity(0.15))
-                        .frame(height: 6)
-                    Capsule()
-                        .fill(item.label == cameraManager.currentSign ? .cyan : .secondary.opacity(0.5))
-                        .frame(width: geo.size.width * CGFloat(item.confidence), height: 6)
-                }
-            }
-            .frame(width: 100, height: 6)
-
-            Text(String(format: "%.0f%%", item.confidence * 100))
-                .font(.caption.monospacedDigit().weight(.bold))
-                .foregroundStyle(item.label == cameraManager.currentSign ? .cyan : .secondary)
-                .frame(width: 42, alignment: .trailing)
+            
+            debugManualOverrideRow
         }
     }
 
@@ -529,13 +504,204 @@ struct UnifiedView: View {
         .accessibilityLabel("Remove \(word.text)")
     }
 
+    // MARK: - Game Mechanics
+
+    func startNewGame() {
+        nextTargetIndex = 0
+        showResult = false
+        isGameActive = true
+        startGameTimer()
+    }
+
+    func startGameTimer() {
+        stopGameTimer()
+        timerSecondsRemaining = 30
+        gameTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            Task { @MainActor in
+                if self.timerSecondsRemaining > 0 {
+                    self.timerSecondsRemaining -= 1
+                } else {
+                    self.endGame()
+                }
+            }
+        }
+    }
+
+    func stopGameTimer() {
+        gameTimer?.invalidate()
+        gameTimer = nil
+    }
+
+    func endGame(with forcedLevel: GameResultLevel? = nil) {
+        stopGameTimer()
+        isGameActive = false
+        
+        let finalLevel: GameResultLevel
+        if let forced = forcedLevel {
+            finalLevel = forced
+        } else {
+            if nextTargetIndex == currentChallenge.targetTokens.count {
+                finalLevel = .good
+            } else if nextTargetIndex > 0 {
+                finalLevel = .okay
+            } else {
+                finalLevel = .bad
+            }
+        }
+
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+            gameResultLevel = finalLevel
+            showResult = true
+        }
+
+        // Haptic notification feedback
+        let generator = UINotificationFeedbackGenerator()
+        switch finalLevel {
+        case .good: generator.notificationOccurred(.success)
+        case .okay: generator.notificationOccurred(.warning)
+        case .bad: generator.notificationOccurred(.error)
+        }
+    }
+
+    func fetchNewChallengeAndStart() {
+        Task {
+            isGeneratingChallenge = true
+            let challenge = await ChallengeGenerator.generateChallenge(targetLanguage: appStore.languageSettings.ttsLanguage)
+            await MainActor.run {
+                currentChallenge = challenge
+                isGeneratingChallenge = false
+                startNewGame()
+            }
+        }
+    }
+
+    func handleSpokenQuestion(_ question: String) {
+        Task {
+            isGeneratingChallenge = true
+            let tokens = await ChallengeGenerator.generateTokens(for: question, targetLanguage: appStore.languageSettings.ttsLanguage)
+            await MainActor.run {
+                currentChallenge = PracticeChallenge(question: question, targetTokens: tokens)
+                isGeneratingChallenge = false
+                startNewGame()
+            }
+        }
+    }
+
+    private func handleNewSign(_ sign: String, confidence: Double) {
+        guard isGameActive else { return }
+        guard sign != "Detecting...", sign != "Uncertain" else { return }
+        let cleaned = SignRecognitionEngine.cleanLabel(sign)
+        
+        guard nextTargetIndex < currentChallenge.targetTokens.count else { return }
+        let targetWord = currentChallenge.targetTokens[nextTargetIndex]
+        
+        if cleaned.lowercased() == targetWord.lowercased() {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                nextTargetIndex += 1
+            }
+            
+            if nextTargetIndex == currentChallenge.targetTokens.count {
+                endGame(with: .good)
+            }
+        }
+    }
+
+    private func toggleSpeechRecording() {
+        guard let speechStore else { return }
+        if speechStore.isRecording {
+            speechStore.stopRecording()
+        } else {
+            speechStore.startRecording()
+        }
+    }
+
+    // MARK: - Native Overlays
+
+    private var resultOverlayView: some View {
+        VStack(spacing: 24) {
+            Image(systemName: gameResultLevel.sfSymbol)
+                .font(.system(size: 64))
+                .foregroundColor(gameResultLevel.color)
+            
+            VStack(spacing: 8) {
+                Text(gameResultLevel.title)
+                    .font(.title3.weight(.bold))
+                    .foregroundColor(.primary)
+                
+                Text(gameResultLevel.description)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+            }
+            
+            HStack(spacing: 12) {
+                VStack(alignment: .center, spacing: 4) {
+                    Text("\(nextTargetIndex)/\(currentChallenge.targetTokens.count)")
+                        .font(.title2.monospacedDigit().weight(.bold))
+                        .foregroundColor(.primary)
+                    Text("ISYARAT BENAR")
+                        .font(.caption2.weight(.bold))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+            }
+            
+            Button {
+                fetchNewChallengeAndStart()
+            } label: {
+                Text("Main Lagi")
+                    .font(.body.weight(.bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Color.blue, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 32)
+        }
+        .padding(.vertical, 36)
+        .background(
+            RoundedRectangle(cornerRadius: 28)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 20)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 28)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+        )
+        .padding(.horizontal, 24)
+    }
+
+    private var generatingOverlayView: some View {
+        ZStack {
+            Color.black.opacity(0.2)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 16) {
+                ProgressView()
+                    .tint(.blue)
+                    .scaleEffect(1.2)
+                
+                Text("Menghasilkan tantangan...")
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(.primary)
+            }
+            .padding(24)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+        }
+    }
+
     private var permissionDeniedView: some View {
         ContentUnavailableView {
-            Label("Camera Access Required", systemImage: "camera.fill.badge.ellipsis")
+            Label("Akses Kamera Dibutuhkan", systemImage: "camera.fill.badge.ellipsis")
         } description: {
-            Text("Allow camera access to detect Bisindo hand signs in real time.")
+            Text("Harap berikan izin akses kamera untuk melatih isyarat secara real-time.")
         } actions: {
-            Button("Open Settings") {
+            Button("Buka Pengaturan") {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
@@ -543,16 +709,34 @@ struct UnifiedView: View {
         }
     }
 
-    private func handleNewSign(_ sign: String, confidence: Double) {
-        guard sign != "Detecting..." else { return }
-        Task { @MainActor in
-            recognizer.targetLanguage = appStore.languageSettings.ttsLanguage
-            recognizer.conversationContext = ConversationContextService.buildContextString(
-                from: appStore.conversationHistory,
-                currentSpeaker: .userSigned
-            )
-            recognizer.feed(rawLabel: sign, confidence: confidence)
+    private var cameraResetButton: some View {
+        Button {
+            resetSignRecognition()
+        } label: {
+            Label("Reset Sign", systemImage: "arrow.counterclockwise")
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(.ultraThinMaterial, in: .capsule)
         }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .accessibilityLabel("Reset sign recognition")
+    }
+
+    private var flipButton: some View {
+        Button {
+            withAnimation(.spring()) {
+                cameraManager.toggleCamera()
+            }
+        } label: {
+            Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
+                .font(.title2.weight(.semibold))
+                .padding(10)
+                .background(.ultraThinMaterial, in: .circle)
+        }
+        .buttonStyle(.plain)
+        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
     }
 
     private func clearDetectedWords() {
@@ -570,60 +754,76 @@ struct UnifiedView: View {
         }
     }
 
-    private func toggleSpeechRecording() {
-        guard let speechStore else { return }
-        if speechStore.isRecording {
-            speechStore.stopRecording()
-        } else {
-            speechStore.startRecording()
+    // MARK: - Eye Close Tracking logic
+
+    private func handleEyeTrackingUpdate() {
+        guard isEyeCloseControlEnabled else {
+            cancelWink()
+            return
+        }
+
+        let isLeftClosed = cameraManager.isLeftEyeClosed
+        let isRightClosed = cameraManager.isRightEyeClosed
+        let isFaceDetected = cameraManager.isFaceDetected
+
+        guard isFaceDetected else { return }
+
+        let eitherClosed = isLeftClosed || isRightClosed
+        let bothOpen = !isLeftClosed && !isRightClosed
+
+        if eitherClosed && !bothOpen {
+            if winkTimer == nil {
+                startWink()
+            }
+        } else if bothOpen {
+            cancelWink()
         }
     }
 
-    private func speakTemanTuliTranscription() {
-        Task {
-            await speakTemanTuliTranscription()
-        }
-    }
-
-    private func speakTemanTuliTranscription() async {
-        await appStore.synthesizerService.speak(temanTuliText)
-        appStore.addToHistory(message: temanTuliText, role: .assistantSpoke)
-    }
-
-    @ViewBuilder
-    private var micButton: some View {
-        if let speechStore {
-            Button {
-                if speechStore.isRecording {
-                    speechStore.stopRecording()
-                } else {
-                    speechStore.startRecording()
+    private func startWink() {
+        winkStart = Date()
+        winkProgress = 0.0
+        winkTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
+            Task { @MainActor in
+                guard let start = self.winkStart else {
+                    self.cancelWink()
+                    return
                 }
-            } label: {
-                Image(systemName: speechStore.isRecording ? "mic.circle.fill" : "mic.fill")
-                    .font(.title2.weight(.semibold))
-                    .frame(width: 52, height: 52)
+                
+                let isLeftClosed = self.cameraManager.isLeftEyeClosed
+                let isRightClosed = self.cameraManager.isRightEyeClosed
+                let bothOpen = !isLeftClosed && !isRightClosed
+                
+                if bothOpen {
+                    self.cancelWink()
+                    return
+                }
+                
+                let elapsed = Date().timeIntervalSince(start)
+                let progress = min(elapsed / 1.0, 1.0)
+                self.winkProgress = progress
+                
+                if elapsed >= 1.0 {
+                    self.cancelWink()
+                    self.triggerWinkAction()
+                }
             }
-            .buttonStyle(.glassProminent)
-            .tint(speechStore.isRecording ? .red : .blue)
-            .accessibilityLabel(speechStore.isRecording ? "Turn off microphone" : "Turn on microphone")
         }
     }
 
-    private var flipButton: some View {
-        Button {
-            withAnimation(.spring()) {
-                cameraManager.toggleCamera()
-            }
-        } label: {
-            Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
-                .font(.title2.weight(.semibold))
-                .padding(10)
-                .background(.ultraThinMaterial, in: .circle)
+    private func cancelWink() {
+        winkTimer?.invalidate()
+        winkTimer = nil
+        winkStart = nil
+        winkProgress = 0.0
+    }
+
+    private func triggerWinkAction() {
+        if showResult {
+            fetchNewChallengeAndStart()
+        } else if isGameActive {
+            fetchNewChallengeAndStart()
         }
-        .buttonStyle(.plain)
-        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
-        .help(cameraManager.isFrontCamera ? "Switch to rear camera" : "Switch to front camera")
     }
 }
 
@@ -631,3 +831,4 @@ struct UnifiedView: View {
     UnifiedView()
         .environment(AppStore())
 }
+

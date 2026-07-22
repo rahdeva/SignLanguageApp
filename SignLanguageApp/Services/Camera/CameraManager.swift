@@ -23,9 +23,11 @@ struct InferenceResult {
     let top3: [(label: String, confidence: Double)]
 }
 
-// MARK: - Skeleton Points (hand overlay only)
+// MARK: - Skeleton Points (hand & eye overlay)
 struct SkeletonPoints {
     var handPoints: [VNHumanHandPoseObservation.JointName: CGPoint] = [:]
+    var leftEyePoints: [CGPoint] = []
+    var rightEyePoints: [CGPoint] = []
 }
 
 // MARK: - Model Mode
@@ -54,9 +56,12 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
     @Published var modelMode: ModelMode        = .handOnly
 
     // Face & Eye Tracking
+    @Published var isFaceDetectionEnabled: Bool = true
     @Published var isFaceDetected: Bool      = false
     @Published var isLeftEyeClosed: Bool     = false
     @Published var isRightEyeClosed: Bool    = false
+    @Published var leftEAR: Double           = 0.0
+    @Published var rightEAR: Double          = 0.0
 
     // Legacy accessor so ContentView / HandOverlayView compile without changes
     var handPoints: [VNHumanHandPoseObservation.JointName: CGPoint] { skeleton.handPoints }
@@ -92,6 +97,8 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
     nonisolated(unsafe) private var currentIsFrontCamera: Bool = true
     /// Cached model mode for use on captureQueue (mirrors @Published modelMode)
     nonisolated(unsafe) private var cachedModelMode: ModelMode = .handOnly
+    /// Cached Vision region of interest (ROI) matching the visible cropped preview rectangle exactly
+    nonisolated(unsafe) private var cachedVisionROI: CGRect = CGRect(x: 0, y: 0, width: 1, height: 1)
 
     // MARK: - Joint Order (must match training data exactly)
 
@@ -245,7 +252,33 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
                 }
             }
 
-            DispatchQueue.main.async { self.isRunning = self.session.isRunning }
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.isRunning = self.session.isRunning
+                self.configurePreviewLayerOrientation()
+            }
+        }
+    }
+
+    /// Configures the AVCaptureVideoPreviewLayer and AVCaptureVideoDataOutput connection orientation and mirroring.
+    func configurePreviewLayerOrientation() {
+        if let layer = previewLayer, let connection = layer.connection {
+            if connection.isVideoOrientationSupported {
+                connection.videoOrientation = .portrait
+            }
+            if connection.isVideoMirroringSupported {
+                connection.automaticallyAdjustsVideoMirroring = false
+                connection.isVideoMirrored = isFrontCamera
+            }
+        }
+        if let videoConnection = videoDataOutput.connection(with: .video) {
+            if videoConnection.isVideoOrientationSupported {
+                videoConnection.videoOrientation = .portrait
+            }
+            if videoConnection.isVideoMirroringSupported {
+                videoConnection.automaticallyAdjustsVideoMirroring = false
+                videoConnection.isVideoMirrored = isFrontCamera
+            }
         }
     }
 
@@ -278,6 +311,22 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
             }
         }
     }
+
+    /// Updates the region of interest (ROI) so Vision only detects hands inside the exact area visible in the UI preview.
+    func updateROI() {
+        guard let layer = previewLayer, layer.bounds.width > 0, layer.bounds.height > 0 else { return }
+        let captureRect = layer.metadataOutputRectConverted(fromLayerRect: layer.bounds)
+        guard !captureRect.isEmpty && !captureRect.isInfinite else { return }
+        // Convert capture device coordinates (origin top-left) to Vision portrait coordinates (origin bottom-left):
+        // captureX = 1 - visionX  =>  visionX = 1 - captureX - captureWidth
+        // captureY = 1 - visionY  =>  visionY = 1 - captureY - captureHeight
+        let vx = max(0, min(1, 1.0 - captureRect.origin.x - captureRect.width))
+        let vy = max(0, min(1, 1.0 - captureRect.origin.y - captureRect.height))
+        let vw = max(0, min(1 - vx, captureRect.width))
+        let vh = max(0, min(1 - vy, captureRect.height))
+        guard vw > 0 && vh > 0 else { return }
+        cachedVisionROI = CGRect(x: vx, y: vy, width: vw, height: vh)
+    }
 }
 
 // MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
@@ -289,22 +338,44 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
 
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
-        // iPhone sensor raw orientation (no rotation applied to the buffer):
-        //   Back camera in portrait  → .right   (scene top is on the right of the raw landscape frame)
-        //   Front camera in portrait → .leftMirrored (same + horizontal mirror from selfie lens)
-        let orientation: CGImagePropertyOrientation = currentIsFrontCamera ? .leftMirrored : .right
-        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer,
-                                            orientation: orientation,
-                                            options: [:])
+        // ── 0. Crop image buffer to exact visible UI camera preview rectangle ──
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+
+        let cw: CGFloat = previewLayer?.bounds.width ?? 393
+        let ch: CGFloat = previewLayer?.bounds.height ?? 360
+        let containerAspect = cw / ch
+
+        let imgExtent = ciImage.extent
+        let imageAspect = imgExtent.width / imgExtent.height
+
+        var cropRect = imgExtent
+        if containerAspect > imageAspect {
+            // Container is wider than image aspect ratio: crop top & bottom overflow
+            let visibleH = imgExtent.width / containerAspect
+            let offsetY = (imgExtent.height - visibleH) / 2.0
+            cropRect = CGRect(x: imgExtent.origin.x, y: imgExtent.origin.y + offsetY, width: imgExtent.width, height: visibleH)
+        } else {
+            // Container is taller than image aspect ratio: crop left & right overflow
+            let visibleW = imgExtent.height * containerAspect
+            let offsetX = (imgExtent.width - visibleW) / 2.0
+            cropRect = CGRect(x: imgExtent.origin.x + offsetX, y: imgExtent.origin.y, width: visibleW, height: imgExtent.height)
+        }
+
+        let croppedImage = ciImage.cropped(to: cropRect)
+            .transformed(by: CGAffineTransform(translationX: -cropRect.origin.x, y: -cropRect.origin.y))
+        let handler = VNImageRequestHandler(ciImage: croppedImage, options: [:])
 
         // ── 1. Build Vision requests (hand & face) ─────────────────────────────
         let handRequest = VNDetectHumanHandPoseRequest()
         handRequest.maximumHandCount = 1
 
-        let faceRequest = VNDetectFaceLandmarksRequest()
+        let faceEnabled = isFaceDetectionEnabled
+        let faceRequest: VNDetectFaceLandmarksRequest? = faceEnabled ? VNDetectFaceLandmarksRequest() : nil
 
         do {
-            try handler.perform([handRequest, faceRequest])
+            var requests: [VNRequest] = [handRequest]
+            if let fr = faceRequest { requests.append(fr) }
+            try handler.perform(requests)
         } catch {
             handleEmptyFrame(faceDetected: false, leftClosed: false, rightClosed: false)
             return
@@ -313,13 +384,39 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
         var faceDetected = false
         var leftClosed = false
         var rightClosed = false
-        if let faceObs = faceRequest.results?.first, let landmarks = faceObs.landmarks {
+        var valLeftEAR = 0.0
+        var valRightEAR = 0.0
+        var leftEyeDisplay: [CGPoint] = []
+        var rightEyeDisplay: [CGPoint] = []
+
+        if let faceObs = faceRequest?.results?.first, let landmarks = faceObs.landmarks {
             faceDetected = true
-            if let leftEAR = Self.calculateEAR(region: landmarks.leftEye) {
-                leftClosed = leftEAR < 0.18
+            let bbox = faceObs.boundingBox
+
+            if let leftEye = landmarks.leftEye {
+                if let ear = Self.calculateEAR(region: leftEye, bbox: bbox) {
+                    valLeftEAR = ear
+                    leftClosed = ear < 0.18
+                }
+                leftEyeDisplay = leftEye.normalizedPoints.map { p in
+                    CGPoint(
+                        x: bbox.origin.x + p.x * bbox.width,
+                        y: bbox.origin.y + p.y * bbox.height
+                    )
+                }
             }
-            if let rightEAR = Self.calculateEAR(region: landmarks.rightEye) {
-                rightClosed = rightEAR < 0.18
+
+            if let rightEye = landmarks.rightEye {
+                if let ear = Self.calculateEAR(region: rightEye, bbox: bbox) {
+                    valRightEAR = ear
+                    rightClosed = ear < 0.18
+                }
+                rightEyeDisplay = rightEye.normalizedPoints.map { p in
+                    CGPoint(
+                        x: bbox.origin.x + p.x * bbox.width,
+                        y: bbox.origin.y + p.y * bbox.height
+                    )
+                }
             }
         }
 
@@ -348,7 +445,15 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
 
         // Guard: no hand detected → treat as empty for hand buffer, but update eye states
         guard !handDisplay.isEmpty else {
-            handleEmptyFrame(faceDetected: faceDetected, leftClosed: leftClosed, rightClosed: rightClosed)
+            handleEmptyFrame(
+                faceDetected: faceDetected,
+                leftClosed: leftClosed,
+                rightClosed: rightClosed,
+                leftEAR: valLeftEAR,
+                rightEAR: valRightEAR,
+                leftEyeDisplay: leftEyeDisplay,
+                rightEyeDisplay: rightEyeDisplay
+            )
             return
         }
 
@@ -360,31 +465,33 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
         let count      = frameBuffer.count
         let bufferFull = count == windowSize
 
-        // ── 5. Convert coordinates → layer pixels on main thread ───────────────
+        // ── 5. Convert coordinates → container pixels on main thread ───────────
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.bufferCount = count
             self.isFaceDetected = faceDetected
             self.isLeftEyeClosed = leftClosed
             self.isRightEyeClosed = rightClosed
-            if let layer = self.previewLayer {
-                // Vision (.right / .leftMirrored) returns portrait coordinates with
-                // origin at BOTTOM-LEFT and y going UP.
-                // layerPointConverted() expects AVFoundation "capture device" coordinates:
-                // origin at TOP-LEFT of the RAW LANDSCAPE sensor frame, y going DOWN.
-                //
-                // Vision coordinates are 180° rotated relative to the capture device
-                // coordinate space expected by layerPointConverted. Apply 180° rotation
-                // (flip both axes around the centre) to align the skeleton overlay.
-                func toCapture(_ p: CGPoint) -> CGPoint { CGPoint(x: 1 - p.x, y: 1 - p.y) }
+            self.leftEAR = valLeftEAR
+            self.rightEAR = valRightEAR
+            
+            let cw: CGFloat = self.previewLayer?.bounds.width ?? 393
+            let ch: CGFloat = self.previewLayer?.bounds.height ?? 360
 
-                let convertedHand = Dictionary(uniqueKeysWithValues: handDisplay.map {
-                    ($0.key, layer.layerPointConverted(fromCaptureDevicePoint: toCapture($0.value)))
-                })
-                self.skeleton = SkeletonPoints(handPoints: convertedHand)
-            } else {
-                self.skeleton = SkeletonPoints(handPoints: handDisplay)
+            let convertedHand = Dictionary(uniqueKeysWithValues: handDisplay.map {
+                ($0.key, CGPoint(x: $0.value.x * cw, y: (1.0 - $0.value.y) * ch))
+            })
+            let convertedLeftEye = leftEyeDisplay.map {
+                CGPoint(x: $0.x * cw, y: (1.0 - $0.y) * ch)
             }
+            let convertedRightEye = rightEyeDisplay.map {
+                CGPoint(x: $0.x * cw, y: (1.0 - $0.y) * ch)
+            }
+            self.skeleton = SkeletonPoints(
+                handPoints: convertedHand,
+                leftEyePoints: convertedLeftEye,
+                rightEyePoints: convertedRightEye
+            )
         }
 
         // ── 8. Stride-gated inference ──────────────────────────────────────────
@@ -404,13 +511,37 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
     }
 
     // MARK: - Empty Frame Handling
-    private func handleEmptyFrame(faceDetected: Bool = false, leftClosed: Bool = false, rightClosed: Bool = false) {
+    private func handleEmptyFrame(
+        faceDetected: Bool = false,
+        leftClosed: Bool = false,
+        rightClosed: Bool = false,
+        leftEAR: Double = 0.0,
+        rightEAR: Double = 0.0,
+        leftEyeDisplay: [CGPoint] = [],
+        rightEyeDisplay: [CGPoint] = []
+    ) {
         emptyFrameCounter += 1
-        DispatchQueue.main.async {
-            self.skeleton = SkeletonPoints()
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let cw: CGFloat = self.previewLayer?.bounds.width ?? 393
+            let ch: CGFloat = self.previewLayer?.bounds.height ?? 360
+
+            let convertedLeftEye = leftEyeDisplay.map {
+                CGPoint(x: $0.x * cw, y: (1.0 - $0.y) * ch)
+            }
+            let convertedRightEye = rightEyeDisplay.map {
+                CGPoint(x: $0.x * cw, y: (1.0 - $0.y) * ch)
+            }
+            self.skeleton = SkeletonPoints(
+                handPoints: [:],
+                leftEyePoints: convertedLeftEye,
+                rightEyePoints: convertedRightEye
+            )
             self.isFaceDetected = faceDetected
             self.isLeftEyeClosed = leftClosed
             self.isRightEyeClosed = rightClosed
+            self.leftEAR = leftEAR
+            self.rightEAR = rightEAR
         }
 
         if emptyFrameCounter >= 30 {
@@ -432,20 +563,25 @@ nonisolated extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegat
     }
 
     // MARK: - Eye Aspect Ratio (EAR) Calculation
-    private static func calculateEAR(region: VNFaceLandmarkRegion2D?) -> Double? {
+    private static func calculateEAR(region: VNFaceLandmarkRegion2D?, bbox: CGRect) -> Double? {
         guard let region = region, region.pointCount >= 6 else { return nil }
         let pts = region.normalizedPoints
-        let dxW = pts[0].x - pts[3].x
-        let dyW = pts[0].y - pts[3].y
+        
+        let p: [CGPoint] = pts.map { pt in
+            CGPoint(x: pt.x * bbox.width, y: pt.y * bbox.height)
+        }
+
+        let dxW = p[0].x - p[3].x
+        let dyW = p[0].y - p[3].y
         let width = sqrt(dxW * dxW + dyW * dyW)
         guard width > 0.0001 else { return nil }
 
-        let dxH1 = pts[1].x - pts[5].x
-        let dyH1 = pts[1].y - pts[5].y
+        let dxH1 = p[1].x - p[5].x
+        let dyH1 = p[1].y - p[5].y
         let h1 = sqrt(dxH1 * dxH1 + dyH1 * dyH1)
 
-        let dxH2 = pts[2].x - pts[4].x
-        let dyH2 = pts[2].y - pts[4].y
+        let dxH2 = p[2].x - p[4].x
+        let dyH2 = p[2].y - p[4].y
         let h2 = sqrt(dxH2 * dxH2 + dyH2 * dyH2)
 
         return Double((h1 + h2) / (2.0 * width))
