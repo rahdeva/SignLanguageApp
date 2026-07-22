@@ -3,13 +3,47 @@
 //  SignLanguageApp
 //
 //  Created by Dimas Prihady Setyawan on 19/07/26.
+//  Refactored by Antigravity to support BISINDO Practice Game Mode with Native Apple Aesthetic.
 //
 
 import SwiftUI
 
-enum UnifiedMode: Equatable {
-    case caregiverTranscribe
-    case signMode
+enum GameResultLevel {
+    case good
+    case okay
+    case bad
+    
+    var title: String {
+        switch self {
+        case .good: return "LUAR BIASA! (GOOD)"
+        case .okay: return "CUKUP BAIK (OKAY)"
+        case .bad: return "COBA LAGI (BAD)"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .good: return "Hebat! Kamu berhasil memeragakan seluruh isyarat dengan tepat dan berurutan!"
+        case .okay: return "Bagus! Kamu berhasil memeragakan sebagian isyarat. Tingkatkan lagi kecepatanmu!"
+        case .bad: return "Jangan menyerah! Ayo coba lagi untuk melatih gerakan isyarat BISINDO-mu."
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .good: return .green
+        case .okay: return .orange
+        case .bad: return .red
+        }
+    }
+    
+    var sfSymbol: String {
+        switch self {
+        case .good: return "checkmark.seal.fill"
+        case .okay: return "exclamationmark.triangle.fill"
+        case .bad: return "xmark.circle.fill"
+        }
+    }
 }
 
 struct UnifiedView: View {
@@ -23,12 +57,24 @@ struct UnifiedView: View {
     @State private var speechStore: SpeechToTextStore?
     @State private var lastAutoPlayedTemanTuliText: String?
     @State private var showConfidenceDetails = true
+<<<<<<<<< Temporary merge branch 1
+    
+    @State private var mode: UnifiedMode = .caregiverTranscribe
+    @State private var winkProgress: Double = 0.0
+    @State private var winkStart: Date? = nil
+    @State private var winkTimer: Timer? = nil
+
+    @AppStorage("isEyeCloseControlEnabled") private var isEyeCloseControlEnabled = false
+    @AppStorage("isFoundationModelEnabled") private var isFoundationModelEnabled = true
+    @AppStorage("showEyeVisionOverlay") private var showEyeVisionOverlay = false
+=========
     private let availableWords = [
         "Saya", "Lagi", "Makan", "Dengar", "Motor", "Belajar", "Cari", "Hari",
         "Ingat", "Maaf", "Terima kasih", "Tuli", "Apa", "Siapa", "Kapan", "Di mana",
         "Mengapa", "Bagaimana", "Merah", "Kuning", "Hijau", "Hitam", "Berangkat",
         "Datang", "Teman", "Keluarga", "Rumah", "Pagi", "Siang", "Sore", "Malam", "Air"
     ]
+>>>>>>>>> Temporary merge branch 2
 
     private var temanTuliText: String {
         recognizer.builtSentence
@@ -46,49 +92,73 @@ struct UnifiedView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: 16) {
-                    cameraPane
-                    
-                    if !isEyeCloseControlEnabled {
-                        modeSwitchBar
+        ZStack {
+            // Main Content Layout using Original ScrollView and Elements
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        cameraPane
+                        duolingoTaskCard
                     }
-                    
-                    if mode == .signMode {
-                        signRecognitionControls
-                            .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    }
-                    
-                    conversationSection
+                    .padding(.vertical, 20)
                 }
+            }
+            .blur(radius: showResult ? 12 : 0)
+            .disabled(showResult)
+            
+            // Result Screen Overlay (Native Apple Aesthetic)
+            if showResult {
+                resultOverlayView
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .scale(scale: 0.9).combined(with: .opacity)
+                    ))
+                    .zIndex(10)
+            }
+            
+            // Challenge Generating Overlay
+            if isGeneratingChallenge {
+                generatingOverlayView
+                    .zIndex(11)
             }
         }
         .onAppear {
-            recognizer.isAIRefinementEnabled = isFoundationModelEnabled
             if speechStore == nil {
                 speechStore = SpeechToTextStore(appStore: appStore)
             }
-            if mode == .caregiverTranscribe {
-                speechStore?.startRecording()
-            }
+            fetchNewChallengeAndStart()
         }
         .onDisappear {
             cancelWink()
+            stopGameTimer()
             speechStore?.stopRecording()
         }
-        .onChange(of: isFoundationModelEnabled) { _, newValue in
-            recognizer.isAIRefinementEnabled = newValue
-        }
         .onChange(of: appStore.conversationHistory) { _, history in
-            recognizer.conversationContext = ConversationContextService.buildContextString(
-                from: history,
-                currentSpeaker: .userSigned
-            )
+            // When caregiver speaks a custom question, intercept it to generate custom tokens
+            if let lastMessage = history.last, lastMessage.role == .userSpoke {
+                handleSpokenQuestion(lastMessage.message)
+            }
         }
         .onChange(of: cameraManager.currentSign) { _, newSign in
             handleNewSign(newSign, confidence: cameraManager.currentConfidence)
         }
+<<<<<<<<< Temporary merge branch 1
+        .onChange(of: cameraManager.isLeftEyeClosed) { _, _ in
+            handleEyeTrackingUpdate()
+        }
+        .onChange(of: cameraManager.isRightEyeClosed) { _, _ in
+            handleEyeTrackingUpdate()
+        }
+        .onChange(of: temanTuliText) { _, newText in
+            appStore.signPredictionOutput = newText
+            // Auto TTS when a sentence is built after silence gap or reaching maxWords during sign mode
+            if mode == .signMode && !newText.isEmpty {
+                Task {
+                    await appStore.speak(newText)
+                    appStore.addToHistory(message: newText, role: .assistantSpoke)
+                }
+            }
+=========
         .task(id: temanTuliText) {
             guard !temanTuliText.isEmpty,
                   temanTuliText != lastAutoPlayedTemanTuliText
@@ -102,6 +172,7 @@ struct UnifiedView: View {
             appStore.signPredictionOutput = temanTuliText
             lastAutoPlayedTemanTuliText = temanTuliText
             await speakTemanTuliTranscription()
+>>>>>>>>> Temporary merge branch 2
         }
     }
 
@@ -115,9 +186,7 @@ struct UnifiedView: View {
                         cameraManager: cameraManager
                     )
 
-                    if mode == .signMode {
-                        HandOverlayView(handPoints: cameraManager.handPoints)
-                    }
+                    HandOverlayView(handPoints: cameraManager.handPoints)
 
                     if isEyeCloseControlEnabled && showEyeVisionOverlay && cameraManager.isFaceDetected {
                         EyeOverlayView(
@@ -128,27 +197,31 @@ struct UnifiedView: View {
                         )
                     }
                 }
-                .frame(height: 360)
-                .clipped()
+                .frame(height: 300)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                )
                 .overlay(alignment: .top) {
                     cameraStatusBar
                         .padding(12)
                 }
                 .overlay(alignment: .bottomLeading) {
-                    if mode == .signMode {
-                        cameraResetButton
-                            .padding(12)
-                    }
+                    cameraResetButton
+                        .padding(12)
                 }
             } else {
                 permissionDeniedView
-                    .frame(height: 360)
+                    .frame(height: 300)
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             }
 
             if cameraManager.permissionGranted {
                 flipButton.padding(12)
             }
         }
+        .padding(.horizontal, 20)
     }
 
     private var cameraStatusBar: some View {
@@ -168,7 +241,21 @@ struct UnifiedView: View {
 
             Spacer()
 
-            // Eye detection countdown circle or eye mode active indicator icon
+            // Game countdown timer badge (Native Style)
+            if isGameActive {
+                HStack(spacing: 6) {
+                    Image(systemName: "timer")
+                        .foregroundColor(timerColor)
+                    Text("\(timerSecondsRemaining)s")
+                        .font(.caption.monospacedDigit().weight(.bold))
+                        .foregroundColor(timerColor)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.ultraThinMaterial, in: .capsule)
+            }
+
+            // Eye Wink status badge
             if winkProgress > 0 {
                 HStack(spacing: 6) {
                     ZStack {
@@ -177,266 +264,170 @@ struct UnifiedView: View {
                         Circle()
                             .trim(from: 0, to: CGFloat(winkProgress))
                             .stroke(
-                                LinearGradient(
-                                    colors: [.yellow, .orange],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
+                                LinearGradient(colors: [.yellow, .orange], startPoint: .topLeading, endPoint: .bottomTrailing),
                                 style: StrokeStyle(lineWidth: 2, lineCap: .round)
                             )
                             .rotationEffect(.degrees(-90))
                     }
                     .frame(width: 16, height: 16)
                     
-                    Text(String(format: "%.1fs", 1.0 - winkProgress))
-                        .font(.caption2.monospacedDigit().weight(.bold))
+                    Text("Eye Close Control...")
+                        .font(.caption2.weight(.bold))
                         .foregroundStyle(.yellow)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(.ultraThinMaterial, in: .capsule)
-                .transition(.scale.combined(with: .opacity))
-            } else if isEyeCloseControlEnabled {
-                // Eye detection mode active indicator badge
-                HStack(spacing: 4) {
-                    Image(systemName: "eye.fill")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.cyan)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(.ultraThinMaterial, in: .capsule)
-                .transition(.scale.combined(with: .opacity))
-            }
-            /* L R open/closed text badges removed per user preference:
-            else if cameraManager.isFaceDetectionEnabled && cameraManager.isFaceDetected {
-                HStack(spacing: 6) {
-                    eyeBadge(label: "L", isClosed: cameraManager.isLeftEyeClosed, ear: cameraManager.leftEAR)
-                    eyeBadge(label: "R", isClosed: cameraManager.isRightEyeClosed, ear: cameraManager.rightEAR)
-                }
-            }
-            */
-
-            if cameraManager.bufferCount < 60 {
-                ProgressView(value: Double(cameraManager.bufferCount), total: 60)
-                    .progressViewStyle(.linear)
-                    .tint(.cyan)
-                    .frame(width: 56)
-
-                Text("\(cameraManager.bufferCount)/60")
-                    .font(.caption2.monospacedDigit().weight(.bold))
-                    .foregroundStyle(.blue)
-            } else {
-                Text("LIVE")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.green, in: .capsule)
             }
         }
     }
 
-    @ViewBuilder
-    private func eyeBadge(label: String, isClosed: Bool, ear: Double) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: isClosed ? "eye.slash.fill" : "eye.fill")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(isClosed ? .orange : .green)
+    private var timerColor: Color {
+        if timerSecondsRemaining > 15 {
+            return .blue
+        } else if timerSecondsRemaining > 5 {
+            return .orange
+        } else {
+            return .red
+        }
+    }
+
+    private var duolingoTaskCard: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Part 1: Duolingo-style Speech Bubble for Caregiver Question
+            HStack(alignment: .top, spacing: 14) {
+                // Avatar icon representing caregiver
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(.blue)
+                
+                // Speech Bubble
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("PERTANYAAN CAREGIVER")
+                        .font(.caption2.weight(.black))
+                        .foregroundStyle(.secondary)
+                        .tracking(0.8)
+                    
+                    HStack(alignment: .center, spacing: 12) {
+                        Text(currentChallenge.question)
+                            .font(.body.weight(.bold))
+                            .foregroundColor(.primary)
+                        
+                        Spacer()
+                        
+                        // Speech Recording Toggle Button
+                        Button {
+                            toggleSpeechRecording()
+                        } label: {
+                            Image(systemName: speechStore?.isRecording == true ? "mic.circle.fill" : "mic.fill")
+                                .font(.title3.weight(.bold))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(speechStore?.isRecording == true ? .red : .blue)
+                        .accessibilityLabel(speechStore?.isRecording == true ? "Turn off microphone" : "Turn on microphone")
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        Color.primary.opacity(0.06),
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                    )
+                }
+            }
             
-            Text("\(label): \(isClosed ? "PEJAM" : "OPEN") (\(String(format: "%.2f", ear)))")
-                .font(.caption2.monospacedDigit().weight(.bold))
-                .foregroundStyle(isClosed ? .orange : .white)
-        }
-        .animation(.easeInOut(duration: 0.15), value: isClosed)
-    }
-
-    private var signRecognitionControls: some View {
-        VStack(spacing: 12) {
-//            if !recognizer.wordSequence.isEmpty {
-//                wordSequenceRow
-//            }
-//
-//            if !recognizer.builtSentence.isEmpty || recognizer.isBuildingSentence || recognizer.sentenceError != nil {
-//                sentencePanel
-//            }
-//
-//            topPredictionSummary
+            Divider()
+            
+            // Part 2: Isyarat Untuk Menjawab (Separated Target Badges)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("ISYARAT UNTUK MENJAWAB (TARGET)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.blue)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(0..<currentChallenge.targetTokens.count, id: \.self) { idx in
+                            let token = currentChallenge.targetTokens[idx]
+                            let isCompleted = idx < nextTargetIndex
+                            let isActive = idx == nextTargetIndex
+                            
+                            HStack(spacing: 6) {
+                                if isCompleted {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                        .imageScale(.small)
+                                } else if isActive {
+                                    Image(systemName: "arrow.right.circle.fill")
+                                        .foregroundColor(.blue)
+                                        .imageScale(.small)
+                                }
+                                
+                                Text(token)
+                                    .font(.subheadline.weight(.bold))
+                                    .foregroundColor(isCompleted ? .green : (isActive ? .blue : .primary))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(isCompleted ? Color.green.opacity(0.1) : (isActive ? Color.blue.opacity(0.12) : Color.primary.opacity(0.06)))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(isCompleted ? Color.green.opacity(0.3) : (isActive ? Color.blue.opacity(0.4) : Color.clear), lineWidth: 1.5)
+                            )
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            
+            Divider()
+            
+            // Part 3: Word Sequence Card (Kata Terdeteksi & Debug Toolbar)
             wordSequenceRow
         }
-        .padding(.horizontal,20)
-    }
-
-    private var modeSwitchBar: some View {
-        HStack(spacing: 12) {
-            // Caregiver Card Selector
-            Button {
-                if mode == .signMode {
-                    switchToCaregiverMode()
-                } else {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        recognizer.clearAll()
-                        mode = .caregiverTranscribe
-                        speechStore?.startRecording()
-                    }
-                }
-            } label: {
-                HStack(spacing: 10) {
-                    ZStack {
-                        Circle()
-                            .fill(mode == .caregiverTranscribe ? Color.blue : Color.gray.opacity(0.3))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "mic.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Mendengarkan Caregiver")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(mode == .caregiverTranscribe ? .primary : .secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                        Text("Voice input")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    Spacer(minLength: 0)
-                }
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(mode == .caregiverTranscribe ? Color.blue.opacity(0.12) : Color(uiColor: .systemBackground))
-                        .shadow(color: .black.opacity(mode == .caregiverTranscribe ? 0.1 : 0.04), radius: 6, x: 0, y: 3)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(mode == .caregiverTranscribe ? Color.blue : Color.clear, lineWidth: 1.5)
-                )
-            }
-            .buttonStyle(.plain)
-
-            // Teman Tuli Card Selector
-            Button {
-                if mode == .caregiverTranscribe {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        speechStore?.stopRecording()
-                        recognizer.clearAll()
-                        mode = .signMode
-                    }
-                }
-            } label: {
-                HStack(spacing: 10) {
-                    ZStack {
-                        Circle()
-                            .fill(mode == .signMode ? Color.blue : Color.gray.opacity(0.3))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "hand.raised.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Menyuarakan Teman Tuli")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(mode == .signMode ? .primary : .secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                        Text("Camera input")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    Spacer(minLength: 0)
-                }
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(mode == .signMode ? Color.blue.opacity(0.12) : Color(uiColor: .systemBackground))
-                        .shadow(color: .black.opacity(mode == .signMode ? 0.1 : 0.04), radius: 6, x: 0, y: 3)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(mode == .signMode ? Color.blue : Color.clear, lineWidth: 1.5)
-                )
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 8)
-    }
-
-    private var conversationSection: some View {
-        VStack(spacing: 24) {
-            if mode == .signMode {
-                ConversationComponentView(
-                    title: "Menyuarakan Teman Tuli",
-                    subtitle: "Camera input translating in real-time",
-                    iconName: "hand.raised.fill",
-                    senderLabel: "Menyuarakan Teman Tuli:",
-                    messageText: temanTuliText,
-                    isActive: isSignActive,
-                    showHeaderCard: false,
-                    accentColor: .blue,
-                    onReadAloud: speakTemanTuliTranscription
-                )
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
-            } else {
-                ConversationComponentView(
-                    title: "Mendengarkan Caregiver",
-                    subtitle: "Voice input transcribing in real-time",
-                    iconName: "mic.fill",
-                    senderLabel: "Mendengarkan Caregiver:",
-                    messageText: caregiverTranscribedText,
-                    isActive: speechStore?.isRecording ?? false,
-                    showHeaderCard: false,
-                    accentColor: .blue,
-                    labelActionIconName: speechStore?.isRecording == true ? "mic.circle.fill" : "mic.fill",
-                    labelActionAccessibilityLabel: speechStore?.isRecording == true ? "Turn off microphone" : "Turn on microphone",
-                    labelActionTint: speechStore?.isRecording == true ? .red : .blue,
-                    onLabelAction: toggleSpeechRecording
-                )
-                .padding(.bottom, 80)
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
-            }
-        }
-    }
-
-    private var modelButton: some View {
-        Button {
-            withAnimation(.spring()) {
-                cameraManager.switchModel(
-                    cameraManager.modelMode == .handOnly ? .multiModal : .handOnly
-                )
-            }
-        } label: {
-            Image(systemName: cameraManager.modelMode.sfSymbol)
-                .font(.title2.weight(.semibold))
-                .frame(width: 52, height: 52)
-        }
-        .buttonStyle(.glassProminent)
-        .tint(cameraManager.modelMode == .multiModal ? .cyan : .blue)
-        .accessibilityLabel(
-            cameraManager.modelMode == .handOnly
-                ? "Switch to multi modal model"
-                : "Switch to hand only model"
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(.background)
+                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 3)
         )
+        .padding(.horizontal, 20)
     }
 
-    private var cameraResetButton: some View {
-        Button {
-            resetSignRecognition()
-        } label: {
-            Label("Reset Sign", systemImage: "arrow.counterclockwise")
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .background(.ultraThinMaterial, in: .capsule)
+    private var debugManualOverrideRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("DEBUG MANUAL OVERRIDE (TAP UNTUK MENAMBAH)")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(ChallengeGenerator.availableWords, id: \.self) { word in
+                        Button {
+                            handleNewSign(word, confidence: 1.0)
+                        } label: {
+                            Text(word)
+                                .font(.caption.weight(.bold))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(.blue.opacity(0.08), in: .capsule)
+                                .overlay(
+                                    Capsule()
+                                        .stroke(.blue.opacity(0.24), lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.blue)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(.primary)
-        .accessibilityLabel("Reset sign recognition")
     }
 
     private var wordSequenceRow: some View {
@@ -493,6 +484,9 @@ struct UnifiedView: View {
                     wordChip(word, index: index)
                 }
             }
+<<<<<<<<< Temporary merge branch 1
+            .padding(.vertical, 2)
+=========
 
             Divider()
                 .padding(.vertical, 4)
@@ -525,6 +519,7 @@ struct UnifiedView: View {
                     .padding(.vertical, 2)
                 }
             }
+>>>>>>>>> Temporary merge branch 2
         }
         .padding(20)
         .background(
@@ -588,156 +583,103 @@ struct UnifiedView: View {
                 }
             }
         }
-        .padding(16)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 18))
     }
 
-    private var topPredictionSummary: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("DETECTED BISINDO SIGN")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.secondary)
-
-                    Text(cameraManager.currentSign.uppercased())
-                        .font(.title2.weight(.heavy))
-                        .foregroundStyle(
-                            cameraManager.currentSign == "Uncertain" ||
-                                cameraManager.currentSign == "Detecting..." ? .yellow : .cyan
-                        )
-                        .minimumScaleFactor(0.7)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                confidenceRing
-            }
-
-            if !cameraManager.topPredictions.isEmpty {
-                Divider()
-
-                HStack {
-                    Text("TOP CANDIDATES")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Button {
-                        withAnimation(.easeInOut) {
-                            showConfidenceDetails.toggle()
-                        }
-                    } label: {
-                        Image(systemName: showConfidenceDetails ? "chevron.up" : "chevron.down")
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel(showConfidenceDetails ? "Hide top candidates" : "Show top candidates")
-                }
-
-                if showConfidenceDetails {
-                    VStack(spacing: 8) {
-                        ForEach(cameraManager.topPredictions, id: \.label) { item in
-                            predictionRow(item)
-                        }
-                    }
-                }
-            }
+    private func toggleSpeechRecording() {
+        guard let speechStore else { return }
+        if speechStore.isRecording {
+            speechStore.stopRecording()
+        } else {
+            speechStore.startRecording()
         }
-        .padding(16)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 18))
     }
 
-    private var confidenceRing: some View {
+    // MARK: - Native Overlays
+
+    private var resultOverlayView: some View {
+        VStack(spacing: 24) {
+            Image(systemName: gameResultLevel.sfSymbol)
+                .font(.system(size: 64))
+                .foregroundColor(gameResultLevel.color)
+            
+            VStack(spacing: 8) {
+                Text(gameResultLevel.title)
+                    .font(.title3.weight(.bold))
+                    .foregroundColor(.primary)
+                
+                Text(gameResultLevel.description)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+            }
+            
+            HStack(spacing: 12) {
+                VStack(alignment: .center, spacing: 4) {
+                    Text("\(nextTargetIndex)/\(currentChallenge.targetTokens.count)")
+                        .font(.title2.monospacedDigit().weight(.bold))
+                        .foregroundColor(.primary)
+                    Text("ISYARAT BENAR")
+                        .font(.caption2.weight(.bold))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+            }
+            
+            Button {
+                fetchNewChallengeAndStart()
+            } label: {
+                Text("Main Lagi")
+                    .font(.body.weight(.bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Color.blue, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 32)
+        }
+        .padding(.vertical, 36)
+        .background(
+            RoundedRectangle(cornerRadius: 28)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 20)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 28)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+        )
+        .padding(.horizontal, 24)
+    }
+
+    private var generatingOverlayView: some View {
         ZStack {
-            Circle()
-                .stroke(.secondary.opacity(0.2), lineWidth: 5)
-                .frame(width: 58, height: 58)
-
-            Circle()
-                .trim(from: 0, to: CGFloat(cameraManager.currentConfidence))
-                .stroke(
-                    .cyan,
-                    style: StrokeStyle(lineWidth: 5, lineCap: .round)
-                )
-                .frame(width: 58, height: 58)
-                .rotationEffect(.degrees(-90))
-                .animation(.easeInOut(duration: 0.25), value: cameraManager.currentConfidence)
-
-            VStack(spacing: 0) {
-                Text("\(Int(cameraManager.currentConfidence * 100))%")
-                    .font(.caption.weight(.black))
-                Text("CONF")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
+            Color.black.opacity(0.2)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 16) {
+                ProgressView()
+                    .tint(.blue)
+                    .scaleEffect(1.2)
+                
+                Text("Menghasilkan tantangan...")
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(.primary)
             }
+            .padding(24)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
         }
-    }
-
-    private func predictionRow(_ item: (label: String, confidence: Double)) -> some View {
-        HStack {
-            Text(SignRecognitionEngine.cleanLabel(item.label))
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(item.label == cameraManager.currentSign ? .primary : .secondary)
-
-            Spacer()
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(.secondary.opacity(0.15))
-                        .frame(height: 6)
-                    Capsule()
-                        .fill(item.label == cameraManager.currentSign ? .cyan : .secondary.opacity(0.5))
-                        .frame(width: geo.size.width * CGFloat(item.confidence), height: 6)
-                }
-            }
-            .frame(width: 100, height: 6)
-
-            Text(String(format: "%.0f%%", item.confidence * 100))
-                .font(.caption.monospacedDigit().weight(.bold))
-                .foregroundStyle(item.label == cameraManager.currentSign ? .cyan : .secondary)
-                .frame(width: 42, alignment: .trailing)
-        }
-    }
-
-    private func wordChip(_ word: DetectedWord, index: Int) -> some View {
-        Button {
-            withAnimation {
-                recognizer.removeWord(id: word.id)
-            }
-        } label: {
-            HStack(spacing: 6) {
-                Text(word.text)
-                    .font(.subheadline.weight(.bold))
-
-                Image(systemName: "xmark.circle.fill")
-                    .font(.caption.weight(.semibold))
-                    .imageScale(.small)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.primary)
-        .background(.quaternary.opacity(0.45), in: .capsule)
-        .overlay {
-            Capsule()
-                .stroke(.secondary.opacity(0.16), lineWidth: 1)
-        }
-        .accessibilityLabel("Remove \(word.text)")
     }
 
     private var permissionDeniedView: some View {
         ContentUnavailableView {
-            Label("Camera Access Required", systemImage: "camera.fill.badge.ellipsis")
+            Label("Akses Kamera Dibutuhkan", systemImage: "camera.fill.badge.ellipsis")
         } description: {
-            Text("Allow camera access to detect Bisindo hand signs in real time.")
+            Text("Harap berikan izin akses kamera untuk melatih isyarat secara real-time.")
         } actions: {
-            Button("Open Settings") {
+            Button("Buka Pengaturan") {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
@@ -745,14 +687,41 @@ struct UnifiedView: View {
         }
     }
 
-    private func displaySign(for raw: String) -> String {
-        if raw == "Detecting..." || raw == "Uncertain" {
-            return raw == "Detecting..."
-                ? "sign.detecting".localized(for: appStore.languageSettings.appLanguage)
-                : "sign.uncertain".localized(for: appStore.languageSettings.appLanguage)
+    private var cameraResetButton: some View {
+        Button {
+            resetSignRecognition()
+        } label: {
+            Label("Reset Sign", systemImage: "arrow.counterclockwise")
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(.ultraThinMaterial, in: .capsule)
         }
-        let cleaned = SignRecognitionEngine.cleanLabel(raw)
-        return SignLabelTranslator.translate(cleaned, to: appStore.languageSettings.ttsLanguage)
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .accessibilityLabel("Reset sign recognition")
+    }
+
+    private var flipButton: some View {
+        Button {
+            withAnimation(.spring()) {
+                cameraManager.toggleCamera()
+            }
+        } label: {
+            Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
+                .font(.title2.weight(.semibold))
+                .padding(10)
+                .background(.ultraThinMaterial, in: .circle)
+        }
+        .buttonStyle(.plain)
+        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+    }
+
+    private func clearDetectedWords() {
+        withAnimation {
+            recognizer.clearAll()
+            appStore.signPredictionOutput = ""
+        }
     }
 
     private func handleNewSign(_ sign: String, confidence: Double) {
@@ -760,12 +729,117 @@ struct UnifiedView: View {
         guard sign != "Detecting...", sign != "Uncertain" else { return }
         let translated = displaySign(for: sign)
         Task { @MainActor in
+<<<<<<<<< Temporary merge branch 1
+            recognizer.feed(rawLabel: translated, confidence: confidence)
+        }
+    }
+
+    private func handleEyeTrackingUpdate() {
+        guard isEyeCloseControlEnabled else {
+            cancelWink()
+            return
+        }
+
+        let isLeftClosed = cameraManager.isLeftEyeClosed
+        let isRightClosed = cameraManager.isRightEyeClosed
+        let isFaceDetected = cameraManager.isFaceDetected
+
+        guard isFaceDetected else { return }
+
+        let eitherClosed = isLeftClosed || isRightClosed
+        let bothOpen = !isLeftClosed && !isRightClosed
+
+        if eitherClosed && !bothOpen {
+            if winkTimer == nil {
+                startWink()
+            }
+        } else if bothOpen {
+            cancelWink()
+        }
+    }
+
+    private func startWink() {
+        winkStart = Date()
+        winkProgress = 0.0
+        winkTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
+            Task { @MainActor in
+                guard let start = self.winkStart else {
+                    self.cancelWink()
+                    return
+                }
+                
+                let isLeftClosed = self.cameraManager.isLeftEyeClosed
+                let isRightClosed = self.cameraManager.isRightEyeClosed
+                let bothOpen = !isLeftClosed && !isRightClosed
+                
+                if bothOpen {
+                    self.cancelWink()
+                    return
+                }
+                
+                let elapsed = Date().timeIntervalSince(start)
+                let progress = min(elapsed / 1.0, 1.0)
+                self.winkProgress = progress
+                
+                if elapsed >= 1.0 {
+                    self.cancelWink()
+                    self.toggleMode()
+                }
+            }
+        }
+    }
+
+    private func cancelWink() {
+        winkTimer?.invalidate()
+        winkTimer = nil
+        winkStart = nil
+        winkProgress = 0.0
+    }
+
+    private func toggleMode() {
+        if mode == .caregiverTranscribe {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                speechStore?.stopRecording()
+                recognizer.clearAll()
+                mode = .signMode
+            }
+        } else {
+            switchToCaregiverMode()
+        }
+    }
+
+    private func switchToCaregiverMode() {
+        Task {
+            // 1. Obtain text to speak (raw or FM refined based on Foundation Model toggle)
+            let sentenceToSpeak: String
+            if recognizer.builtSentence.isEmpty {
+                sentenceToSpeak = await recognizer.buildSentenceAsync()
+            } else {
+                sentenceToSpeak = recognizer.builtSentence
+            }
+            
+            // 2. Perform TTS FIRST before changing mode
+            if !sentenceToSpeak.isEmpty {
+                await appStore.speak(sentenceToSpeak)
+                appStore.addToHistory(message: sentenceToSpeak, role: .assistantSpoke)
+            }
+            
+            // 3. AFTER speaking, clear recognizer and switch mode to caregiver transcribe
+            await MainActor.run {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    recognizer.clearAll()
+                    mode = .caregiverTranscribe
+                    speechStore?.startRecording()
+                }
+            }
+=========
             recognizer.targetLanguage = appStore.languageSettings.ttsLanguage
             recognizer.conversationContext = ConversationContextService.buildContextString(
                 from: appStore.conversationHistory,
                 currentSpeaker: .userSigned
             )
             recognizer.feed(rawLabel: sign, confidence: confidence)
+>>>>>>>>> Temporary merge branch 2
         }
     }
 
@@ -846,49 +920,3 @@ struct UnifiedView: View {
         .environment(AppStore())
 }
 
-// MARK: - Flow Layout
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let width = proposal.width ?? 300
-        var currentX: CGFloat = 0
-        var currentY: CGFloat = 0
-        var maxRowHeight: CGFloat = 0
-        var maxContainerWidth: CGFloat = 0
-        
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if currentX > 0 && currentX + size.width > width {
-                currentX = 0
-                currentY += maxRowHeight + spacing
-                maxRowHeight = 0
-            }
-            
-            currentX += size.width + spacing
-            maxRowHeight = max(maxRowHeight, size.height)
-            maxContainerWidth = max(maxContainerWidth, currentX)
-        }
-        
-        return CGSize(width: maxContainerWidth, height: currentY + maxRowHeight)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var currentX: CGFloat = bounds.minX
-        var currentY: CGFloat = bounds.minY
-        var maxRowHeight: CGFloat = 0
-        
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if currentX > bounds.minX && currentX + size.width > bounds.maxX {
-                currentX = bounds.minX
-                currentY += maxRowHeight + spacing
-                maxRowHeight = 0
-            }
-            
-            subview.place(at: CGPoint(x: currentX, y: currentY), proposal: .unspecified)
-            currentX += size.width + spacing
-            maxRowHeight = max(maxRowHeight, size.height)
-        }
-    }
-}
