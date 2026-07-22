@@ -6,45 +6,7 @@
 //  Refactored by Antigravity to support BISINDO Practice Game Mode with Native Apple Aesthetic.
 //
 
-import SwiftUI
-
-enum GameResultLevel {
-    case good
-    case okay
-    case bad
-    
-    var title: String {
-        switch self {
-        case .good: return "LUAR BIASA! (GOOD)"
-        case .okay: return "CUKUP BAIK (OKAY)"
-        case .bad: return "COBA LAGI (BAD)"
-        }
-    }
-    
-    var description: String {
-        switch self {
-        case .good: return "Hebat! Kamu berhasil memeragakan seluruh isyarat dengan tepat dan berurutan!"
-        case .okay: return "Bagus! Kamu berhasil memeragakan sebagian isyarat. Tingkatkan lagi kecepatanmu!"
-        case .bad: return "Jangan menyerah! Ayo coba lagi untuk melatih gerakan isyarat BISINDO-mu."
-        }
-    }
-    
-    var color: Color {
-        switch self {
-        case .good: return .green
-        case .okay: return .orange
-        case .bad: return .red
-        }
-    }
-    
-    var sfSymbol: String {
-        switch self {
-        case .good: return "checkmark.seal.fill"
-        case .okay: return "exclamationmark.triangle.fill"
-        case .bad: return "xmark.circle.fill"
-        }
-    }
-}
+import SwiftUI      
 
 struct UnifiedView: View {
     @Environment(AppStore.self) private var appStore

@@ -9,13 +9,11 @@ import SwiftUI
 
 /// Navigation tabs for the two main pipelines plus history log.
 enum AppTab: String, CaseIterable {
-    case conversation, speechToText, signToSpeech, history, settings
+    case sign, history, settings
 
     var titleKey: LocalizedStringKey {
         switch self {
-        case .conversation: "tab.conversation"
-        case .speechToText: "tab.speech"
-        case .signToSpeech: "tab.sign"
+        case .sign: "tab.sign"
         case .history:      "tab.history"
         case .settings:     "tab.settings"
         }
@@ -23,9 +21,7 @@ enum AppTab: String, CaseIterable {
 
     var icon: String {
         switch self {
-        case .conversation: "person.2.wave.2"
-        case .speechToText: "mic"
-        case .signToSpeech: "camera"
+        case .sign: "hand.palm.facing.fill"
         case .history:      "clock"
         case .settings:     "gearshape"
         }
@@ -37,7 +33,7 @@ enum AppTab: String, CaseIterable {
 /// child views automatically render in the correct language.
 struct RootView: View {
     @State private var appStore = AppStore()
-    @State private var selectedTab: AppTab = .conversation
+    @State private var selectedTab: AppTab = .sign
     @State private var showOnboarding = !UserDefaults.standard.bool(
         forKey: "hasSeenOnboarding"
     )
@@ -73,11 +69,11 @@ struct RootView: View {
                         }
                         .tag(AppTab.history)
                     
-                    UnifiedView()
+                    SignView()
                         .tabItem {
-                            Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
+                            Label(AppTab.sign.titleKey, systemImage: AppTab.sign.icon)
                         }
-                        .tag(AppTab.conversation)
+                        .tag(AppTab.sign)
 
                     SettingsView()
                         .tabItem {
