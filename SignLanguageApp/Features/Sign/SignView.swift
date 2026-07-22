@@ -96,8 +96,15 @@ struct SignView: View {
     }
     
     // MARK: - Game Mechanics
+    
+    func playImpactHaptic(style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.prepare()
+        generator.impactOccurred()
+    }
 
     func startNewGame() {
+        playImpactHaptic()
         nextTargetIndex = 0
         showResult = false
         isGameActive = true
@@ -175,7 +182,7 @@ struct SignView: View {
                 resultTitle: gameResultLevel.title,
                 resultDesc: gameResultLevel.description
             )
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.large])
         }
     }
     

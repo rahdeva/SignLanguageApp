@@ -103,6 +103,8 @@ struct ResultSheet: View {
             }
             .padding(.bottom, 20)
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 50)
     }
 }
 
