@@ -16,6 +16,12 @@ struct SignToSpeechView: View {
         stableThreshold: 2, cooldownThreshold: 5, maxWords: 12
     )
     @State private var showConfidenceDetails: Bool = true
+    private let availableWords = [
+        "Saya", "Lagi", "Makan", "Dengar", "Motor", "Belajar", "Cari", "Hari",
+        "Ingat", "Maaf", "Terima kasih", "Tuli", "Apa", "Siapa", "Kapan", "Di mana",
+        "Mengapa", "Bagaimana", "Merah", "Kuning", "Hijau", "Hitam", "Berangkat",
+        "Datang", "Teman", "Keluarga", "Rumah", "Pagi", "Siang", "Sore", "Malam", "Air"
+    ]
 
     // Helper to clean and translate any sign label for UI display and TTS
     private func displaySign(for raw: String) -> String {
@@ -34,6 +40,11 @@ struct SignToSpeechView: View {
         guard sign != "Detecting...", sign != "Uncertain" else { return }
         let translated = displaySign(for: sign)
         Task { @MainActor in
+            recognizer.targetLanguage = appStore.languageSettings.ttsLanguage
+            recognizer.conversationContext = ConversationContextService.buildContextString(
+                from: appStore.conversationHistory,
+                currentSpeaker: .userSigned
+            )
             recognizer.feed(rawLabel: translated, confidence: confidence)
         }
     }
@@ -87,6 +98,12 @@ struct SignToSpeechView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onChange(of: appStore.conversationHistory) { _, history in
+            recognizer.conversationContext = ConversationContextService.buildContextString(
+                from: history,
+                currentSpeaker: .userSigned
+            )
+        }
         .onChange(of: cameraManager.currentSign) { _, newSign in
             handleNewSign(newSign, confidence: cameraManager.currentConfidence)
         }
@@ -203,6 +220,7 @@ struct SignToSpeechView: View {
                     .animation(.linear(duration: 0.05), value: recognizer.silenceProgress)
                 }
 
+
                 // Undo last word
                 Button(action: { withAnimation { recognizer.removeLastWord() } }) {
                     Image(systemName: "delete.backward")
@@ -224,6 +242,39 @@ struct SignToSpeechView: View {
                     }
                 }
                 .padding(.vertical, 2)
+            }
+
+            Divider()
+                .background(Color.white.opacity(0.15))
+                .padding(.vertical, 4)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("DEBUG MANUAL OVERRIDE (TAP UNTUK MENAMBAH)")
+                    .font(.system(size: 8, weight: .bold, design: .rounded))
+                    .foregroundColor(.secondary)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(availableWords, id: \.self) { word in
+                            Button {
+                                recognizer.addWordManually(word)
+                            } label: {
+                                Text(word)
+                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    .foregroundColor(.cyan)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Capsule().fill(Color.cyan.opacity(0.12)))
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color.cyan.opacity(0.3), lineWidth: 1)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
             }
         }
         .padding(14)

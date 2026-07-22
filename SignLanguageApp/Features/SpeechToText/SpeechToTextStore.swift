@@ -15,7 +15,9 @@ final class SpeechToTextStore {
     private let appStore: AppStore
 
     var transcribedText: String = ""
+    var refinedText: String = ""
     var isRecording = false
+    var isRefining = false
     var isAuthorized = false
 
     init(appStore: AppStore) {
@@ -25,6 +27,7 @@ final class SpeechToTextStore {
     /// Request mic permission and start streaming transcription.
     func startRecording() {
         guard !isRecording else { return }
+        refinedText = ""
         Task { [appStore] in
             do {
                 isAuthorized = await PermissionService.requestMicrophone()
@@ -63,5 +66,6 @@ final class SpeechToTextStore {
         transcribedText = ""
         guard !finalText.isEmpty else { return }
         appStore.addToHistory(message: finalText, role: .userSpoke)
+        refinedText = finalText
     }
 }

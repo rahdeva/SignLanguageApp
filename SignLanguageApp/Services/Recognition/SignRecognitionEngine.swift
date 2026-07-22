@@ -34,6 +34,10 @@ final class SignRecognitionEngine: ObservableObject {
     @Published var silenceProgress: Double = 0.0
     /// Toggle to enable or disable AI grammar refinement (`checkFM`) via FoundationModels
     @Published var isAIRefinementEnabled: Bool = true
+    /// Recent conversation context for contextual AI refinement
+    var conversationContext: String = ""
+    /// Target output language for AI sentence generation
+    var targetLanguage: AppLanguage = .indonesian
 
     // MARK: - Configuration
     /// Consecutive inference windows that must agree before accepting a word.
@@ -100,6 +104,20 @@ final class SignRecognitionEngine: ObservableObject {
     }
 
     // MARK: - Manual Controls
+    func addWordManually(_ word: String) {
+        let cleaned = Self.cleanLabel(word)
+        builtSentence = ""
+        sentenceError = nil
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            wordSequence.append(DetectedWord(text: cleaned, timestamp: Date()))
+        }
+        if wordSequence.count >= maxWords {
+            buildSentence()
+        } else {
+            restartSilenceTimer()
+        }
+    }
+
     func removeLastWord() {
         guard !wordSequence.isEmpty else { return }
         wordSequence.removeLast()
@@ -248,11 +266,20 @@ final class SignRecognitionEngine: ObservableObject {
 
     @available(iOS 18.0, macOS 15.0, *)
     private func buildWithAI(words: [String]) async -> String {
-        if let sentence = try? await checkFM(input: words), !sentence.isEmpty {
-            return sentence
+        do {
+            let sentence = try await checkFM(
+                input: words, 
+                conversationContext: conversationContext,
+                targetLanguage: targetLanguage
+            )
+            if !sentence.isEmpty {
+                return sentence
+            }
+        } catch {
+            print("❌ FoundationModels Error: \(error)")
+            sentenceError = "AI Refinement Error: \(error.localizedDescription)"
         }
 
-        sentenceError = "Apple Intelligence is unavailable. Showing raw detected words."
         return fallbackSentence(words: words)
     }
 

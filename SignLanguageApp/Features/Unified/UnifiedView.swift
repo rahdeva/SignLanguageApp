@@ -23,22 +23,22 @@ struct UnifiedView: View {
     @State private var speechStore: SpeechToTextStore?
     @State private var lastAutoPlayedTemanTuliText: String?
     @State private var showConfidenceDetails = true
-    
-    @State private var mode: UnifiedMode = .caregiverTranscribe
-    @State private var winkProgress: Double = 0.0
-    @State private var winkStart: Date? = nil
-    @State private var winkTimer: Timer? = nil
-
-    @AppStorage("isEyeCloseControlEnabled") private var isEyeCloseControlEnabled = false
-    @AppStorage("isFoundationModelEnabled") private var isFoundationModelEnabled = true
-    @AppStorage("showEyeVisionOverlay") private var showEyeVisionOverlay = false
+    private let availableWords = [
+        "Saya", "Lagi", "Makan", "Dengar", "Motor", "Belajar", "Cari", "Hari",
+        "Ingat", "Maaf", "Terima kasih", "Tuli", "Apa", "Siapa", "Kapan", "Di mana",
+        "Mengapa", "Bagaimana", "Merah", "Kuning", "Hijau", "Hitam", "Berangkat",
+        "Datang", "Teman", "Keluarga", "Rumah", "Pagi", "Siang", "Sore", "Malam", "Air"
+    ]
 
     private var temanTuliText: String {
         recognizer.builtSentence
     }
 
     private var caregiverTranscribedText: String {
-        speechStore?.transcribedText ?? appStore.speechToTextOutput
+        if let store = speechStore, !store.refinedText.isEmpty {
+            return store.refinedText
+        }
+        return speechStore?.transcribedText ?? appStore.speechToTextOutput
     }
 
     private var isSignActive: Bool {
@@ -80,24 +80,28 @@ struct UnifiedView: View {
         .onChange(of: isFoundationModelEnabled) { _, newValue in
             recognizer.isAIRefinementEnabled = newValue
         }
+        .onChange(of: appStore.conversationHistory) { _, history in
+            recognizer.conversationContext = ConversationContextService.buildContextString(
+                from: history,
+                currentSpeaker: .userSigned
+            )
+        }
         .onChange(of: cameraManager.currentSign) { _, newSign in
             handleNewSign(newSign, confidence: cameraManager.currentConfidence)
         }
-        .onChange(of: cameraManager.isLeftEyeClosed) { _, _ in
-            handleEyeTrackingUpdate()
-        }
-        .onChange(of: cameraManager.isRightEyeClosed) { _, _ in
-            handleEyeTrackingUpdate()
-        }
-        .onChange(of: temanTuliText) { _, newText in
-            appStore.signPredictionOutput = newText
-            // Auto TTS when a sentence is built after silence gap or reaching maxWords during sign mode
-            if mode == .signMode && !newText.isEmpty {
-                Task {
-                    await appStore.speak(newText)
-                    appStore.addToHistory(message: newText, role: .assistantSpoke)
-                }
-            }
+        .task(id: temanTuliText) {
+            guard !temanTuliText.isEmpty,
+                  temanTuliText != lastAutoPlayedTemanTuliText
+            else { return }
+
+            recognizer.conversationContext = ConversationContextService.buildContextString(
+                from: appStore.conversationHistory,
+                currentSpeaker: .userSigned
+            )
+
+            appStore.signPredictionOutput = temanTuliText
+            lastAutoPlayedTemanTuliText = temanTuliText
+            await speakTemanTuliTranscription()
         }
     }
 
@@ -489,7 +493,38 @@ struct UnifiedView: View {
                     wordChip(word, index: index)
                 }
             }
-            .padding(.vertical, 2)
+
+            Divider()
+                .padding(.vertical, 4)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("DEBUG MANUAL OVERRIDE (TAP UNTUK MENAMBAH)")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.secondary)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(availableWords, id: \.self) { word in
+                            Button {
+                                recognizer.addWordManually(word)
+                            } label: {
+                                Text(word)
+                                    .font(.caption.weight(.bold))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(.blue.opacity(0.08), in: .capsule)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(.blue.opacity(0.24), lineWidth: 1)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.blue)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
         }
         .padding(20)
         .background(
@@ -725,108 +760,12 @@ struct UnifiedView: View {
         guard sign != "Detecting...", sign != "Uncertain" else { return }
         let translated = displaySign(for: sign)
         Task { @MainActor in
-            recognizer.feed(rawLabel: translated, confidence: confidence)
-        }
-    }
-
-    private func handleEyeTrackingUpdate() {
-        guard isEyeCloseControlEnabled else {
-            cancelWink()
-            return
-        }
-
-        let isLeftClosed = cameraManager.isLeftEyeClosed
-        let isRightClosed = cameraManager.isRightEyeClosed
-        let isFaceDetected = cameraManager.isFaceDetected
-
-        guard isFaceDetected else { return }
-
-        let eitherClosed = isLeftClosed || isRightClosed
-        let bothOpen = !isLeftClosed && !isRightClosed
-
-        if eitherClosed && !bothOpen {
-            if winkTimer == nil {
-                startWink()
-            }
-        } else if bothOpen {
-            cancelWink()
-        }
-    }
-
-    private func startWink() {
-        winkStart = Date()
-        winkProgress = 0.0
-        winkTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
-            Task { @MainActor in
-                guard let start = self.winkStart else {
-                    self.cancelWink()
-                    return
-                }
-                
-                let isLeftClosed = self.cameraManager.isLeftEyeClosed
-                let isRightClosed = self.cameraManager.isRightEyeClosed
-                let bothOpen = !isLeftClosed && !isRightClosed
-                
-                if bothOpen {
-                    self.cancelWink()
-                    return
-                }
-                
-                let elapsed = Date().timeIntervalSince(start)
-                let progress = min(elapsed / 1.0, 1.0)
-                self.winkProgress = progress
-                
-                if elapsed >= 1.0 {
-                    self.cancelWink()
-                    self.toggleMode()
-                }
-            }
-        }
-    }
-
-    private func cancelWink() {
-        winkTimer?.invalidate()
-        winkTimer = nil
-        winkStart = nil
-        winkProgress = 0.0
-    }
-
-    private func toggleMode() {
-        if mode == .caregiverTranscribe {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                speechStore?.stopRecording()
-                recognizer.clearAll()
-                mode = .signMode
-            }
-        } else {
-            switchToCaregiverMode()
-        }
-    }
-
-    private func switchToCaregiverMode() {
-        Task {
-            // 1. Obtain text to speak (raw or FM refined based on Foundation Model toggle)
-            let sentenceToSpeak: String
-            if recognizer.builtSentence.isEmpty {
-                sentenceToSpeak = await recognizer.buildSentenceAsync()
-            } else {
-                sentenceToSpeak = recognizer.builtSentence
-            }
-            
-            // 2. Perform TTS FIRST before changing mode
-            if !sentenceToSpeak.isEmpty {
-                await appStore.speak(sentenceToSpeak)
-                appStore.addToHistory(message: sentenceToSpeak, role: .assistantSpoke)
-            }
-            
-            // 3. AFTER speaking, clear recognizer and switch mode to caregiver transcribe
-            await MainActor.run {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    recognizer.clearAll()
-                    mode = .caregiverTranscribe
-                    speechStore?.startRecording()
-                }
-            }
+            recognizer.targetLanguage = appStore.languageSettings.ttsLanguage
+            recognizer.conversationContext = ConversationContextService.buildContextString(
+                from: appStore.conversationHistory,
+                currentSpeaker: .userSigned
+            )
+            recognizer.feed(rawLabel: sign, confidence: confidence)
         }
     }
 
