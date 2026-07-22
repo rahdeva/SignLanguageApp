@@ -87,19 +87,19 @@
 "history.title"                      = "Riwayat";
 "history.empty"                      = "Belum ada riwayat percakapan.";
 "history.empty_title"                = "Belum Ada Riwayat";
-"history.empty_desc"                 = "Mulai rekam bicara atau isyarat untuk membangun riwayat percakapan.";
+"history.empty_desc"                 = "Mulai belajar bahasa isyarat untuk membangun riwayat percakapan.";
 
 /* Onboarding */
 "onboarding.continue"                = "Lanjutkan";
 "onboarding.get_started"             = "Mulai";
 "onboarding.next"                    = "Lanjut";
 "onboarding.replay_hint"             = "Anda dapat melihat pengantar ini lagi di Pengaturan";
-"onboarding.p1.title"                = "Bicara ke Teks";
-"onboarding.p1.desc"                 = "Ketuk mikrofon dan mulai berbicara. Ucapan Anda akan muncul di layar secara langsung.";
-"onboarding.p2.title"                = "Isyarat ke Ucapan";
-"onboarding.p2.desc"                 = "Arahkan kamera ke pergerakan bahasa isyarat. Aplikasi menerjemahkannya menjadi ucapan suara.";
-"onboarding.p3.title"                = "Riwayat Percakapan";
-"onboarding.p3.desc"                 = "Setiap terjemahan disimpan agar Anda dapat meninjau, memutar ulang, atau membagikan percakapan.";
+"onboarding.p1.title"                = "Selamat Datang di Stella";
+"onboarding.p1.desc"                 = "Mulai latihan bahasa isyarat hari ini dan jembatani batasan komunikasi";
+"onboarding.p2.title"                = "Praktik Percakapan";
+"onboarding.p2.desc"                 = "Respons instruksi interaktif menggunakan bahasa isyarat BISINDO-mu";
+"onboarding.p3.title"                = "Lawan Barisan Waktu";
+"onboarding.p3.desc"                 = "Uji kecepatan dan rasa percaya dirimu dengan merespons percakapan dalam waktu kurang dari 30 detik";
 
 /* Errors */
 "error.permission.camera"            = "Izin kamera ditolak. Harap izinkan akses kamera di Pengaturan.";

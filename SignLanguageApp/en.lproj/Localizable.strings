@@ -94,12 +94,12 @@
 "onboarding.get_started"             = "Get Started";
 "onboarding.next"                    = "Next";
 "onboarding.replay_hint"             = "You can replay this anytime in Settings";
-"onboarding.p1.title"                = "Speech to Text";
-"onboarding.p1.desc"                 = "Tap the microphone and start speaking. Your words appear on screen in real time.";
-"onboarding.p2.title"                = "Sign to Speech";
-"onboarding.p2.desc"                 = "Point your camera at sign language gestures. The app translates them into spoken words.";
-"onboarding.p3.title"                = "Conversation History";
-"onboarding.p3.desc"                 = "Every translation is saved so you can review, replay, or share past conversations.";
+"onboarding.p1.title"                = "Learn BISINDO Hand Signs";
+"onboarding.p1.desc"                 = "Start practicing hand signs today and bridge the communication gap.";
+"onboarding.p2.title"                = "Join the Dialogue";
+"onboarding.p2.desc"                 = "Put your skills to use by answering everyday conversations in BISINDO";
+"onboarding.p3.title"                = "Beat the 30-Second Clock";
+"onboarding.p3.desc"                 = "Test your speed and confidence by responding to conversations under 30 seconds.";
 
 /* Errors */
 "error.permission.camera"            = "Camera permission denied. Please allow camera access in Settings.";
