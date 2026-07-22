@@ -66,34 +66,6 @@ final class SpeechToTextStore {
         transcribedText = ""
         guard !finalText.isEmpty else { return }
         appStore.addToHistory(message: finalText, role: .userSpoke)
-
-        // AI-refine the caregiver's speech with conversation context
-        Task {
-            isRefining = true
-            let context = ConversationContextService.buildContextString(
-                from: appStore.conversationHistory,
-                currentSpeaker: .userSpoke
-            )
-            do {
-                let refined = try await refineCaregiverSpeech(
-                    rawSpeech: finalText,
-                    conversationContext: context,
-                    targetLanguage: appStore.languageSettings.ttsLanguage
-                )
-                if !refined.isEmpty {
-                    refinedText = refined
-                    // Write the refined text back to history replacing the raw one
-                    if let lastIndex = appStore.conversationHistory.lastIndex(where: { $0.role == .userSpoke }) {
-                        appStore.conversationHistory[lastIndex] = Conversation(message: refined, role: .userSpoke)
-                    }
-                } else {
-                    refinedText = finalText
-                }
-            } catch {
-                print("❌ CaregiverSpeechRefiner Error: \(error)")
-                refinedText = finalText
-            }
-            isRefining = false
-        }
+        refinedText = finalText
     }
 }

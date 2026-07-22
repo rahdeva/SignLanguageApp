@@ -19,6 +19,12 @@ struct UnifiedView: View {
     @State private var speechStore: SpeechToTextStore?
     @State private var lastAutoPlayedTemanTuliText: String?
     @State private var showConfidenceDetails = true
+    private let availableWords = [
+        "Saya", "Lagi", "Makan", "Dengar", "Motor", "Belajar", "Cari", "Hari",
+        "Ingat", "Maaf", "Terima kasih", "Tuli", "Apa", "Siapa", "Kapan", "Di mana",
+        "Mengapa", "Bagaimana", "Merah", "Kuning", "Hijau", "Hitam", "Berangkat",
+        "Datang", "Teman", "Keluarga", "Rumah", "Pagi", "Siang", "Sore", "Malam", "Air"
+    ]
 
     private var temanTuliText: String {
         recognizer.builtSentence
@@ -284,6 +290,38 @@ struct UnifiedView: View {
                     }
                 }
                 .padding(.vertical, 2)
+            }
+
+            Divider()
+                .padding(.vertical, 4)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("DEBUG MANUAL OVERRIDE (TAP UNTUK MENAMBAH)")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.secondary)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(availableWords, id: \.self) { word in
+                            Button {
+                                recognizer.addWordManually(word)
+                            } label: {
+                                Text(word)
+                                    .font(.caption.weight(.bold))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(.blue.opacity(0.08), in: .capsule)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(.blue.opacity(0.24), lineWidth: 1)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.blue)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
             }
         }
         .padding(20)

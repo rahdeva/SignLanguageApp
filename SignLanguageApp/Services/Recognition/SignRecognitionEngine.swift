@@ -104,6 +104,20 @@ final class SignRecognitionEngine: ObservableObject {
     }
 
     // MARK: - Manual Controls
+    func addWordManually(_ word: String) {
+        let cleaned = Self.cleanLabel(word)
+        builtSentence = ""
+        sentenceError = nil
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            wordSequence.append(DetectedWord(text: cleaned, timestamp: Date()))
+        }
+        if wordSequence.count >= maxWords {
+            buildSentence()
+        } else {
+            restartSilenceTimer()
+        }
+    }
+
     func removeLastWord() {
         guard !wordSequence.isEmpty else { return }
         wordSequence.removeLast()
