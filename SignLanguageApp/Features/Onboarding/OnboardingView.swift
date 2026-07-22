@@ -70,7 +70,7 @@ struct OnboardingView: View {
             Image(systemName: page.icon)
                 .font(.system(size: 72))
                 .foregroundStyle(.tint)
-//                .symbolEffect(.bounce, options: .repeating)
+                .symbolEffect(.bounce, options: .repeating)
 
             Text(LocalizedStringKey(page.titleKey), tableName: "Localizable")
                 .font(.largeTitle.weight(.bold))
@@ -95,9 +95,9 @@ private struct OnboardingPage {
     let titleKey: String
     let subtitleKey: String
 
-    static let samples: [OnboardingPage] = [ 
+    static let samples: [OnboardingPage] = [
         OnboardingPage(
-            icon: "hand.wave.fill",
+            icon: "waveform",
             titleKey: "onboarding.p1.title",
             subtitleKey: "onboarding.p1.desc"
         ),
@@ -107,7 +107,7 @@ private struct OnboardingPage {
             subtitleKey: "onboarding.p2.desc"
         ),
         OnboardingPage(
-            icon: "gauge.with.needle.fill",
+            icon: "clock.arrow.circlepath",
             titleKey: "onboarding.p3.title",
             subtitleKey: "onboarding.p3.desc"
         ),

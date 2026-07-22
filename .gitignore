@@ -110,3 +110,4 @@ Templates/.generated/
 # R.swift and Sourcery generated
 *.generated.swift
 R.generated.swift
+build/

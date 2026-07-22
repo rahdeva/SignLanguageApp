@@ -9,13 +9,11 @@ import SwiftUI
 
 /// Navigation tabs for the two main pipelines plus history log.
 enum AppTab: String, CaseIterable {
-    case conversation, speechToText, signToSpeech, history, settings
+    case conversation, history, settings
 
     var titleKey: LocalizedStringKey {
         switch self {
         case .conversation: "tab.conversation"
-        case .speechToText: "tab.speech"
-        case .signToSpeech: "tab.sign"
         case .history:      "tab.history"
         case .settings:     "tab.settings"
         }
@@ -24,8 +22,6 @@ enum AppTab: String, CaseIterable {
     var icon: String {
         switch self {
         case .conversation: "hand.wave"
-        case .speechToText: "mic"
-        case .signToSpeech: "camera"
         case .history:      "clock"
         case .settings:     "gearshape"
         }
@@ -55,7 +51,7 @@ struct RootView: View {
                             .transition(.opacity)
                     } else {
                         TabView(selection: $selectedTab) {
-                            UnifiedView()
+                            SignView()
                                 .tabItem {
                                     Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
                                 }
@@ -66,7 +62,7 @@ struct RootView: View {
                                     Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
                                 }
                                 .tag(AppTab.history)
-                            
+
                             SettingsView()
                                 .tabItem {
                                     Label(AppTab.settings.titleKey, systemImage: AppTab.settings.icon)

@@ -4,6 +4,7 @@
 "common.error"           = "Error";
 
 /* Tab titles */
+"tab.home"               = "Home";
 "tab.speech"             = "Speech";
 "tab.sign"               = "Sign";
 "tab.history"            = "History";

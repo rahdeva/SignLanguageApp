@@ -30,8 +30,9 @@ final class AppStore {
     var isPredicting = false
     var isCameraAuthorized = false
 
-    // MARK: - Conversation
+    // MARK: - Conversation & Practice History
     var conversationHistory: [Conversation] = []
+    var practiceHistory: [PracticeRecord] = []
 
     // MARK: - Error
     var error: AppError?
@@ -63,6 +64,10 @@ final class AppStore {
 
     func addToHistory(message: String, role: ConversationRole) {
         conversationHistory.append(Conversation(message: message, role: role))
+    }
+
+    func addPracticeRecord(_ record: PracticeRecord) {
+        practiceHistory.append(record)
     }
 
     /// Speak text aloud using the current TTS language setting.

@@ -4,6 +4,7 @@
 "common.error"           = "Kesalahan";
 
 /* Tab titles */
+"tab.home"               = "Beranda";
 "tab.speech"             = "Bicara";
 "tab.sign"               = "Isyarat";
 "tab.history"            = "Riwayat";

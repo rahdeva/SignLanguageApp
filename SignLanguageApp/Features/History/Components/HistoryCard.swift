@@ -54,7 +54,7 @@ struct HistoryCard: View {
 
                 Text("\"\(targetText)\"")
                     .font(.headline)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.primary)
                     .fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -62,7 +62,7 @@ struct HistoryCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Kata terdeteksi")
                     .font(.footnote)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.secondary)
                     .fontWeight(.medium)
 
                 HStack(spacing: 8) {
@@ -74,7 +74,7 @@ struct HistoryCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Divider()
-                .overlay(Color.gray.opacity(0.2))
+                .overlay(Color.primary.opacity(0.1))
 
             HStack {
                 MetricText(title: "Akurasi:", value: accuracyText)
@@ -91,8 +91,9 @@ struct HistoryCard: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color("CardColor"))
+                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
         )
     }
 }
@@ -158,7 +159,7 @@ private struct DetectedWordBadge: View {
             text: word.text,
             iconName: word.isAnswered ? "checkmark" : "xmark",
             tint: tint,
-            textColor: .black
+            textColor: .primary
         )
     }
 }

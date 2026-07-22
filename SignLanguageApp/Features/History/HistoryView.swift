@@ -2,19 +2,30 @@
 //  HistoryView.swift
 //  SignLanguageApp
 //
-//  Created by Muhammad Hisyam Kamil on 17/07/26.
+//  Created by Antigravity on 23/07/26.
 //
 
 import SwiftUI
+import SwiftData
 
-/// Conversation history tab — shows all transcribed/spoken entries in reverse order.
+/// Conversation & practice history tab — renders SwiftData persistent history items using HistoryCard.
 struct HistoryView: View {
-    @Environment(AppStore.self) private var appStore
+    @Query(sort: \PracticeHistoryItem.date, order: .reverse) private var historyItems: [PracticeHistoryItem]
+    @Environment(\.modelContext) private var modelContext
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM, HH.mm"
+        return formatter
+    }()
 
     var body: some View {
         NavigationStack {
-            Group {
-                if appStore.conversationHistory.isEmpty {
+            ZStack {
+                Color(UIColor.systemGroupedBackground)
+                    .ignoresSafeArea()
+
+                if historyItems.isEmpty {
                     ContentUnavailableView {
                         Label(
                             LocalizedStringKey("history.empty_title"),
@@ -24,23 +35,28 @@ struct HistoryView: View {
                         Text("history.empty_desc", tableName: "Localizable")
                     }
                 } else {
-                    List(appStore.conversationHistory.reversed()) { entry in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(entry.role.label(for: appStore.languageSettings.appLanguage))
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.tint)
-                                Spacer()
-                                Text(entry.timestamp, style: .time)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach(historyItems) { item in
+                                let score: HistoryCard.Score = item.scoreRawValue == "Keren" ? .keren : (item.scoreRawValue == "Bagus" ? .bagus : .kurang)
+                                let accuracy = item.targetTokens.isEmpty ? "0%" : "\(Int(Double(item.completedCount) / Double(item.targetTokens.count) * 100))%"
+                                let detected = item.targetTokens.enumerated().map { idx, token in
+                                    HistoryCard.DetectedWord(text: token, isAnswered: idx < item.completedCount)
+                                }
+
+                                HistoryCard(
+                                    score: score,
+                                    dateText: Self.dateFormatter.string(from: item.date),
+                                    targetText: item.question,
+                                    detectedWords: detected,
+                                    accuracyText: accuracy,
+                                    wordCountText: "\(item.completedCount)/\(item.targetTokens.count)",
+                                    durationText: "\(item.durationSeconds) Detik"
+                                )
                             }
-                            Text(entry.message)
-                                .font(.body)
                         }
-                        .padding(.vertical, 4)
+                        .padding(16)
                     }
-                    .listStyle(.insetGrouped)
                 }
             }
             .navigationTitle(Text("history.title", tableName: "Localizable"))

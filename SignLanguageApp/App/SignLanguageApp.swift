@@ -6,13 +6,15 @@
 //
 
 import SwiftUI
+import SwiftData
 
-/// App entry point. Root scene connects `AppStore` to the view hierarchy.
+/// App entry point. Root scene connects `AppStore` and SwiftData modelContainer to the view hierarchy.
 @main
 struct SignLanguageApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
         }
+        .modelContainer(for: PracticeHistoryItem.self)
     }
 }
