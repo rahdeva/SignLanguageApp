@@ -14,9 +14,6 @@ struct SettingsView: View {
     @State private var hasSeenOnboarding = UserDefaults.standard.bool(
         forKey: "hasSeenOnboarding"
     )
-    @State private var isFoundationModelEnabled = UserDefaults.standard.object(forKey: "isFoundationModelEnabled") as? Bool ?? true
-    @State private var isEyeCloseControlEnabled = UserDefaults.standard.object(forKey: "isEyeCloseControlEnabled") as? Bool ?? false
-    @State private var showEyeVisionOverlay = UserDefaults.standard.object(forKey: "showEyeVisionOverlay") as? Bool ?? false
 
     var body: some View {
         NavigationStack {
@@ -42,52 +39,6 @@ struct SettingsView: View {
                     Text("settings.section.general", tableName: "Localizable")
                 }
 
-                // MARK: - Features
-                Section {
-                    Toggle(isOn: $isFoundationModelEnabled) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("settings.features.foundation_models", tableName: "Localizable")
-                                .font(.body)
-                            Text("settings.features.foundation_models.desc", tableName: "Localizable")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: isFoundationModelEnabled) { _, newValue in
-                        UserDefaults.standard.set(newValue, forKey: "isFoundationModelEnabled")
-                    }
-
-                    Toggle(isOn: $isEyeCloseControlEnabled) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("settings.features.eye_close_mode", tableName: "Localizable")
-                                .font(.body)
-                            Text("settings.features.eye_close_mode.desc", tableName: "Localizable")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: isEyeCloseControlEnabled) { _, newValue in
-                        UserDefaults.standard.set(newValue, forKey: "isEyeCloseControlEnabled")
-                    }
-
-                    if isEyeCloseControlEnabled {
-                        Toggle(isOn: $showEyeVisionOverlay) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Tampilkan Visualisasi Mata (Vision)")
-                                    .font(.body)
-                                Text("Tampilkan garis kontur deteksi mata Vision pada layar kamera")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .onChange(of: showEyeVisionOverlay) { _, newValue in
-                            UserDefaults.standard.set(newValue, forKey: "showEyeVisionOverlay")
-                        }
-                    }
-                } header: {
-                    Text("settings.section.features", tableName: "Localizable")
-                }
-
                 // MARK: - Language
                 @Bindable var settings = appStore.languageSettings
                 Section {
@@ -95,18 +46,8 @@ struct SettingsView: View {
                         titleKey: "settings.language.app",
                         selection: $settings.appLanguage
                     )
-                    LanguagePickerRow(
-                        titleKey: "settings.language.tts",
-                        selection: $settings.ttsLanguage
-                    )
-                    LanguagePickerRow(
-                        titleKey: "settings.language.speech",
-                        selection: $settings.speechLanguage
-                    )
                 } header: {
                     Text("settings.section.language", tableName: "Localizable")
-                } footer: {
-                    Text("settings.language.footer", tableName: "Localizable")
                 }
 
                 // MARK: - Privacy
@@ -159,3 +100,4 @@ struct SettingsView: View {
     SettingsView()
         .environment(AppStore())
 }
+
