@@ -55,40 +55,45 @@ struct UnifiedView: View {
         maxWords: 12
     )
     @State private var speechStore: SpeechToTextStore?
-    @State private var lastAutoPlayedTemanTuliText: String?
-    @State private var showConfidenceDetails = true
-<<<<<<<<< Temporary merge branch 1
-    
-    @State private var mode: UnifiedMode = .caregiverTranscribe
+    @State private var showConfidenceDetails = false
+
+    // MARK: - Game State
+    @State private var currentChallenge: PracticeChallenge = PracticeChallenge(question: "Kamu sedang apa?", targetTokens: ["Saya", "Lagi", "Makan"])
+    @State private var nextTargetIndex = 0
+    @State private var timerSecondsRemaining = 30
+    @State private var isGameActive = false
+    @State private var isGeneratingChallenge = false
+    @State private var showResult = false
+    @State private var gameResultLevel: GameResultLevel = .bad
+    @State private var gameTimer: Timer? = nil
+
+    // MARK: - Eye Control Settings
+    @AppStorage("isEyeCloseControlEnabled") private var isEyeCloseControlEnabled = false
+    @AppStorage("showEyeVisionOverlay") private var showEyeVisionOverlay = false
     @State private var winkProgress: Double = 0.0
     @State private var winkStart: Date? = nil
     @State private var winkTimer: Timer? = nil
 
-    @AppStorage("isEyeCloseControlEnabled") private var isEyeCloseControlEnabled = false
-    @AppStorage("isFoundationModelEnabled") private var isFoundationModelEnabled = true
-    @AppStorage("showEyeVisionOverlay") private var showEyeVisionOverlay = false
-=========
-    private let availableWords = [
-        "Saya", "Lagi", "Makan", "Dengar", "Motor", "Belajar", "Cari", "Hari",
-        "Ingat", "Maaf", "Terima kasih", "Tuli", "Apa", "Siapa", "Kapan", "Di mana",
-        "Mengapa", "Bagaimana", "Merah", "Kuning", "Hijau", "Hitam", "Berangkat",
-        "Datang", "Teman", "Keluarga", "Rumah", "Pagi", "Siang", "Sore", "Malam", "Air"
-    ]
->>>>>>>>> Temporary merge branch 2
-
-    private var temanTuliText: String {
-        recognizer.builtSentence
-    }
-
-    private var caregiverTranscribedText: String {
-        if let store = speechStore, !store.refinedText.isEmpty {
-            return store.refinedText
-        }
-        return speechStore?.transcribedText ?? appStore.speechToTextOutput
-    }
-
     private var isSignActive: Bool {
         cameraManager.permissionGranted && cameraManager.isRunning
+    }
+
+    private var practiceSequenceText: String {
+        var result = ""
+        for idx in 0..<currentChallenge.targetTokens.count {
+            let token = currentChallenge.targetTokens[idx]
+            if idx > 0 {
+                result += "  ➔  "
+            }
+            if idx < nextTargetIndex {
+                result += "✓ \(token)"
+            } else if idx == nextTargetIndex {
+                result += "▶ [\(token)]"
+            } else {
+                result += "• \(token)"
+            }
+        }
+        return result
     }
 
     var body: some View {
@@ -142,39 +147,15 @@ struct UnifiedView: View {
         .onChange(of: cameraManager.currentSign) { _, newSign in
             handleNewSign(newSign, confidence: cameraManager.currentConfidence)
         }
-<<<<<<<<< Temporary merge branch 1
         .onChange(of: cameraManager.isLeftEyeClosed) { _, _ in
             handleEyeTrackingUpdate()
         }
         .onChange(of: cameraManager.isRightEyeClosed) { _, _ in
             handleEyeTrackingUpdate()
         }
-        .onChange(of: temanTuliText) { _, newText in
-            appStore.signPredictionOutput = newText
-            // Auto TTS when a sentence is built after silence gap or reaching maxWords during sign mode
-            if mode == .signMode && !newText.isEmpty {
-                Task {
-                    await appStore.speak(newText)
-                    appStore.addToHistory(message: newText, role: .assistantSpoke)
-                }
-            }
-=========
-        .task(id: temanTuliText) {
-            guard !temanTuliText.isEmpty,
-                  temanTuliText != lastAutoPlayedTemanTuliText
-            else { return }
-
-            recognizer.conversationContext = ConversationContextService.buildContextString(
-                from: appStore.conversationHistory,
-                currentSpeaker: .userSigned
-            )
-
-            appStore.signPredictionOutput = temanTuliText
-            lastAutoPlayedTemanTuliText = temanTuliText
-            await speakTemanTuliTranscription()
->>>>>>>>> Temporary merge branch 2
-        }
     }
+
+    // MARK: - Original Layout Panes
 
     private var cameraPane: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -479,108 +460,149 @@ struct UnifiedView: View {
                 .accessibilityLabel("Clear all detected words")
             }
 
-            FlowLayout(spacing: 8) {
-                ForEach(Array(recognizer.wordSequence.enumerated()), id: \.element.id) { index, word in
-                    wordChip(word, index: index)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(recognizer.wordSequence.enumerated()), id: \.element.id) { index, word in
+                        wordChip(word, index: index)
+                    }
                 }
+                .padding(.vertical, 2)
             }
-<<<<<<<<< Temporary merge branch 1
-            .padding(.vertical, 2)
-=========
 
             Divider()
                 .padding(.vertical, 4)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("DEBUG MANUAL OVERRIDE (TAP UNTUK MENAMBAH)")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
-                
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(availableWords, id: \.self) { word in
-                            Button {
-                                recognizer.addWordManually(word)
-                            } label: {
-                                Text(word)
-                                    .font(.caption.weight(.bold))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(.blue.opacity(0.08), in: .capsule)
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(.blue.opacity(0.24), lineWidth: 1)
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(.blue)
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-            }
->>>>>>>>> Temporary merge branch 2
+            
+            debugManualOverrideRow
         }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(.background)
-                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 3)
-        )
     }
 
-    private var sentencePanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label("KALIMAT", systemImage: "text.bubble.fill")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                Button {
-                    withAnimation { recognizer.clearAll() }
-                } label: {
-                    Image(systemName: "xmark")
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("Clear sentence")
+    private func wordChip(_ word: DetectedWord, index: Int) -> some View {
+        Button {
+            withAnimation {
+                recognizer.removeWord(id: word.id)
             }
+        } label: {
+            HStack(spacing: 6) {
+                Text(word.text)
+                    .font(.subheadline.weight(.bold))
 
-            if recognizer.isBuildingSentence {
-                HStack(spacing: 10) {
-                    ProgressView()
-                        .tint(.cyan)
-                    Text("Menyusun kalimat...")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            } else if !recognizer.builtSentence.isEmpty {
-                Text(recognizer.builtSentence)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption.weight(.semibold))
+                    .imageScale(.small)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .background(.quaternary.opacity(0.45), in: .capsule)
+        .overlay {
+            Capsule()
+                .stroke(.secondary.opacity(0.16), lineWidth: 1)
+        }
+        .accessibilityLabel("Remove \(word.text)")
+    }
 
-                Button {
-                    recognizer.buildSentence()
-                } label: {
-                    Label("Ulangi", systemImage: "arrow.clockwise")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.cyan)
-            } else if let error = recognizer.sentenceError {
-                Text(error)
-                    .font(.subheadline)
-                    .foregroundStyle(.orange)
+    // MARK: - Game Mechanics
 
-                if !recognizer.builtSentence.isEmpty {
-                    Text(recognizer.builtSentence)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
+    func startNewGame() {
+        nextTargetIndex = 0
+        showResult = false
+        isGameActive = true
+        startGameTimer()
+    }
+
+    func startGameTimer() {
+        stopGameTimer()
+        timerSecondsRemaining = 30
+        gameTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            Task { @MainActor in
+                if self.timerSecondsRemaining > 0 {
+                    self.timerSecondsRemaining -= 1
+                } else {
+                    self.endGame()
                 }
+            }
+        }
+    }
+
+    func stopGameTimer() {
+        gameTimer?.invalidate()
+        gameTimer = nil
+    }
+
+    func endGame(with forcedLevel: GameResultLevel? = nil) {
+        stopGameTimer()
+        isGameActive = false
+        
+        let finalLevel: GameResultLevel
+        if let forced = forcedLevel {
+            finalLevel = forced
+        } else {
+            if nextTargetIndex == currentChallenge.targetTokens.count {
+                finalLevel = .good
+            } else if nextTargetIndex > 0 {
+                finalLevel = .okay
+            } else {
+                finalLevel = .bad
+            }
+        }
+
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+            gameResultLevel = finalLevel
+            showResult = true
+        }
+
+        // Haptic notification feedback
+        let generator = UINotificationFeedbackGenerator()
+        switch finalLevel {
+        case .good: generator.notificationOccurred(.success)
+        case .okay: generator.notificationOccurred(.warning)
+        case .bad: generator.notificationOccurred(.error)
+        }
+    }
+
+    func fetchNewChallengeAndStart() {
+        Task {
+            isGeneratingChallenge = true
+            let challenge = await ChallengeGenerator.generateChallenge(targetLanguage: appStore.languageSettings.ttsLanguage)
+            await MainActor.run {
+                currentChallenge = challenge
+                isGeneratingChallenge = false
+                startNewGame()
+            }
+        }
+    }
+
+    func handleSpokenQuestion(_ question: String) {
+        Task {
+            isGeneratingChallenge = true
+            let tokens = await ChallengeGenerator.generateTokens(for: question, targetLanguage: appStore.languageSettings.ttsLanguage)
+            await MainActor.run {
+                currentChallenge = PracticeChallenge(question: question, targetTokens: tokens)
+                isGeneratingChallenge = false
+                startNewGame()
+            }
+        }
+    }
+
+    private func handleNewSign(_ sign: String, confidence: Double) {
+        guard isGameActive else { return }
+        guard sign != "Detecting...", sign != "Uncertain" else { return }
+        let cleaned = SignRecognitionEngine.cleanLabel(sign)
+        
+        guard nextTargetIndex < currentChallenge.targetTokens.count else { return }
+        let targetWord = currentChallenge.targetTokens[nextTargetIndex]
+        
+        if cleaned.lowercased() == targetWord.lowercased() {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                nextTargetIndex += 1
+            }
+            
+            if nextTargetIndex == currentChallenge.targetTokens.count {
+                endGame(with: .good)
             }
         }
     }
@@ -724,15 +746,15 @@ struct UnifiedView: View {
         }
     }
 
-    private func handleNewSign(_ sign: String, confidence: Double) {
-        guard mode == .signMode else { return }
-        guard sign != "Detecting...", sign != "Uncertain" else { return }
-        let translated = displaySign(for: sign)
-        Task { @MainActor in
-<<<<<<<<< Temporary merge branch 1
-            recognizer.feed(rawLabel: translated, confidence: confidence)
+    private func resetSignRecognition() {
+        withAnimation {
+            cameraManager.resetBuffer()
+            recognizer.clearAll()
+            appStore.signPredictionOutput = ""
         }
     }
+
+    // MARK: - Eye Close Tracking logic
 
     private func handleEyeTrackingUpdate() {
         guard isEyeCloseControlEnabled else {
@@ -783,7 +805,7 @@ struct UnifiedView: View {
                 
                 if elapsed >= 1.0 {
                     self.cancelWink()
-                    self.toggleMode()
+                    self.triggerWinkAction()
                 }
             }
         }
@@ -796,122 +818,12 @@ struct UnifiedView: View {
         winkProgress = 0.0
     }
 
-    private func toggleMode() {
-        if mode == .caregiverTranscribe {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                speechStore?.stopRecording()
-                recognizer.clearAll()
-                mode = .signMode
-            }
-        } else {
-            switchToCaregiverMode()
+    private func triggerWinkAction() {
+        if showResult {
+            fetchNewChallengeAndStart()
+        } else if isGameActive {
+            fetchNewChallengeAndStart()
         }
-    }
-
-    private func switchToCaregiverMode() {
-        Task {
-            // 1. Obtain text to speak (raw or FM refined based on Foundation Model toggle)
-            let sentenceToSpeak: String
-            if recognizer.builtSentence.isEmpty {
-                sentenceToSpeak = await recognizer.buildSentenceAsync()
-            } else {
-                sentenceToSpeak = recognizer.builtSentence
-            }
-            
-            // 2. Perform TTS FIRST before changing mode
-            if !sentenceToSpeak.isEmpty {
-                await appStore.speak(sentenceToSpeak)
-                appStore.addToHistory(message: sentenceToSpeak, role: .assistantSpoke)
-            }
-            
-            // 3. AFTER speaking, clear recognizer and switch mode to caregiver transcribe
-            await MainActor.run {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    recognizer.clearAll()
-                    mode = .caregiverTranscribe
-                    speechStore?.startRecording()
-                }
-            }
-=========
-            recognizer.targetLanguage = appStore.languageSettings.ttsLanguage
-            recognizer.conversationContext = ConversationContextService.buildContextString(
-                from: appStore.conversationHistory,
-                currentSpeaker: .userSigned
-            )
-            recognizer.feed(rawLabel: sign, confidence: confidence)
->>>>>>>>> Temporary merge branch 2
-        }
-    }
-
-    private func clearDetectedWords() {
-        withAnimation {
-            recognizer.clearAll()
-            appStore.signPredictionOutput = ""
-        }
-    }
-
-    private func resetSignRecognition() {
-        withAnimation {
-            cameraManager.resetBuffer()
-            recognizer.clearAll()
-            appStore.signPredictionOutput = ""
-        }
-    }
-
-    private func toggleSpeechRecording() {
-        guard let speechStore else { return }
-        if speechStore.isRecording {
-            speechStore.stopRecording()
-        } else {
-            speechStore.startRecording()
-        }
-    }
-
-    private func speakTemanTuliTranscription() {
-        Task {
-            await speakTemanTuliTranscription()
-        }
-    }
-
-    private func speakTemanTuliTranscription() async {
-        await appStore.synthesizerService.speak(temanTuliText)
-        appStore.addToHistory(message: temanTuliText, role: .assistantSpoke)
-    }
-
-    @ViewBuilder
-    private var micButton: some View {
-        if let speechStore {
-            Button {
-                if speechStore.isRecording {
-                    speechStore.stopRecording()
-                } else {
-                    speechStore.startRecording()
-                }
-            } label: {
-                Image(systemName: speechStore.isRecording ? "mic.circle.fill" : "mic.fill")
-                    .font(.title2.weight(.semibold))
-                    .frame(width: 52, height: 52)
-            }
-            .buttonStyle(.glassProminent)
-            .tint(speechStore.isRecording ? .red : .blue)
-            .accessibilityLabel(speechStore.isRecording ? "Turn off microphone" : "Turn on microphone")
-        }
-    }
-
-    private var flipButton: some View {
-        Button {
-            withAnimation(.spring()) {
-                cameraManager.toggleCamera()
-            }
-        } label: {
-            Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
-                .font(.title2.weight(.semibold))
-                .padding(10)
-                .background(.ultraThinMaterial, in: .circle)
-        }
-        .buttonStyle(.plain)
-        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
-        .help(cameraManager.isFrontCamera ? "Switch to rear camera" : "Switch to front camera")
     }
 }
 
