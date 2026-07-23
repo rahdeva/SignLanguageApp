@@ -8,6 +8,10 @@
 import SwiftUI
 
 struct SingleWordPracticeView: View {
+    var showVideoTutorial: Bool = true
+    var isRandomMode: Bool = false
+    var customWordList: [String]? = nil
+
     @Environment(AppStore.self) private var appStore
     @StateObject private var cameraManager = CameraManager()
     @StateObject private var recognizer = SignRecognitionEngine(
@@ -31,11 +35,12 @@ struct SingleWordPracticeView: View {
     @State private var winkTimer: Timer? = nil
 
     private var availableWords: [String] {
-        ChallengeGenerator.availableWords
+        customWordList ?? ChallengeGenerator.availableWords
     }
 
     private var currentWord: String {
-        availableWords[wordIndex % availableWords.count]
+        guard !availableWords.isEmpty else { return "Saya" }
+        return availableWords[wordIndex % availableWords.count]
     }
 
     private var currentEnglishWord: String {
@@ -53,13 +58,15 @@ struct SingleWordPracticeView: View {
                     VStack(spacing: 20) {
                         headerScoreBar
                         
-                        // 1. Video Example Card (Starts every session)
-                        SignVideoPlayerView(
-                            word: currentWord,
-                            englishWord: currentEnglishWord
-                        )
-                        .id(videoPlayerID)
-                        .padding(.horizontal, 16)
+                        // 1. Video Example Card (Optional - hidden in non-video practice mode)
+                        if showVideoTutorial {
+                            SignVideoPlayerView(
+                                word: currentWord,
+                                englishWord: currentEnglishWord
+                            )
+                            .id(videoPlayerID)
+                            .padding(.horizontal, 16)
+                        }
 
                         // 2. Target Word & Action Control Card
                         targetWordCard
@@ -84,6 +91,9 @@ struct SingleWordPracticeView: View {
             }
         }
         .onAppear {
+            if isRandomMode && !availableWords.isEmpty {
+                wordIndex = Int.random(in: 0..<availableWords.count)
+            }
             if !cameraManager.isRunning {
                 cameraManager.checkPermissions()
             }
@@ -154,15 +164,17 @@ struct SingleWordPracticeView: View {
 
                 Spacer()
 
-                Button {
-                    replayVideo()
-                } label: {
-                    Label("word_practice.replay_button", systemImage: "arrow.clockwise.circle.fill")
-                        .font(.subheadline.weight(.semibold))
+                if showVideoTutorial {
+                    Button {
+                        replayVideo()
+                    } label: {
+                        Label("word_practice.replay_button", systemImage: "arrow.clockwise.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .buttonBorderShape(.capsule)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                .buttonBorderShape(.capsule)
             }
 
             HStack {
@@ -374,7 +386,12 @@ struct SingleWordPracticeView: View {
     }
 
     private func nextWord() {
-        wordIndex += 1
+        if isRandomMode && availableWords.count > 1 {
+            let nextRandom = Int.random(in: 0..<availableWords.count)
+            wordIndex = (nextRandom == wordIndex) ? (nextRandom + 1) % availableWords.count : nextRandom
+        } else {
+            wordIndex += 1
+        }
         videoPlayerID = UUID()
     }
 

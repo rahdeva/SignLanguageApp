@@ -134,11 +134,24 @@
 "conv.btn_sign"                      = "Sign Mode";
 "conv.your_signing"                  = "YOUR SIGNING";
 "conv.hint_open_eyes"                = "Open both eyes to speak via TTS";
-"conv.speaking"                      = "SPEAKING VIA TTS...";
-"conv.eye_control"                   = "Eye Control";
-"conv.ai_refinement"                 = "AI Grammar";
-"conv.face_none"                     = "No Face";
-"conv.eyes_closed"                   = "Eyes Closed";
-"conv.eyes_wink"                     = "Winking";
-"conv.eyes_open"                     = "Eyes Open";
+/* Home & Menu Cards */
+"home.welcome_title"                 = "Welcome to Stella";
+"home.welcome_subtitle"              = "Choose your BISINDO sign language practice mode below";
+"home.card1_title"                   = "Sign Dictionary";
+"home.card1_subtitle"                = "Learn 31 sign words with video tutorial guides";
+"home.card2_title"                   = "Practice Without Video";
+"home.card2_subtitle"                = "Test your signing skills directly without video guidance";
+
+/* Onboarding Flow */
+"onboarding.guided_phase_title"      = "Guided Signing (With Video)";
+"onboarding.guided_phase_subtitle"   = "Watch the video example, then perform the sign in front of the camera";
+"onboarding.practice_phase_title"    = "Test Without Video Guidance";
+"onboarding.practice_phase_subtitle" = "Perform the 3 words you learned without video guidance";
+"onboarding.result_title"            = "Onboarding Practice Results";
+"onboarding.result_subtitle"         = "You completed the BISINDO sign introduction stage!";
+"onboarding.eval_perfect"            = "Excellent!";
+"onboarding.eval_good"               = "Great Job!";
+"onboarding.eval_keep_trying"        = "Keep Going!";
+"onboarding.finish_button"           = "Enter Main Menu";
+
 

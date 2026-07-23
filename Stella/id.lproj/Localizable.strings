@@ -137,9 +137,24 @@
 "conv.hint_open_eyes"                = "Buka kedua mata untuk membacakan via TTS";
 "conv.speaking"                      = "MEMBACAKAN VIA TTS...";
 "conv.eye_control"                   = "Kontrol Mata";
-"conv.ai_refinement"                 = "AI Tata Bahasa";
-"conv.face_none"                     = "Wajah Tidak Terdeteksi";
-"conv.eyes_closed"                   = "Mata Terpejam";
-"conv.eyes_wink"                     = "Satu Mata Terpejam";
-"conv.eyes_open"                     = "Mata Terbuka";
+/* Home & Menu Cards */
+"home.welcome_title"                 = "Selamat Datang di Stella";
+"home.welcome_subtitle"              = "Pilih mode latihan bahasa isyarat BISINDO di bawah ini";
+"home.card1_title"                   = "Kamus Isyarat";
+"home.card1_subtitle"                = "Pelajari 31 kata isyarat dengan panduan video tutorial";
+"home.card2_title"                   = "Latihan Tanpa Video";
+"home.card2_subtitle"                = "Uji kemampuan isyaratmu secara langsung tanpa panduan video";
+
+/* Onboarding Flow */
+"onboarding.guided_phase_title"      = "Panduan Isyarat (Dengan Video)";
+"onboarding.guided_phase_subtitle"   = "Pelajari contoh video, lalu peragakan isyaratnya di depan kamera";
+"onboarding.practice_phase_title"    = "Uji Tanpa Panduan Video";
+"onboarding.practice_phase_subtitle" = "Peragakan kembali 3 kata yang sudah kamu pelajari tanpa panduan video";
+"onboarding.result_title"            = "Hasil Latihan Onboarding";
+"onboarding.result_subtitle"         = "Kamu telah menyelesaikan tahap pengenalan isyarat BISINDO!";
+"onboarding.eval_perfect"            = "Sangat Bagus!";
+"onboarding.eval_good"               = "Bagus!";
+"onboarding.eval_keep_trying"        = "Tetap Semangat!";
+"onboarding.finish_button"           = "Masuk ke Menu Utama";
+
 
