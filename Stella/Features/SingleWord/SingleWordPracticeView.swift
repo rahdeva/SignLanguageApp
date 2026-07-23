@@ -165,8 +165,12 @@ struct SingleWordPracticeView: View {
         .padding(18)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(uiColor: .white))
-                .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
+                .fill(Color(uiColor: .secondarySystemBackground))
+                .shadow(color: Color.black.opacity(0.20), radius: 12, x: 0, y: 6)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(Color(uiColor: .separator), lineWidth: 0.5)
         )
         .padding(.horizontal, 16)
     }
@@ -284,15 +288,9 @@ struct SingleWordPracticeView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                ZStack {
-                    Circle()
-                        .fill(Color.green.opacity(0.2))
-                        .frame(width: 90, height: 90)
-
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.green)
-                }
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.green)
 
                 VStack(spacing: 8) {
                     Text("word_practice.success_title", tableName: "Localizable")
@@ -338,6 +336,9 @@ struct SingleWordPracticeView: View {
         let targetCleaned = SignRecognitionEngine.cleanLabel(currentWord)
         
         if cleaned.caseInsensitiveCompare(targetCleaned) == .orderedSame {
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+
             withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                 showSuccessOverlay = true
             }
