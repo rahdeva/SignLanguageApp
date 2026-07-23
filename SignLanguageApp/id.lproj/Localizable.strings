@@ -6,8 +6,20 @@
 /* Tab titles */
 "tab.speech"             = "Bicara";
 "tab.sign"               = "Isyarat";
+"tab.single_word"        = "Satu Kata";
 "tab.history"            = "Riwayat";
 "tab.settings"           = "Pengaturan";
+
+/* Single Word Practice */
+"word_practice.title"          = "Latihan Satu Kata";
+"word_practice.subtitle"       = "Perhatikan contoh video, lalu peragakan isyaratnya!";
+"word_practice.video_title"    = "Contoh Isyarat Video";
+"word_practice.target_label"   = "Target Isyarat";
+"word_practice.success_title"  = "LUAR BIASA! ISYARAT TEPAT";
+"word_practice.success_desc"   = "Kamu berhasil memperagakan isyarat ini dengan tepat!";
+"word_practice.next_button"    = "Kata Berikutnya";
+"word_practice.replay_button"  = "Putar Video";
+"word_practice.score_title"    = "Skor Kamu";
 
 /* Settings — General */
 "settings.title"                     = "Pengaturan";
