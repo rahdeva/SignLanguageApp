@@ -22,7 +22,73 @@ struct ChallengeGenerator {
         "Mengapa", "Bagaimana", "Merah", "Kuning", "Hijau", "Hitam", "Berangkat",
         "Datang", "Teman", "Keluarga", "Rumah", "Pagi", "Siang", "Sore", "Malam", "Air"
     ]
-    
+
+    /// A vocabulary word paired with the model's F1 score for that sign.
+    struct WeightedWord {
+        let word: String
+        let f1Score: Double
+    }
+
+    /// Per-word recognition F1 scores. The score doubles as the appearance
+    /// weight when picking a random practice word — words the model recognizes
+    /// more confidently (higher F1) show up more often.
+    static let weightedWords: [WeightedWord] = [
+        WeightedWord(word: "Datang", f1Score: 0.92),
+        WeightedWord(word: "Dengar", f1Score: 0.91),
+        WeightedWord(word: "Berangkat", f1Score: 0.86),
+        WeightedWord(word: "Teman", f1Score: 0.86),
+        WeightedWord(word: "Siang", f1Score: 0.83),
+        WeightedWord(word: "Mengapa", f1Score: 0.83),
+        WeightedWord(word: "Lagi", f1Score: 0.83),
+        WeightedWord(word: "Kapan", f1Score: 0.83),
+        WeightedWord(word: "Apa", f1Score: 0.83),
+        WeightedWord(word: "Merah", f1Score: 0.82),
+        WeightedWord(word: "Tuli", f1Score: 0.80),
+        WeightedWord(word: "Air", f1Score: 0.80),
+        WeightedWord(word: "Motor", f1Score: 0.80),
+        WeightedWord(word: "Kuning", f1Score: 0.77),
+        WeightedWord(word: "Rumah", f1Score: 0.77),
+        WeightedWord(word: "Keluarga", f1Score: 0.77),
+        WeightedWord(word: "Hitam", f1Score: 0.77),
+        WeightedWord(word: "Bagaimana", f1Score: 0.77),
+        WeightedWord(word: "Di mana", f1Score: 0.77),
+        WeightedWord(word: "Terima kasih", f1Score: 0.77),
+        WeightedWord(word: "Maaf", f1Score: 0.77),
+        WeightedWord(word: "Ingat", f1Score: 0.77),
+        WeightedWord(word: "Siapa", f1Score: 0.73),
+        WeightedWord(word: "Makan", f1Score: 0.71),
+        WeightedWord(word: "Cari", f1Score: 0.71),
+        WeightedWord(word: "Pagi", f1Score: 0.71),
+        WeightedWord(word: "Malam", f1Score: 0.71),
+        WeightedWord(word: "Sore", f1Score: 0.71),
+        WeightedWord(word: "Hari", f1Score: 0.67),
+        WeightedWord(word: "Saya", f1Score: 0.62),
+        WeightedWord(word: "Belajar", f1Score: 0.56),
+        WeightedWord(word: "Hijau", f1Score: 0.20)
+    ]
+
+    /// Picks a random practice word weighted by its F1 score, so higher-F1
+    /// words appear more frequently. Pass `excluding` to avoid repeating the
+    /// current word back-to-back.
+    static func randomWeightedWord(excluding: String? = nil) -> String {
+        let candidates = weightedWords.filter { $0.word != excluding }
+        let pool = candidates.isEmpty ? weightedWords : candidates
+
+        let totalWeight = pool.reduce(0.0) { $0 + $1.f1Score }
+        guard totalWeight > 0 else {
+            return pool.randomElement()?.word ?? availableWords[0]
+        }
+
+        var threshold = Double.random(in: 0..<totalWeight)
+        for item in pool {
+            threshold -= item.f1Score
+            if threshold < 0 {
+                return item.word
+            }
+        }
+        return pool.last!.word
+    }
+
     static let fallbacks = [
         PracticeChallenge(question: "Kamu sedang apa?", targetTokens: ["Saya", "Lagi", "Makan"]),
         PracticeChallenge(question: "Kamu mau pergi ke mana?", targetTokens: ["Saya", "Rumah", "Teman"]),

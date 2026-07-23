@@ -17,8 +17,7 @@ struct SingleWordPracticeView: View {
     )
     
     // MARK: - Word Practice State
-    @State private var wordIndex: Int = 0
-    @State private var score: Int = 0
+    @State private var currentWord: String = ChallengeGenerator.randomWeightedWord()
     @State private var showSuccessOverlay: Bool = false
     @State private var showConfidenceDetails: Bool = false
     @State private var videoPlayerID: UUID = UUID()
@@ -29,14 +28,6 @@ struct SingleWordPracticeView: View {
     @State private var winkProgress: Double = 0.0
     @State private var winkStart: Date? = nil
     @State private var winkTimer: Timer? = nil
-
-    private var availableWords: [String] {
-        ChallengeGenerator.availableWords
-    }
-
-    private var currentWord: String {
-        availableWords[wordIndex % availableWords.count]
-    }
 
     private var currentEnglishWord: String {
         SignLabelTranslator.translate(currentWord, to: .english)
@@ -51,7 +42,7 @@ struct SingleWordPracticeView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 20) {
-                        headerScoreBar
+                        headerBar
                         
                         // 1. Video Example Card (Starts every session)
                         SignVideoPlayerView(
@@ -104,7 +95,7 @@ struct SingleWordPracticeView: View {
 
     // MARK: - Subviews
 
-    private var headerScoreBar: some View {
+    private var headerBar: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text("word_practice.title", tableName: "Localizable")
@@ -115,66 +106,46 @@ struct SingleWordPracticeView: View {
             }
 
             Spacer()
-
-            HStack(spacing: 6) {
-                Image(systemName: "star.fill")
-                    .foregroundColor(.yellow)
-                Text("\(score)")
-                    .font(.headline.weight(.black))
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(Color.yellow.opacity(0.15))
-            .clipShape(Capsule())
         }
         .padding(.horizontal, 16)
     }
 
     private var targetWordCard: some View {
-        VStack(spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("word_practice.target_label", tableName: "Localizable")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(.secondary)
-                        .textCase(.uppercase)
+        VStack(alignment: .leading, spacing: 16) {
+            // Target word section
+            VStack(alignment: .leading, spacing: 6) {
+                Text("word_practice.target_label", tableName: "Localizable")
+                    .font(.caption.weight(.bold))
+                    .foregroundColor(.secondary)
+                    .textCase(.uppercase)
+                    .tracking(1)
 
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(currentWord)
-                            .font(.system(size: 32, weight: .black, design: .rounded))
-                            .foregroundColor(.primary)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(currentWord)
+                        .font(.system(size: 34, weight: .black, design: .rounded))
+                        .foregroundColor(.primary)
 
-                        if currentEnglishWord != currentWord {
-                            Text("(\(currentEnglishWord))")
-                                .font(.title3.weight(.medium))
-                                .foregroundColor(.secondary)
-                        }
+                    if currentEnglishWord != currentWord {
+                        Text("(\(currentEnglishWord))")
+                            .font(.title2.weight(.medium))
+                            .foregroundColor(.secondary)
                     }
                 }
-
-                Spacer()
-
-                Button {
-                    replayVideo()
-                } label: {
-                    Label("word_practice.replay_button", systemImage: "arrow.clockwise.circle.fill")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                .buttonBorderShape(.capsule)
             }
 
+            Divider()
+
+            // Detection feedback + next control
             HStack {
-                // Current detection feedback pill
                 HStack(spacing: 6) {
                     Circle()
                         .fill(cameraManager.currentConfidence >= 0.35 ? Color.green : Color.orange)
                         .frame(width: 8, height: 8)
 
-                    Text("Deteksi: \(cameraManager.currentSign)")
-                        .font(.caption.weight(.medium))
+                    Text("Deteksi: \(SignRecognitionEngine.cleanLabel(cameraManager.currentSign))")
+                        .font(.subheadline.weight(.medium))
                         .foregroundColor(.secondary)
+                        .lineLimit(1)
                 }
 
                 Spacer()
@@ -186,15 +157,16 @@ struct SingleWordPracticeView: View {
                         Text("word_practice.next_button", tableName: "Localizable")
                         Image(systemName: "forward.fill")
                     }
-                    .font(.caption.weight(.bold))
+                    .font(.subheadline.weight(.bold))
                     .foregroundColor(.blue)
                 }
             }
         }
-        .padding(16)
+        .padding(18)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(uiColor: .white))
+                .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
         )
         .padding(.horizontal, 16)
     }
@@ -366,7 +338,6 @@ struct SingleWordPracticeView: View {
         let targetCleaned = SignRecognitionEngine.cleanLabel(currentWord)
         
         if cleaned.caseInsensitiveCompare(targetCleaned) == .orderedSame {
-            score += 1
             withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                 showSuccessOverlay = true
             }
@@ -374,11 +345,7 @@ struct SingleWordPracticeView: View {
     }
 
     private func nextWord() {
-        wordIndex += 1
-        videoPlayerID = UUID()
-    }
-
-    private func replayVideo() {
+        currentWord = ChallengeGenerator.randomWeightedWord(excluding: currentWord)
         videoPlayerID = UUID()
     }
 
