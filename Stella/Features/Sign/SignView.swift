@@ -63,6 +63,7 @@ struct SignView: View {
     // MARK: - Game State
     @State private var currentChallenge: PracticeChallenge = PracticeChallenge(question: "Apa yang kamu lakukan hari ini?", targetTokens: ["Saya", "Lagi", "Makan"])
     @State private var nextTargetIndex = 0
+    @State private var detectedSignSequence: [String] = []
     @State private var timerSecondsRemaining = 30
     @State private var isGameActive = false
     @State private var isGeneratingChallenge = false
@@ -127,7 +128,6 @@ struct SignView: View {
         .onDisappear {
             cancelWink()
             stopGameTimer()
-            speechStore?.stopRecording()
         }
         .onChange(of: appStore.speechToTextOutput) { _, newText in
             if !newText.isEmpty {
@@ -336,9 +336,9 @@ struct SignView: View {
     
     private var playCard: some View {
         VStack(spacing: 18) {
-            // Caregiver Question Section
+            // Instruksi Latihan Section
             VStack(alignment: .leading, spacing: 10) {
-                Text("PERTANYAAN CAREGIVER")
+                Text("INSTRUKSI LATIHAN")
                     .font(.caption.weight(.bold))
                     .foregroundColor(.secondary)
                 
@@ -352,27 +352,15 @@ struct SignView: View {
                             .foregroundColor(.blue)
                     }
                     
-                    HStack(spacing: 12) {
-                        Text(currentChallenge.question)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.primary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        
-                        Spacer()
-                        
-                        Button {
-                            toggleSpeechRecording()
-                        } label: {
-                            Image(systemName: speechStore?.isRecording == true ? "mic.circle.fill" : "mic.fill")
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(speechStore?.isRecording == true ? .red : .blue)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(Color(UIColor.secondarySystemGroupedBackground))
-                    .cornerRadius(18)
+                    Text(currentChallenge.question)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(Color(UIColor.secondarySystemGroupedBackground))
+                        .cornerRadius(18)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -405,7 +393,7 @@ struct SignView: View {
 
             Divider()
 
-            // Kata Terdeteksi Section
+            // Kata Terdeteksi Section (Realtime Updated)
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text("Kata Terdeteksi")
@@ -430,15 +418,38 @@ struct SignView: View {
                 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        ForEach(0..<currentChallenge.targetTokens.count, id: \.self) { idx in
-                            let token = currentChallenge.targetTokens[idx]
-                            let isCompleted = idx < nextTargetIndex
+                        if detectedSignSequence.isEmpty {
+                            let liveSign = SignRecognitionEngine.cleanLabel(cameraManager.currentSign)
+                            if isGameActive && liveSign != "Detecting..." && liveSign != "Uncertain" {
+                                StatusChip(
+                                    text: liveSign,
+                                    isGreen: false,
+                                    showsCheckmark: false
+                                )
+                            } else {
+                                StatusChip(
+                                    text: "Menunggu isyarat...",
+                                    isGreen: false,
+                                    showsCheckmark: false
+                                )
+                            }
+                        } else {
+                            ForEach(detectedSignSequence.indices, id: \.self) { idx in
+                                StatusChip(
+                                    text: detectedSignSequence[idx],
+                                    isGreen: true,
+                                    showsCheckmark: true
+                                )
+                            }
                             
-                            StatusChip(
-                                text: token,
-                                isGreen: isCompleted,
-                                showsCheckmark: isCompleted
-                            )
+                            let liveSign = SignRecognitionEngine.cleanLabel(cameraManager.currentSign)
+                            if isGameActive && liveSign != "Detecting..." && liveSign != "Uncertain" && detectedSignSequence.last != liveSign {
+                                StatusChip(
+                                    text: liveSign,
+                                    isGreen: false,
+                                    showsCheckmark: false
+                                )
+                            }
                         }
                     }
                     .padding(.vertical, 2)
@@ -511,6 +522,7 @@ struct SignView: View {
         playImpactHaptic()
         stopGameTimer()
         nextTargetIndex = 0
+        detectedSignSequence.removeAll()
         showResult = false
         isGameActive = true
         timerSecondsRemaining = 30
@@ -621,6 +633,12 @@ struct SignView: View {
         guard sign != "Detecting...", sign != "Uncertain" else { return }
         let cleaned = SignRecognitionEngine.cleanLabel(sign)
         
+        if detectedSignSequence.last != cleaned {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                detectedSignSequence.append(cleaned)
+            }
+        }
+        
         guard nextTargetIndex < currentChallenge.targetTokens.count else { return }
         let targetWord = currentChallenge.targetTokens[nextTargetIndex]
         
@@ -633,15 +651,6 @@ struct SignView: View {
             if nextTargetIndex == currentChallenge.targetTokens.count {
                 endGame(with: .good)
             }
-        }
-    }
-
-    private func toggleSpeechRecording() {
-        guard let speechStore else { return }
-        if speechStore.isRecording {
-            speechStore.stopRecording()
-        } else {
-            speechStore.startRecording()
         }
     }
 
