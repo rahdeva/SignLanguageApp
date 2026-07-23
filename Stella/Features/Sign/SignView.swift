@@ -416,43 +416,69 @@ struct SignView: View {
                     .cornerRadius(12)
                 }
                 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        if detectedSignSequence.isEmpty {
-                            let liveSign = SignRecognitionEngine.cleanLabel(cameraManager.currentSign)
-                            if isGameActive && liveSign != "Detecting..." && liveSign != "Uncertain" {
-                                StatusChip(
-                                    text: liveSign,
-                                    isGreen: false,
-                                    showsCheckmark: false
-                                )
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            if detectedSignSequence.isEmpty {
+                                let liveSign = SignRecognitionEngine.cleanLabel(cameraManager.currentSign)
+                                if isGameActive && liveSign != "Detecting..." && liveSign != "Uncertain" {
+                                    StatusChip(
+                                        text: liveSign,
+                                        isGreen: false,
+                                        showsCheckmark: false
+                                    )
+                                    .id("trailingTarget")
+                                } else {
+                                    StatusChip(
+                                        text: "Menunggu isyarat...",
+                                        isGreen: false,
+                                        showsCheckmark: false
+                                    )
+                                    .id("trailingTarget")
+                                }
                             } else {
-                                StatusChip(
-                                    text: "Menunggu isyarat...",
-                                    isGreen: false,
-                                    showsCheckmark: false
-                                )
+                                ForEach(detectedSignSequence.indices, id: \.self) { idx in
+                                    StatusChip(
+                                        text: detectedSignSequence[idx],
+                                        isGreen: true,
+                                        showsCheckmark: true
+                                    )
+                                    .id(idx)
+                                }
+                                
+                                let liveSign = SignRecognitionEngine.cleanLabel(cameraManager.currentSign)
+                                if isGameActive && liveSign != "Detecting..." && liveSign != "Uncertain" && detectedSignSequence.last != liveSign {
+                                    StatusChip(
+                                        text: liveSign,
+                                        isGreen: false,
+                                        showsCheckmark: false
+                                    )
+                                    .id("trailingTarget")
+                                }
                             }
-                        } else {
-                            ForEach(detectedSignSequence.indices, id: \.self) { idx in
-                                StatusChip(
-                                    text: detectedSignSequence[idx],
-                                    isGreen: true,
-                                    showsCheckmark: true
-                                )
-                            }
-                            
-                            let liveSign = SignRecognitionEngine.cleanLabel(cameraManager.currentSign)
-                            if isGameActive && liveSign != "Detecting..." && liveSign != "Uncertain" && detectedSignSequence.last != liveSign {
-                                StatusChip(
-                                    text: liveSign,
-                                    isGreen: false,
-                                    showsCheckmark: false
-                                )
+                        }
+                        .padding(.vertical, 2)
+                    }
+                    .onChange(of: detectedSignSequence) { _, _ in
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            if let lastIdx = detectedSignSequence.indices.last {
+                                proxy.scrollTo(lastIdx, anchor: .trailing)
+                            } else {
+                                proxy.scrollTo("trailingTarget", anchor: .trailing)
                             }
                         }
                     }
-                    .padding(.vertical, 2)
+                    .onChange(of: cameraManager.currentSign) { _, _ in
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            if isGameActive {
+                                if let lastIdx = detectedSignSequence.indices.last {
+                                    proxy.scrollTo(lastIdx, anchor: .trailing)
+                                } else {
+                                    proxy.scrollTo("trailingTarget", anchor: .trailing)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
