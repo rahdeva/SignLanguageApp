@@ -336,8 +336,7 @@ struct SingleWordPracticeView: View {
         let targetCleaned = SignRecognitionEngine.cleanLabel(currentWord)
         
         if cleaned.caseInsensitiveCompare(targetCleaned) == .orderedSame {
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(.success)
+            HapticManager.shared.playSuccess()
 
             withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                 showSuccessOverlay = true

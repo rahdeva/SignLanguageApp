@@ -19,10 +19,10 @@ struct SignVideoPlayerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ZStack {
+            ZStack(alignment: .topLeading) {
                 if hasLocalVideo, let player = player {
                     VideoPlayer(player: player)
-                        .frame(height: 220)
+                        .aspectRatio(16.0 / 9.0, contentMode: .fit)
                         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                         .onDisappear {
                             player.pause()
@@ -30,6 +30,11 @@ struct SignVideoPlayerView: View {
                 } else {
                     // Fallback Animated Demonstration Video Card
                     fallbackVideoCard
+                }
+
+                if hasLocalVideo {
+                    exampleChip
+                        .padding(12)
                 }
             }
         }
@@ -39,6 +44,16 @@ struct SignVideoPlayerView: View {
         .onChange(of: word) { _, _ in
             setupPlayer()
         }
+    }
+
+    private var exampleChip: some View {
+        Text("Contoh")
+            .font(.caption.weight(.bold))
+            .foregroundColor(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().stroke(Color.white.opacity(0.25), lineWidth: 0.5))
     }
 
     private var fallbackVideoCard: some View {
