@@ -7,8 +7,20 @@
 "tab.home"               = "Home";
 "tab.speech"             = "Speech";
 "tab.sign"               = "Sign";
+"tab.single_word"        = "Single Word";
 "tab.history"            = "History";
 "tab.settings"           = "Settings";
+
+/* Single Word Practice */
+"word_practice.title"          = "Single Word Practice";
+"word_practice.subtitle"       = "Watch the video example, then perform the sign!";
+"word_practice.video_title"    = "Sign Video Example";
+"word_practice.target_label"   = "Target Sign";
+"word_practice.success_title"  = "EXCELLENT! CORRECT SIGN";
+"word_practice.success_desc"   = "You performed this sign perfectly!";
+"word_practice.next_button"    = "Next Word";
+"word_practice.replay_button"  = "Replay Video";
+"word_practice.score_title"    = "Your Score";"settings.features.eye_close_mode"           = "Eye Close Switch Mode";
 
 /* Settings — General */
 "settings.title"                     = "Settings";

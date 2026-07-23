@@ -1,6 +1,6 @@
 //
 //  RootView.swift
-//  Stella
+//  SignLanguageApp
 //
 //  Created by Muhammad Hisyam Kamil on 17/07/26.
 //
@@ -9,20 +9,27 @@ import SwiftUI
 
 /// Navigation tabs for the two main pipelines plus history log.
 enum AppTab: String, CaseIterable {
-    case conversation, history, settings
+//    case conversation, singleWord, speechToText, signToSpeech, history, settings
+    case singleWord, settings
 
     var titleKey: LocalizedStringKey {
         switch self {
-        case .conversation: "tab.conversation"
-        case .history:      "tab.history"
+//        case .conversation: "tab.conversation"
+        case .singleWord:   "tab.single_word"
+//        case .speechToText: "tab.speech"
+//        case .signToSpeech: "tab.sign"
+//        case .history:      "tab.history"
         case .settings:     "tab.settings"
         }
     }
 
     var icon: String {
         switch self {
-        case .conversation: "hand.wave"
-        case .history:      "clock"
+//        case .conversation: "hand.wave"
+        case .singleWord:   "play.rectangle.fill"
+//        case .speechToText: "mic"
+//        case .signToSpeech: "camera"
+//        case .history:      "clock"
         case .settings:     "gearshape"
         }
     }
@@ -33,7 +40,7 @@ enum AppTab: String, CaseIterable {
 /// child views automatically render in the correct language.
 struct RootView: View {
     @State private var appStore = AppStore()
-    @State private var selectedTab: AppTab = .conversation
+    @State private var selectedTab: AppTab = .singleWord
     @State private var showOnboarding = !UserDefaults.standard.bool(
         forKey: "hasSeenOnboarding"
     )
@@ -51,18 +58,24 @@ struct RootView: View {
                             .transition(.opacity)
                     } else {
                         TabView(selection: $selectedTab) {
-                            SignView()
-                                .tabItem {
-                                    Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
-                                }
-                                .tag(AppTab.conversation)
+//                            UnifiedView()
+//                                .tabItem {
+//                                    Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
+//                                }
+//                                .tag(AppTab.conversation)
 
-                            HistoryView()
+                            SingleWordPracticeView()
                                 .tabItem {
-                                    Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
+                                    Label(AppTab.singleWord.titleKey, systemImage: AppTab.singleWord.icon)
                                 }
-                                .tag(AppTab.history)
+                                .tag(AppTab.singleWord)
 
+//                            HistoryView()
+//                                .tabItem {
+//                                    Label(AppTab.history.titleKey, systemImage: AppTab.history.icon)
+//                                }
+//                                .tag(AppTab.history)
+                            
                             SettingsView()
                                 .tabItem {
                                     Label(AppTab.settings.titleKey, systemImage: AppTab.settings.icon)
