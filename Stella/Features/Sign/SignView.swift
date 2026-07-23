@@ -123,9 +123,6 @@ struct SignView: View {
             if speechStore == nil {
                 speechStore = SpeechToTextStore(appStore: appStore)
             }
-            if !isGameActive {
-                handleStartGameTap()
-            }
         }
         .onDisappear {
             cancelWink()
@@ -521,7 +518,6 @@ struct SignView: View {
         recognizer.clearAll()
         appStore.signPredictionOutput = ""
         
-        startGameTimer()
         fetchNewChallenge()
     }
 
@@ -598,11 +594,15 @@ struct SignView: View {
             await MainActor.run {
                 currentChallenge = challenge
                 isGeneratingChallenge = false
+                nextTargetIndex = 0
+                timerSecondsRemaining = 30
+                startGameTimer()
             }
         }
     }
 
     private func handleSpokenQuestion(_ question: String) {
+        stopGameTimer()
         Task {
             isGeneratingChallenge = true
             let tokens = await ChallengeGenerator.generateTokens(for: question, targetLanguage: appStore.languageSettings.ttsLanguage)
@@ -610,6 +610,7 @@ struct SignView: View {
                 currentChallenge = PracticeChallenge(question: question, targetTokens: tokens)
                 isGeneratingChallenge = false
                 nextTargetIndex = 0
+                timerSecondsRemaining = 30
                 startGameTimer()
             }
         }
