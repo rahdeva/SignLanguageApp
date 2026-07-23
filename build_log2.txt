@@ -1,8 +1,0 @@
-2026-07-20 14:13:31.422 xcodebuild[23711:28705590]  DVTFilePathFSEvents: Failed to start fs event stream.
-2026-07-20 14:13:31.506 xcodebuild[23711:28705587] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 "Input/output error". Using NSCachesDirectory instead.
-Command line invocation:
-    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project SignLanguageApp.xcodeproj -scheme SignLanguageApp -sdk iphonesimulator -configuration Debug build
-
-Build settings from command line:
-    SDKROOT = iphonesimulator26.5
-

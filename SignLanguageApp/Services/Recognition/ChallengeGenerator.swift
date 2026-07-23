@@ -142,7 +142,7 @@ struct ChallengeGenerator {
 
             Now generate one new, randomly distinct challenge.
             """
-            
+            =
             let response = try await session.respond(to: prompt)
             let rawContent = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
             

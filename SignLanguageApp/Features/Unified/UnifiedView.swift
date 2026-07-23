@@ -57,7 +57,26 @@ struct UnifiedView: View {
     @State private var speechStore: SpeechToTextStore?
     @State private var showConfidenceDetails = false
 
+    // MARK: - Level Struct & Levels list
+    struct PracticeLevel: Identifiable, Equatable {
+        let id: Int
+        let name: String
+        let description: String
+        let iconName: String
+        let color: Color
+        let targetTokens: [String]?
+        let presetQuestion: String?
+    }
+
+    private let practiceLevels = [
+        PracticeLevel(id: 1, name: "Perkenalan (Intro)", description: "Belajar menyapa & memanggil", iconName: "hand.wave.fill", color: .blue, targetTokens: nil, presetQuestion: nil),
+        PracticeLevel(id: 2, name: "Kebutuhan Harian (Needs)", description: "Minta makan & minum", iconName: "fork.knife", color: .green, targetTokens: nil, presetQuestion: nil),
+        PracticeLevel(id: 3, name: "Aktivitas & Rutinitas (Routine)", description: "Belajar, pergi, dan tidur", iconName: "figure.walk", color: .purple, targetTokens: nil, presetQuestion: nil),
+        PracticeLevel(id: 4, name: "Presentasi (Debug)", description: "Menampilkan [Saya, Lagi, Motor]", iconName: "hammer.fill", color: .orange, targetTokens: ["Saya", "Lagi", "Motor"], presetQuestion: "Kamu mau pergi naik apa?")
+    ]
+
     // MARK: - Game State
+    @State private var selectedLevel: PracticeLevel? = nil
     @State private var currentChallenge: PracticeChallenge = PracticeChallenge(question: "Kamu sedang apa?", targetTokens: ["Saya", "Lagi", "Makan"])
     @State private var nextTargetIndex = 0
     @State private var timerSecondsRemaining = 30
@@ -98,18 +117,24 @@ struct UnifiedView: View {
 
     var body: some View {
         ZStack {
-            // Main Content Layout using Original ScrollView and Elements
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: 20) {
-                        cameraPane
-                        duolingoTaskCard
+            if selectedLevel == nil {
+                levelSelectionView
+                    .transition(.opacity)
+            } else {
+                // Main Content Layout using Original ScrollView and Elements
+                VStack(spacing: 0) {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            cameraPane
+                            duolingoTaskCard
+                        }
+                        .padding(.vertical, 20)
                     }
-                    .padding(.vertical, 20)
                 }
+                .blur(radius: showResult ? 12 : 0)
+                .disabled(showResult)
+                .transition(.opacity)
             }
-            .blur(radius: showResult ? 12 : 0)
-            .disabled(showResult)
             
             // Result Screen Overlay (Native Apple Aesthetic)
             if showResult {
@@ -131,7 +156,7 @@ struct UnifiedView: View {
             if speechStore == nil {
                 speechStore = SpeechToTextStore(appStore: appStore)
             }
-            fetchNewChallengeAndStart()
+            cameraManager.stopSession()
         }
         .onDisappear {
             cancelWink()
@@ -139,7 +164,6 @@ struct UnifiedView: View {
             speechStore?.stopRecording()
         }
         .onChange(of: appStore.conversationHistory) { _, history in
-            // When caregiver speaks a custom question, intercept it to generate custom tokens
             if let lastMessage = history.last, lastMessage.role == .userSpoke {
                 handleSpokenQuestion(lastMessage.message)
             }
@@ -153,6 +177,116 @@ struct UnifiedView: View {
         .onChange(of: cameraManager.isRightEyeClosed) { _, _ in
             handleEyeTrackingUpdate()
         }
+    }
+
+    private var levelSelectionView: some View {
+        VStack(spacing: 0) {
+            // Header Bar
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Latihan Isyarat")
+                        .font(.title2.weight(.bold))
+                        .foregroundColor(.primary)
+                    Text("Pilih level untuk memulai latihan BISINDO")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                
+                // Duolingo-style streak or crown
+                HStack(spacing: 4) {
+                    Image(systemName: "crown.fill")
+                        .foregroundColor(.yellow)
+                    Text("4/4")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundColor(.primary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.yellow.opacity(0.12), in: .capsule)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 16)
+            
+            Divider()
+            
+            // Level Cards Scroll List
+            ScrollView(showsIndicators: false) {
+                LazyVStack(spacing: 16) {
+                    ForEach(practiceLevels) { level in
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                startLevel(level)
+                            }
+                        }) {
+                            levelCard(for: level)
+                        }
+                        .buttonStyle(CardButtonStyle())
+                    }
+                }
+                .padding(20)
+            }
+        }
+    }
+
+    private func levelCard(for level: PracticeLevel) -> some View {
+        HStack(spacing: 16) {
+            // Icon Badge
+            ZStack {
+                Circle()
+                    .fill(level.color.opacity(0.12))
+                    .frame(width: 56, height: 56)
+                
+                Image(systemName: level.iconName)
+                    .font(.title3.weight(.bold))
+                    .foregroundColor(level.color)
+            }
+            
+            // Content text
+            VStack(alignment: .leading, spacing: 4) {
+                Text(level.name)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Text(level.description)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
+                
+                // Show custom badges preview if preset tokens exist (Debug level)
+                if let tokens = level.targetTokens {
+                    HStack(spacing: 6) {
+                        ForEach(tokens, id: \.self) { token in
+                            Text(token)
+                                .font(.system(size: 10, weight: .bold))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.orange.opacity(0.12), in: Capsule())
+                                .foregroundColor(.orange)
+                        }
+                    }
+                    .padding(.top, 2)
+                }
+            }
+            
+            Spacer()
+            
+            // Play Chevron
+            Image(systemName: "play.circle.fill")
+                .font(.title2)
+                .foregroundColor(level.color)
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
     }
 
     // MARK: - Original Layout Panes
@@ -207,6 +341,17 @@ struct UnifiedView: View {
 
     private var cameraStatusBar: some View {
         HStack(spacing: 8) {
+            Button(action: {
+                cancelGameAndExit()
+            }) {
+                Image(systemName: "chevron.left")
+                    .foregroundColor(.white)
+                    .font(.body.weight(.bold))
+                    .frame(width: 32, height: 32)
+                    .background(.ultraThinMaterial, in: .circle)
+            }
+            .accessibilityLabel("Keluar latihan")
+            
             HStack(spacing: 6) {
                 Circle()
                     .fill(cameraManager.bufferCount == 60 ? .green : .yellow)
@@ -532,6 +677,14 @@ struct UnifiedView: View {
         gameTimer = nil
     }
 
+    func cancelGameAndExit() {
+        stopGameTimer()
+        isGameActive = false
+        showResult = false
+        selectedLevel = nil
+        cameraManager.stopSession()
+    }
+
     func endGame(with forcedLevel: GameResultLevel? = nil) {
         stopGameTimer()
         isGameActive = false
@@ -560,6 +713,18 @@ struct UnifiedView: View {
         case .good: generator.notificationOccurred(.success)
         case .okay: generator.notificationOccurred(.warning)
         case .bad: generator.notificationOccurred(.error)
+        }
+    }
+    
+    func startLevel(_ level: PracticeLevel) {
+        selectedLevel = level
+        cameraManager.startSession()
+        
+        if let presetTokens = level.targetTokens, let presetQ = level.presetQuestion {
+            currentChallenge = PracticeChallenge(question: presetQ, targetTokens: presetTokens)
+            startNewGame()
+        } else {
+            fetchNewChallengeAndStart()
         }
     }
 
@@ -650,17 +815,38 @@ struct UnifiedView: View {
                 .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
             }
             
-            Button {
-                fetchNewChallengeAndStart()
-            } label: {
-                Text("Main Lagi")
-                    .font(.body.weight(.bold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.blue, in: Capsule())
+            VStack(spacing: 8) {
+                Button {
+                    if let level = selectedLevel {
+                        startLevel(level)
+                    } else {
+                        fetchNewChallengeAndStart()
+                    }
+                } label: {
+                    Text("Main Lagi")
+                        .font(.body.weight(.bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.blue, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                
+                Button {
+                    withAnimation {
+                        selectedLevel = nil
+                        showResult = false
+                        cameraManager.stopSession()
+                    }
+                } label: {
+                    Text("Pilih Level")
+                        .font(.body.weight(.semibold))
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
             .padding(.horizontal, 32)
         }
         .padding(.vertical, 36)
@@ -819,11 +1005,19 @@ struct UnifiedView: View {
     }
 
     private func triggerWinkAction() {
-        if showResult {
-            fetchNewChallengeAndStart()
-        } else if isGameActive {
-            fetchNewChallengeAndStart()
+        if let level = selectedLevel {
+            startLevel(level)
         }
+    }
+}
+
+// MARK: - Level Card Button Style helper
+struct CardButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
 

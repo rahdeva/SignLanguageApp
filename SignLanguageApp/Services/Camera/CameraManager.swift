@@ -281,6 +281,32 @@ class CameraManager: NSObject, ObservableObject, @unchecked Sendable {
             }
         }
     }
+    
+    // MARK: - Session Controls
+    func startSession() {
+        guard permissionGranted else { return }
+        captureQueue.async { [weak self] in
+            guard let self else { return }
+            if !self.session.isRunning {
+                self.session.startRunning()
+                DispatchQueue.main.async {
+                    self.isRunning = self.session.isRunning
+                }
+            }
+        }
+    }
+
+    func stopSession() {
+        captureQueue.async { [weak self] in
+            guard let self else { return }
+            if self.session.isRunning {
+                self.session.stopRunning()
+                DispatchQueue.main.async {
+                    self.isRunning = self.session.isRunning
+                }
+            }
+        }
+    }
 
     // MARK: - Public Controls
     func toggleCamera() {
